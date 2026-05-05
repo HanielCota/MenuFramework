@@ -4,9 +4,6 @@ import com.github.hanielcota.menuframework.api.ClickContext;
 import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.api.MenuSession;
 import com.github.hanielcota.menuframework.internal.text.MiniMessageProvider;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
@@ -14,7 +11,6 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 
-@Accessors(fluent = true)
 public record ClickContextImpl(@NonNull MenuSession session, @NonNull Player player, int rawSlot, @NonNull ClickType clickType,
                                @NonNull MenuService menuService) implements ClickContext {
 

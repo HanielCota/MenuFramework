@@ -38,7 +38,6 @@ public final class MenuFrameworkConfig {
 
   private boolean logSlowRenders = true;
   private long slowRenderThresholdMillis = DEFAULT_SLOW_RENDER_THRESHOLD_MS;
-  private boolean validateLayoutIntegrity = true;
 
   public MenuFrameworkConfig sessionCacheMaxSize(int sessionCacheMaxSize) {
     this.sessionCacheMaxSize =
@@ -83,11 +82,6 @@ public final class MenuFrameworkConfig {
   public MenuFrameworkConfig slowRenderThresholdMillis(long slowRenderThresholdMillis) {
     this.slowRenderThresholdMillis =
         ConfigValidator.requireNonNegative(slowRenderThresholdMillis, "slowRenderThresholdMillis");
-    return this;
-  }
-
-  public MenuFrameworkConfig validateLayoutIntegrity(boolean validateLayoutIntegrity) {
-    this.validateLayoutIntegrity = validateLayoutIntegrity;
     return this;
   }
 }

@@ -8,10 +8,10 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Resolves dynamic menu content by querying registered providers or fallback static content.
@@ -44,6 +44,10 @@ public final class DynamicContentResolver {
     var resolvedPlayer = resolvePlayer(view);
     var session = resolveSession(view);
 
+    if (resolvedPlayer == null || session == null) {
+      return dynamicContentRegistry.getDynamicContent(menuId);
+    }
+
     var items = providerOpt.get().provide(resolvedPlayer, session);
     var duration = System.currentTimeMillis() - start;
 
@@ -52,7 +56,7 @@ public final class DynamicContentResolver {
     return items != null ? items : List.of();
   }
 
-  private @NonNull Player resolvePlayer(@NonNull InventoryView view) {
+  private @Nullable Player resolvePlayer(@NonNull InventoryView view) {
     var viewer = view.getPlayer();
     if (viewer == null) return null;
 
@@ -63,7 +67,7 @@ public final class DynamicContentResolver {
     return resolved;
   }
 
-  private @NonNull MenuSession resolveSession(@NonNull InventoryView view) {
+  private @Nullable MenuSession resolveSession(@NonNull InventoryView view) {
     var topInventory = view.getTopInventory();
     Objects.requireNonNull(topInventory, "topInventory is null (view may be closed)");
     var holder = topInventory.getHolder();

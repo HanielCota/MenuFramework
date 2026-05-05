@@ -28,7 +28,7 @@ public final class SessionLifecycle {
   public SessionLifecycle(
       @NonNull Plugin plugin,
       @NonNull SchedulerAdapter scheduler,
-      @NonNull MenuSession session,
+      @Nullable MenuSession session,
       @NonNull MenuSessionState state,
       @NonNull ActiveSlotRegistry activeSlots,
       @NonNull ServerAccess serverAccess) {

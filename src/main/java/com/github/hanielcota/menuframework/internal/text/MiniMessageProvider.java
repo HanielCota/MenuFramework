@@ -11,15 +11,7 @@ public final class MiniMessageProvider {
 
   private MiniMessageProvider() {}
 
-  public static @NonNull MiniMessage get() {
-    return MINI_MESSAGE;
-  }
-
   public static @NonNull Component deserialize(@NonNull String input) {
     return MINI_MESSAGE.deserialize(Objects.requireNonNull(input, "input"));
-  }
-
-  public static @NonNull String serialize(@NonNull Component component) {
-    return MINI_MESSAGE.serialize(Objects.requireNonNull(component, "component"));
   }
 }

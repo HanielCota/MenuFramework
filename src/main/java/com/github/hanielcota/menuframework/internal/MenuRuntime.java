@@ -48,24 +48,12 @@ public final class MenuRuntime {
     return paginationEngine;
   }
 
-  public @NonNull MenuRegistry menuRegistry() {
-    return menuRegistry;
-  }
-
-  public @NonNull SessionRegistry sessionRegistry() {
-    return sessionRegistry;
-  }
-
   public @NonNull SessionFactory sessionFactory() {
     return sessionFactory;
   }
 
   public @NonNull MenuEventRouter eventRouter() {
     return eventRouter;
-  }
-
-  public @NonNull ItemStackFactory itemStackFactory() {
-    return itemStackFactory;
   }
 
   public @NonNull MenuRegistry definitions() {

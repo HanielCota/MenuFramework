@@ -96,10 +96,6 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
     lifecycle.disposeImmediately();
   }
 
-  MenuSessionState state() {
-    return this.state;
-  }
-
   List<com.github.hanielcota.menuframework.api.MenuFeature> features() {
     return state.definition().features();
   }
