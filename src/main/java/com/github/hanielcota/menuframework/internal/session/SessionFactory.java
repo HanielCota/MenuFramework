@@ -3,20 +3,22 @@ package com.github.hanielcota.menuframework.internal.session;
 import com.github.hanielcota.menuframework.api.MenuFeature;
 import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.api.MenuSession;
+import com.github.hanielcota.menuframework.core.server.ServerAccess;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import com.github.hanielcota.menuframework.internal.render.RenderEngine;
-import com.github.hanielcota.menuframework.internal.server.ServerAccess;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import lombok.RequiredArgsConstructor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-@RequiredArgsConstructor
 public final class SessionFactory {
+
+  private static final Logger log = Logger.getLogger(SessionFactory.class.getName());
 
   @NonNull
   private final Plugin plugin;
@@ -35,9 +37,37 @@ public final class SessionFactory {
   @NonNull
   private final MenuSessionImplFactory sessionImplFactory;
 
+  public SessionFactory(
+      @NonNull Plugin plugin,
+      @NonNull SchedulerAdapter scheduler,
+      @NonNull ServerAccess serverAccess,
+      @NonNull RenderEngine renderEngine,
+      @NonNull MenuService menuService,
+      @NonNull SessionCommands sessionCommands,
+      @NonNull RefreshScheduler refreshScheduler,
+      @NonNull MenuSessionImplFactory sessionImplFactory) {
+    this.plugin = plugin;
+    this.scheduler = scheduler;
+    this.serverAccess = serverAccess;
+    this.renderEngine = renderEngine;
+    this.menuService = menuService;
+    this.sessionCommands = sessionCommands;
+    this.refreshScheduler = refreshScheduler;
+    this.sessionImplFactory = sessionImplFactory;
+  }
+
   private static void fireOpenFeatures(@NonNull MenuSessionImpl session, @NonNull MenuDefinition definition) {
     for (MenuFeature feature : definition.features()) {
-      feature.onOpen(session);
+      try {
+        feature.onOpen(session);
+      } catch (Exception exception) {
+        log.log(
+            Level.WARNING,
+            exception,
+            () ->
+                "menu.feature.onOpen_failed menuId=%s featureType=%s"
+                    .formatted(definition.id(), feature.getClass().getSimpleName()));
+      }
     }
   }
 
@@ -63,10 +93,15 @@ public final class SessionFactory {
         return;
       }
 
-      sessionCommands.register(playerUuid, session);
-      fireOpenFeatures(session, definition);
-      scheduleRefresh(session);
-      future.complete(session);
+      try {
+        fireOpenFeatures(session, definition);
+        scheduleRefresh(session);
+        sessionCommands.register(playerUuid, session);
+        future.complete(session);
+      } catch (Exception exception) {
+        session.close();
+        future.completeExceptionally(exception);
+      }
     } catch (Exception exception) {
       future.completeExceptionally(exception);
     }

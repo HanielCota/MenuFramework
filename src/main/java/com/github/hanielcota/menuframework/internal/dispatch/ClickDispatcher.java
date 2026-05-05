@@ -3,16 +3,18 @@ package com.github.hanielcota.menuframework.internal.dispatch;
 import com.github.hanielcota.menuframework.internal.session.InteractiveMenuSession;
 import com.github.hanielcota.menuframework.internal.session.SessionQuery;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
-@RequiredArgsConstructor
 public final class ClickDispatcher {
 
   @NonNull private final SessionQuery sessionQuery;
+
+  public ClickDispatcher(@NonNull SessionQuery sessionQuery) {
+    this.sessionQuery = sessionQuery;
+  }
 
   public boolean dispatchClick(
       @NonNull Player player,

@@ -1,4 +1,4 @@
-package com.github.hanielcota.menuframework.internal.server;
+package com.github.hanielcota.menuframework.core.server;
 
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import java.util.Objects;
@@ -10,7 +10,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.jspecify.annotations.NonNull;
 
-public final class BukkitServerAccess implements ServerAccess {
+public record BukkitServerAccess() implements ServerAccess {
 
   @Override
   public boolean isPrimaryThread() {

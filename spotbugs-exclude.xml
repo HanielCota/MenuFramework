@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+  <!-- EI_EXPOSE_REP and EI_EXPOSE_REP2: The framework intentionally stores references to Bukkit objects
+       (Plugin, InventoryView, Player) and internal mutable registries. These are managed by the Bukkit
+       lifecycle or synchronized internally. Copying them would be incorrect or unnecessary. -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP" />
+    <Or>
+      <Package name="com.github.hanielcota.menuframework.internal" />
+      <Package name="com.github.hanielcota.menuframework.internal.session" />
+      <Package name="com.github.hanielcota.menuframework.internal.render" />
+      <Package name="com.github.hanielcota.menuframework.internal.interaction" />
+      <Package name="com.github.hanielcota.menuframework.internal.registry" />
+      <Package name="com.github.hanielcota.menuframework.internal.event" />
+      <Package name="com.github.hanielcota.menuframework.internal.item" />
+      <Package name="com.github.hanielcota.menuframework.internal.dispatch" />
+      <Package name="com.github.hanielcota.menuframework.builder" />
+      <Package name="com.github.hanielcota.menuframework.definition" />
+    </Or>
+  </Match>
+
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2" />
+    <Or>
+      <Package name="com.github.hanielcota.menuframework.internal" />
+      <Package name="com.github.hanielcota.menuframework.internal.session" />
+      <Package name="com.github.hanielcota.menuframework.internal.render" />
+      <Package name="com.github.hanielcota.menuframework.internal.interaction" />
+      <Package name="com.github.hanielcota.menuframework.internal.registry" />
+      <Package name="com.github.hanielcota.menuframework.internal.event" />
+      <Package name="com.github.hanielcota.menuframework.internal.item" />
+      <Package name="com.github.hanielcota.menuframework.internal.dispatch" />
+      <Package name="com.github.hanielcota.menuframework.builder" />
+      <Package name="com.github.hanielcota.menuframework.definition" />
+    </Or>
+  </Match>
+
+  <!-- RCN_REDUNDANT_NULLCHECK: Defensive null checks against Bukkit API returns are intentional.
+       Bukkit API contracts can vary across versions and implementations. -->
+  <Match>
+    <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+    <Or>
+      <Class name="com.github.hanielcota.menuframework.internal.event.MenuListener" />
+      <Class name="com.github.hanielcota.menuframework.internal.render.DynamicContentResolver" />
+      <Class name="com.github.hanielcota.menuframework.core.profile.BukkitPlayerProfileService" />
+    </Or>
+  </Match>
+
+  <!-- RV_RETURN_VALUE_IGNORED: setItemMeta has side effects on the ItemStack; the boolean return
+       indicates success but failure is extremely rare and not actionable in this context. -->
+  <Match>
+    <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
+    <Class name="com.github.hanielcota.menuframework.internal.item.CachedItemStackFactory" />
+  </Match>
+
+</FindBugsFilter>

@@ -48,15 +48,26 @@ public record PageView(int pageNumber, @Nullable ItemStack[] items, int totalPag
     if (this == o) return true;
     if (!(o instanceof PageView(int otherPageNumber, ItemStack[] otherItems, int otherTotalPages)))
       return false;
-    return pageNumber == otherPageNumber
-        && totalPages == otherTotalPages
-        && Arrays.equals(items, otherItems);
+    if (pageNumber != otherPageNumber || totalPages != otherTotalPages) return false;
+    if (items.length != otherItems.length) return false;
+    for (int i = 0; i < items.length; i++) {
+      if (!areItemsEqual(items[i], otherItems[i])) return false;
+    }
+    return true;
+  }
+
+  private static boolean areItemsEqual(@Nullable ItemStack a, @Nullable ItemStack b) {
+    if (a == b) return true;
+    if (a == null || b == null) return false;
+    return a.isSimilar(b);
   }
 
   @Override
   public int hashCode() {
     int result = 31 * pageNumber + totalPages;
-    result = 31 * result + Arrays.hashCode(items);
+    for (ItemStack item : items) {
+      result = 31 * result + (item == null ? 0 : item.hashCode());
+    }
     return result;
   }
 

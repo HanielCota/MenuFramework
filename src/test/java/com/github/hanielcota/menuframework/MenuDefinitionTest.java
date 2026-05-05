@@ -2,8 +2,6 @@ package com.github.hanielcota.menuframework;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import be.seeseemelk.mockbukkit.MockBukkit;
-import be.seeseemelk.mockbukkit.ServerMock;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import com.github.hanielcota.menuframework.definition.PaginationConfig;
@@ -11,8 +9,6 @@ import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryType;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +25,7 @@ class MenuDefinitionTest {
     assertThrows(IllegalArgumentException.class, () ->
         new MenuDefinition(
             "test", InventoryType.CHEST, 10, net.kyori.adventure.text.Component.empty(),
-            slots, null, PaginationConfig.builder().build(), List.of(), true, true));
+            slots, null, PaginationConfig.builder().build(), List.of(), true, true, null));
   }
 
   @Test
@@ -39,7 +35,7 @@ class MenuDefinitionTest {
     assertThrows(IllegalArgumentException.class, () ->
         new MenuDefinition(
             "test", InventoryType.CHEST, 8, net.kyori.adventure.text.Component.empty(),
-            slots, null, PaginationConfig.builder().build(), List.of(), true, true));
+            slots, null, PaginationConfig.builder().build(), List.of(), true, true, null));
   }
 
   @Test
@@ -49,7 +45,7 @@ class MenuDefinitionTest {
     assertThrows(IllegalArgumentException.class, () ->
         new MenuDefinition(
             "test", InventoryType.CHEST, 63, net.kyori.adventure.text.Component.empty(),
-            slots, null, PaginationConfig.builder().build(), List.of(), true, true));
+            slots, null, PaginationConfig.builder().build(), List.of(), true, true, null));
   }
 
   @Test
@@ -58,7 +54,7 @@ class MenuDefinitionTest {
     var slots = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<SlotDefinition>();
     var def = new MenuDefinition(
         "test", InventoryType.DROPPER, 9, net.kyori.adventure.text.Component.empty(),
-        slots, null, PaginationConfig.builder().build(), List.of(), true, true);
+        slots, null, PaginationConfig.builder().build(), List.of(), true, true, null);
     assertNotNull(def);
   }
 
@@ -72,7 +68,7 @@ class MenuDefinitionTest {
     assertThrows(IllegalArgumentException.class, () ->
         new MenuDefinition(
             "test", InventoryType.CHEST, 27, net.kyori.adventure.text.Component.empty(),
-            slots, null, PaginationConfig.builder().build(), List.of(), true, true));
+            slots, null, PaginationConfig.builder().build(), List.of(), true, true, null));
   }
 
   @Test
@@ -85,7 +81,7 @@ class MenuDefinitionTest {
     assertThrows(IllegalArgumentException.class, () ->
         new MenuDefinition(
             "test", InventoryType.CHEST, 27, net.kyori.adventure.text.Component.empty(),
-            slots, null, PaginationConfig.builder().build(), List.of(), true, true));
+            slots, null, PaginationConfig.builder().build(), List.of(), true, true, null));
   }
 
   @Test
@@ -95,7 +91,7 @@ class MenuDefinitionTest {
     assertThrows(NullPointerException.class, () ->
         new MenuDefinition(
             null, InventoryType.CHEST, 27, net.kyori.adventure.text.Component.empty(),
-            slots, null, PaginationConfig.builder().build(), List.of(), true, true));
+            slots, null, PaginationConfig.builder().build(), List.of(), true, true, null));
   }
 
   @Test
@@ -107,7 +103,7 @@ class MenuDefinitionTest {
 
     var def = new MenuDefinition(
         "test", InventoryType.CHEST, 27, net.kyori.adventure.text.Component.empty(),
-        slots, null, PaginationConfig.builder().build(), List.of(), true, true);
+        slots, null, PaginationConfig.builder().build(), List.of(), true, true, null);
 
     assertEquals("test", def.id());
     assertEquals(InventoryType.CHEST, def.type());

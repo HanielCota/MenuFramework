@@ -1,8 +1,6 @@
 package com.github.hanielcota.menuframework;
 
-import com.github.hanielcota.menuframework.internal.config.ConfigValidator;
-import lombok.Getter;
-import lombok.experimental.Accessors;
+import com.github.hanielcota.menuframework.core.config.ConfigValidator;
 
 /**
  * Configuration for the MenuFramework library.
@@ -17,8 +15,6 @@ import lombok.experimental.Accessors;
  *     .pageCacheExpireMinutes(5);
  * }</pre>
  */
-@Getter
-@Accessors(fluent = true)
 public final class MenuFrameworkConfig {
 
   private static final int DEFAULT_SESSION_CACHE_MAX_SIZE = 500;
@@ -38,6 +34,38 @@ public final class MenuFrameworkConfig {
 
   private boolean logSlowRenders = true;
   private long slowRenderThresholdMillis = DEFAULT_SLOW_RENDER_THRESHOLD_MS;
+
+  public int sessionCacheMaxSize() {
+    return sessionCacheMaxSize;
+  }
+
+  public int sessionCacheExpireMinutes() {
+    return sessionCacheExpireMinutes;
+  }
+
+  public int pageCacheMaxSize() {
+    return pageCacheMaxSize;
+  }
+
+  public int pageCacheExpireMinutes() {
+    return pageCacheExpireMinutes;
+  }
+
+  public int itemStackCacheMaxSize() {
+    return itemStackCacheMaxSize;
+  }
+
+  public int itemStackCacheExpireMinutes() {
+    return itemStackCacheExpireMinutes;
+  }
+
+  public boolean logSlowRenders() {
+    return logSlowRenders;
+  }
+
+  public long slowRenderThresholdMillis() {
+    return slowRenderThresholdMillis;
+  }
 
   public MenuFrameworkConfig sessionCacheMaxSize(int sessionCacheMaxSize) {
     this.sessionCacheMaxSize =

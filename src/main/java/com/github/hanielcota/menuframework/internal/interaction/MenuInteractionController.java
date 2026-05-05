@@ -1,15 +1,18 @@
 package com.github.hanielcota.menuframework.internal.interaction;
 
-import com.github.hanielcota.menuframework.api.ClickHandler;
+import com.github.hanielcota.menuframework.api.MenuHistory;
+import com.github.hanielcota.menuframework.api.MenuService;
+import com.github.hanielcota.menuframework.api.PlayerInventoryClickHandler;
+import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import com.github.hanielcota.menuframework.internal.session.ActiveSlotRegistry;
+import com.github.hanielcota.menuframework.internal.session.ClickContextImpl;
 import com.github.hanielcota.menuframework.internal.session.MenuSessionState;
 import com.github.hanielcota.menuframework.internal.session.PlayerResolver;
-import lombok.RequiredArgsConstructor;
+import com.github.hanielcota.menuframework.messaging.MessageService;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.jspecify.annotations.NonNull;
 
-@RequiredArgsConstructor
 public final class MenuInteractionController {
 
   @NonNull private final MenuSessionState state;
@@ -17,6 +20,28 @@ public final class MenuInteractionController {
   @NonNull private final PlayerResolver playerResolver;
   @NonNull private final ClickExecutor clickExecutor;
   @NonNull private final InteractionPolicy interactionPolicy;
+  @NonNull private final MenuService menuService;
+  @NonNull private final MenuHistory menuHistory;
+  @NonNull private final MessageService messageService;
+
+  public MenuInteractionController(
+      @NonNull MenuSessionState state,
+      @NonNull ActiveSlotRegistry activeSlots,
+      @NonNull PlayerResolver playerResolver,
+      @NonNull ClickExecutor clickExecutor,
+      @NonNull InteractionPolicy interactionPolicy,
+      @NonNull MenuService menuService,
+      @NonNull MenuHistory menuHistory,
+      @NonNull MessageService messageService) {
+    this.state = state;
+    this.activeSlots = activeSlots;
+    this.playerResolver = playerResolver;
+    this.clickExecutor = clickExecutor;
+    this.interactionPolicy = interactionPolicy;
+    this.menuService = menuService;
+    this.menuHistory = menuHistory;
+    this.messageService = messageService;
+  }
 
   public boolean handleClick(int rawSlot, @NonNull ClickType clickType) {
     if (state.disposed()) return true;
@@ -24,22 +49,36 @@ public final class MenuInteractionController {
     Player player = playerResolver.resolveOnline(state.viewerId());
     if (player == null) return true;
 
-    ClickHandler handler = rawSlot >= 0 ? activeSlots.get(rawSlot) : null;
-    if (handler != null) {
-      clickExecutor.execute(sessionContext(), player, rawSlot, clickType, handler);
-      return true;
-    }
-
     var definition = state.definition();
     var view = state.view();
     if (definition == null || view == null) return true;
+
+    int topSize = view.getTopInventory().getSize();
+
+    // Handle clicks in player inventory (bottom inventory)
+    if (rawSlot >= topSize) {
+      PlayerInventoryClickHandler inventoryHandler = definition.playerInventoryClickHandler();
+      if (inventoryHandler != null) {
+        var session = menuService.getSession(player.getUniqueId()).orElse(null);
+        if (session != null) {
+          inventoryHandler.onClick(player, clickType, rawSlot - topSize, session);
+        }
+        return definition.blockPlayerInventoryClicks();
+      }
+      return interactionPolicy.shouldCancelUnhandledClick(definition, view, rawSlot, clickType);
+    }
+
+    // Handle clicks in top inventory (menu)
+    SlotDefinition slotDef = rawSlot >= 0 ? activeSlots.get(rawSlot) : null;
+    if (slotDef != null && slotDef.handler() != null) {
+      var session = menuService.getSession(player.getUniqueId()).orElse(null);
+      if (session != null) {
+        var clickContext = new ClickContextImpl(session, player, rawSlot, clickType, menuService, menuHistory, messageService);
+        clickExecutor.execute(definition, session, player, rawSlot, clickType, slotDef.handler(), slotDef, clickContext);
+      }
+      return true;
+    }
+
     return interactionPolicy.shouldCancelUnhandledClick(definition, view, rawSlot, clickType);
   }
-
-  private ClickExecutionContext sessionContext() {
-    return new ClickExecutionContext(state.definition());
-  }
-
-  public record ClickExecutionContext(
-      com.github.hanielcota.menuframework.definition.MenuDefinition definition) {}
 }

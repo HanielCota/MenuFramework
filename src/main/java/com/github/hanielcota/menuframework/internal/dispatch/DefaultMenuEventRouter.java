@@ -4,17 +4,22 @@ import com.github.hanielcota.menuframework.api.MenuSession;
 import com.github.hanielcota.menuframework.internal.registry.SessionRegistry;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
-@RequiredArgsConstructor
 public final class DefaultMenuEventRouter implements MenuEventRouter {
 
   @NonNull private final SessionRegistry sessionRegistry;
   @NonNull private final ClickDispatcher clickDispatcher;
+
+  public DefaultMenuEventRouter(
+      @NonNull SessionRegistry sessionRegistry,
+      @NonNull ClickDispatcher clickDispatcher) {
+    this.sessionRegistry = sessionRegistry;
+    this.clickDispatcher = clickDispatcher;
+  }
 
   @Override
   public @NonNull Optional<@NonNull MenuSession> getSession(@NonNull UUID playerUuid) {

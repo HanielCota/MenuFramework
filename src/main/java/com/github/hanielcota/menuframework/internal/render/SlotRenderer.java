@@ -1,26 +1,27 @@
 package com.github.hanielcota.menuframework.internal.render;
 
-import com.github.hanielcota.menuframework.api.ClickHandler;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import com.github.hanielcota.menuframework.internal.item.ItemStackFactory;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
-@RequiredArgsConstructor
 public final class SlotRenderer {
 
   @NonNull private final ItemStackFactory itemStackFactory;
 
+  public SlotRenderer(@NonNull ItemStackFactory itemStackFactory) {
+    this.itemStackFactory = itemStackFactory;
+  }
+
   public void renderStaticSlots(
       @NonNull InventoryView view,
       @NonNull MenuDefinition definition,
-      @NonNull Int2ObjectMap<ClickHandler> handlers) {
+      @NonNull Int2ObjectMap<SlotDefinition> slots) {
     for (var entry : definition.slots().int2ObjectEntrySet()) {
       var slot = entry.getValue();
       var template = slot.template();
@@ -28,9 +29,8 @@ public final class SlotRenderer {
         view.setItem(entry.getIntKey(), itemStackFactory.create(template));
       }
 
-      var handler = slot.handler();
-      if (handler != null) {
-        handlers.put(entry.getIntKey(), handler);
+      if (slot.handler() != null || slot.navigational()) {
+        slots.put(entry.getIntKey(), slot);
       }
     }
   }
@@ -116,7 +116,7 @@ public final class SlotRenderer {
 
     var fillStack = itemStackFactory.create(fill);
     for (int slot = 0; slot < slotCount; slot++) {
-      if (!definition.slots().containsKey(slot)) {
+      if (view.getItem(slot) == null) {
         view.setItem(slot, fillStack.clone());
       }
     }

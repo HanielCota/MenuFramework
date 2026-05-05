@@ -1,10 +1,18 @@
 package com.github.hanielcota.menuframework.api;
 
+import com.github.hanielcota.menuframework.feature.internal.RefreshIntervalFeature;
+import com.github.hanielcota.menuframework.feature.internal.SoundOnClickFeature;
+import com.github.hanielcota.menuframework.feature.internal.SoundOnOpenFeature;
 import java.util.Objects;
 import net.kyori.adventure.sound.Sound;
-import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 
+/**
+ * Factory methods for built-in {@link MenuFeature} implementations.
+ *
+ * @see MenuFeature
+ * @see RefreshingMenuFeature
+ */
 public final class MenuFeatures {
 
   private MenuFeatures() {}
@@ -23,33 +31,6 @@ public final class MenuFeatures {
    * <p>The task is automatically canceled when the menu closes.
    */
   public static @NonNull MenuFeature refreshInterval(long ticks) {
-    if (ticks <= 0) {
-      throw new IllegalArgumentException("refresh interval must be > 0, got: " + ticks);
-    }
     return new RefreshIntervalFeature(ticks);
   }
-
-  private record SoundOnOpenFeature(@NonNull Sound sound) implements MenuFeature {
-    @Override
-    public void onOpen(@NonNull MenuSession session) {
-      var viewer = session.view().getPlayer();
-
-      if (viewer instanceof Player player && player.isOnline()) {
-        player.playSound(sound);
-      }
-    }
-  }
-
-  private record SoundOnClickFeature(@NonNull Sound sound) implements MenuFeature {
-    @Override
-    public void onClick(@NonNull ClickContext context) {
-      var player = context.player();
-      if (player.isOnline()) {
-        player.playSound(sound);
-      }
-    }
-  }
-
-  public record RefreshIntervalFeature(long refreshIntervalTicks)
-      implements RefreshingMenuFeature {}
 }

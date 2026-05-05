@@ -7,15 +7,17 @@ import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import com.github.hanielcota.menuframework.pagination.PaginationEngine;
 import java.util.List;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 
-@RequiredArgsConstructor
 public final class MenuRegistry
     implements MenuDefinitionRegistry, ItemTemplateRegistry, DynamicContentRegistry {
 
   private final MenuData data = new MenuData();
   @NonNull private final PaginationEngine paginationEngine;
+
+  public MenuRegistry(@NonNull PaginationEngine paginationEngine) {
+    this.paginationEngine = paginationEngine;
+  }
 
   public @NonNull PaginationEngine paginationEngine() {
     return paginationEngine;

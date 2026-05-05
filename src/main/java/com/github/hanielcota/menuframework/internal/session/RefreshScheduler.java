@@ -2,20 +2,26 @@ package com.github.hanielcota.menuframework.internal.session;
 
 import com.github.hanielcota.menuframework.api.MenuFeature;
 import com.github.hanielcota.menuframework.api.RefreshingMenuFeature;
-import com.github.hanielcota.menuframework.internal.server.ServerAccess;
+import com.github.hanielcota.menuframework.core.server.ServerAccess;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
-import lombok.RequiredArgsConstructor;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-@RequiredArgsConstructor
 public final class RefreshScheduler {
 
   @NonNull private final Plugin plugin;
   @NonNull private final SchedulerAdapter scheduler;
   @NonNull private final ServerAccess serverAccess;
+
+  public RefreshScheduler(
+      @NonNull Plugin plugin,
+      @NonNull SchedulerAdapter scheduler,
+      @NonNull ServerAccess serverAccess) {
+    this.plugin = plugin;
+    this.scheduler = scheduler;
+    this.serverAccess = serverAccess;
+  }
 
   private static long resolveIntervalTicks(@NonNull Iterable<MenuFeature> features) {
     long interval = -1;
@@ -43,7 +49,7 @@ public final class RefreshScheduler {
     if (session.disposed()) return;
     var viewer = serverAccess.findOnlinePlayer(session.viewerId()).orElse(null);
     if (viewer == null || !viewer.isOnline()) return;
-    if (session.view().getTopInventory().getViewers().isEmpty()) return;
+    if (!viewer.getOpenInventory().equals(session.view())) return;
 
     session.refresh();
 

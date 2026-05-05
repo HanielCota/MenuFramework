@@ -1,7 +1,7 @@
 package com.github.hanielcota.menuframework.internal.render;
 
-import com.github.hanielcota.menuframework.api.ClickHandler;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
+import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import java.util.List;
 import java.util.Objects;
@@ -13,7 +13,7 @@ public record NavigationRenderContext(
     @NonNull MenuDefinition definition,
     int currentPage,
     int totalPages,
-    @NonNull Int2ObjectMap<ClickHandler> activeHandlers,
+    @NonNull Int2ObjectMap<SlotDefinition> activeHandlers,
     @NonNull List<Integer> navSlots) {
 
   public NavigationRenderContext {

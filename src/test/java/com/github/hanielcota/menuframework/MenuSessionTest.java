@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import be.seeseemelk.mockbukkit.MockBukkit;
 import be.seeseemelk.mockbukkit.ServerMock;
-import com.github.hanielcota.menuframework.api.MenuSession;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.ClickType;

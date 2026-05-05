@@ -6,7 +6,6 @@ import com.github.hanielcota.menuframework.internal.dispatch.MenuEventRouter;
 import com.github.hanielcota.menuframework.internal.event.MenuListener;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
 import org.jspecify.annotations.NonNull;
 
 public final class MenuFrameworkInitializer {

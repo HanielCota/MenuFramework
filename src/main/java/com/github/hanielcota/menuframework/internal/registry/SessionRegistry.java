@@ -4,19 +4,19 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.hanielcota.menuframework.MenuFrameworkConfig;
 import com.github.hanielcota.menuframework.api.MenuSession;
-import com.github.hanielcota.menuframework.internal.cache.MenuCacheFactory;
+import com.github.hanielcota.menuframework.core.cache.MenuCacheFactory;
 import com.github.hanielcota.menuframework.internal.session.InteractiveMenuSession;
 import com.github.hanielcota.menuframework.internal.session.MenuSessionImpl;
 import com.github.hanielcota.menuframework.internal.session.SessionCommands;
 import com.github.hanielcota.menuframework.internal.session.SessionQuery;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-@Slf4j
 public final class SessionRegistry implements SessionQuery, SessionCommands {
+
+  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SessionRegistry.class.getName());
 
   @NonNull private final Cache<UUID, MenuSessionImpl> sessionCache;
 
@@ -29,11 +29,11 @@ public final class SessionRegistry implements SessionQuery, SessionCommands {
       @Nullable MenuSessionImpl removedSession,
       RemovalCause removalCause) {
     if (removedSession == null) return;
-    log.trace("Session removed: {} cause={}", playerUuid, removalCause);
+    log.log(java.util.logging.Level.FINE, "Session removed: %s cause=%s".formatted(playerUuid, removalCause));
     try {
       removedSession.disposeImmediately();
     } catch (Exception exception) {
-      log.warn("Error disposing session on removal", exception);
+      log.log(java.util.logging.Level.WARNING, "Error disposing session on removal", exception);
     }
   }
 

@@ -1,10 +1,10 @@
 package com.github.hanielcota.menuframework.internal.session;
 
 import com.github.hanielcota.menuframework.api.MenuSession;
+import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.internal.interaction.MenuInteractionController;
-import com.github.hanielcota.menuframework.internal.render.RenderEngine;
-import com.github.hanielcota.menuframework.internal.server.ServerAccess;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.bukkit.event.inventory.ClickType;
@@ -16,16 +16,20 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
   @NonNull private final MenuSessionState state;
   private final SessionRenderer renderer;
   @NonNull private final MenuInteractionController interactions;
-  private final SessionLifecycle lifecycle;
+  private SessionLifecycle lifecycle;
 
   public MenuSessionImpl(
       @NonNull MenuSessionState state,
       @NonNull SessionRenderer renderer,
       @NonNull MenuInteractionController interactions,
-      @NonNull SessionLifecycle lifecycle) {
+      SessionLifecycle lifecycle) {
     this.state = state;
     this.renderer = renderer;
     this.interactions = interactions;
+    this.lifecycle = lifecycle;
+  }
+
+  void setLifecycle(@NonNull SessionLifecycle lifecycle) {
     this.lifecycle = lifecycle;
   }
 
@@ -58,8 +62,14 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
       throw new IllegalArgumentException("page cannot be negative: " + page);
     }
     if (page == state.currentPage()) return;
+    int previousPage = state.currentPage();
     state.currentPage(page);
-    refresh();
+    try {
+      refresh();
+    } catch (Exception e) {
+      state.currentPage(previousPage);
+      throw e;
+    }
   }
 
   @Override
@@ -70,6 +80,24 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
   @Override
   public void refresh() {
     renderer.refresh();
+  }
+
+  @Override
+  public void updateSlot(int slot, @NonNull ItemTemplate template) {
+    if (state.disposed()) {
+      throw new IllegalStateException("Session is disposed");
+    }
+    renderer.updateSlot(slot, template);
+  }
+
+  @Override
+  public void updateSlots(@NonNull Map<Integer, ItemTemplate> slots) {
+    if (state.disposed()) {
+      throw new IllegalStateException("Session is disposed");
+    }
+    for (var entry : slots.entrySet()) {
+      renderer.updateSlot(entry.getKey(), entry.getValue());
+    }
   }
 
   public void setRefreshTaskHandle(@NonNull Object handle) {
@@ -83,7 +111,8 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
 
   @Override
   public boolean isSameView(@NonNull InventoryView other) {
-    return state.view().getTopInventory().equals(other.getTopInventory());
+    // Use reference equality for inventories to avoid false positives
+    return state.view().getTopInventory() == other.getTopInventory();
   }
 
   @Override
@@ -102,5 +131,9 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
 
   boolean disposed() {
     return state.disposed();
+  }
+
+  public @NonNull MenuSessionState state() {
+    return state;
   }
 }

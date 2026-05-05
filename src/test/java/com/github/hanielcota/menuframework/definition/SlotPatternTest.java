@@ -2,8 +2,6 @@ package com.github.hanielcota.menuframework.definition;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.github.hanielcota.menuframework.api.ClickHandler;
-import org.bukkit.Material;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

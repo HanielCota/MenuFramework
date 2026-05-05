@@ -4,6 +4,9 @@ import com.github.hanielcota.menuframework.api.ClickHandler;
 import com.github.hanielcota.menuframework.api.DynamicContentProvider;
 import com.github.hanielcota.menuframework.api.MenuFeature;
 import com.github.hanielcota.menuframework.api.MenuService;
+import com.github.hanielcota.menuframework.api.PlayerInventoryClickHandler;
+import com.github.hanielcota.menuframework.api.ToggleHandler;
+import com.github.hanielcota.menuframework.builder.pattern.SlotPatternStrategy;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import com.github.hanielcota.menuframework.definition.PaginationConfig;
@@ -34,10 +37,40 @@ public final class MenuBuilder {
   private final Map<Character, SlotDefinition> layoutBindings = new HashMap<>();
   private DynamicContentProvider dynamicContentProvider;
   private String[] layout;
+  private Component title = Component.empty();
+  private ItemTemplate fillItem;
+  private PaginationConfig pagination = PaginationConfig.builder().build();
+  private boolean blockPlayerInventoryClicks = true;
+  private boolean blockShiftClick = true;
+  private PlayerInventoryClickHandler playerInventoryClickHandler;
 
   public MenuBuilder(@NonNull String id, @NonNull MenuService menuService) {
     this.id = Objects.requireNonNull(id, "id");
     this.menuService = Objects.requireNonNull(menuService, "menuService");
+  }
+
+  public @NonNull MenuBuilder title(@NonNull Component title) {
+    this.title = Objects.requireNonNull(title, "title");
+    return this;
+  }
+
+  public @NonNull MenuBuilder title(@NonNull String miniMessage) {
+    this.title =
+        com.github.hanielcota.menuframework.core.text.MiniMessageProvider.deserialize(
+            Objects.requireNonNull(miniMessage, "miniMessage"));
+    return this;
+  }
+
+  public @NonNull MenuBuilder rows(int rows) {
+    if (rows < 1 || rows > MAX_ROWS) {
+      throw new IllegalArgumentException(
+          "Rows must be between 1 and " + MAX_ROWS + ", got: " + rows);
+    }
+    this.layout = new String[rows];
+    for (int i = 0; i < rows; i++) {
+      this.layout[i] = "         "; // 9 spaces
+    }
+    return this;
   }
 
   public @NonNull MenuBuilder layout(@NonNull String... layout) {
@@ -114,6 +147,128 @@ public final class MenuBuilder {
     return this;
   }
 
+  public @NonNull MenuBuilder slotWithCooldown(
+      int slot,
+      @NonNull ItemTemplate template,
+      @Nullable ClickHandler handler,
+      long cooldownTicks) {
+    if (slot < 0) {
+      throw new IllegalArgumentException("slot cannot be negative: " + slot);
+    }
+    Objects.requireNonNull(template, "template");
+    if (cooldownTicks < 0) {
+      throw new IllegalArgumentException("cooldownTicks cannot be negative: " + cooldownTicks);
+    }
+    slots.put(slot, SlotDefinition.withCooldown(slot, template, handler, cooldownTicks));
+    return this;
+  }
+
+  public @NonNull MenuBuilder slotWithPermission(
+      int slot,
+      @NonNull ItemTemplate template,
+      @Nullable ClickHandler handler,
+      @NonNull String permission,
+      @Nullable ItemTemplate fallbackTemplate) {
+    if (slot < 0) {
+      throw new IllegalArgumentException("slot cannot be negative: " + slot);
+    }
+    Objects.requireNonNull(template, "template");
+    Objects.requireNonNull(permission, "permission");
+    slots.put(
+        slot, SlotDefinition.withPermission(slot, template, handler, permission, fallbackTemplate));
+    return this;
+  }
+
+  public @NonNull MenuBuilder toggleSlot(
+      int slot,
+      @NonNull ItemTemplate enabledTemplate,
+      @NonNull ItemTemplate disabledTemplate,
+      boolean initialState,
+      @NonNull ToggleHandler toggleHandler) {
+    if (slot < 0) {
+      throw new IllegalArgumentException("slot cannot be negative: " + slot);
+    }
+    Objects.requireNonNull(enabledTemplate, "enabledTemplate");
+    Objects.requireNonNull(disabledTemplate, "disabledTemplate");
+    Objects.requireNonNull(toggleHandler, "toggleHandler");
+    slots.put(
+        slot,
+        SlotDefinition.toggle(
+            slot, enabledTemplate, disabledTemplate, initialState, toggleHandler));
+    return this;
+  }
+
+  public @NonNull MenuBuilder fillBorder(@NonNull ItemTemplate template) {
+    Objects.requireNonNull(template, "template");
+    int rows = layout != null ? layout.length : 3;
+    int size = Math.min(rows * COLUMNS_PER_ROW, MAX_SLOTS);
+
+    for (int slot = 0; slot < size; slot++) {
+      int row = slot / COLUMNS_PER_ROW;
+      int col = slot % COLUMNS_PER_ROW;
+      boolean isBorder = row == 0 || row == rows - 1 || col == 0 || col == COLUMNS_PER_ROW - 1;
+      if (isBorder && !slots.containsKey(slot)) {
+        slots.put(slot, SlotDefinition.of(slot, template, null));
+      }
+    }
+    return this;
+  }
+
+  public @NonNull MenuBuilder fillEmpty(@NonNull ItemTemplate template) {
+    Objects.requireNonNull(template, "template");
+    this.fillItem = template;
+    return this;
+  }
+
+  public @NonNull MenuBuilder fillPattern(
+      @NonNull SlotPatternStrategy pattern, @NonNull ItemTemplate template) {
+    Objects.requireNonNull(pattern, "pattern");
+    Objects.requireNonNull(template, "template");
+    int rows = layout != null ? layout.length : 3;
+    int size = Math.min(rows * COLUMNS_PER_ROW, MAX_SLOTS);
+
+    for (int slot = 0; slot < size; slot++) {
+      if (pattern.matches(slot, rows) && !slots.containsKey(slot)) {
+        slots.put(slot, SlotDefinition.of(slot, template, null));
+      }
+    }
+    return this;
+  }
+
+  /**
+   * @deprecated Use {@link #fillPattern(SlotPatternStrategy, ItemTemplate)} instead.
+   */
+  @Deprecated
+  public @NonNull MenuBuilder fillPattern(
+      @NonNull SlotPattern pattern, @NonNull ItemTemplate template) {
+    return fillPattern((SlotPatternStrategy) pattern, template);
+  }
+
+  public @NonNull MenuBuilder pagination(@NonNull PaginationConfig pagination) {
+    this.pagination = Objects.requireNonNull(pagination, "pagination");
+    return this;
+  }
+
+  public @NonNull MenuBuilder feature(@NonNull MenuFeature feature) {
+    this.features.add(Objects.requireNonNull(feature, "feature"));
+    return this;
+  }
+
+  public @NonNull MenuBuilder allowPlayerInventoryClicks(boolean allow) {
+    this.blockPlayerInventoryClicks = !allow;
+    return this;
+  }
+
+  public @NonNull MenuBuilder allowShiftClick(boolean allow) {
+    this.blockShiftClick = !allow;
+    return this;
+  }
+
+  public @NonNull MenuBuilder onPlayerInventoryClick(@NonNull PlayerInventoryClickHandler handler) {
+    this.playerInventoryClickHandler = Objects.requireNonNull(handler, "handler");
+    return this;
+  }
+
   public @NonNull MenuBuilder dynamicContent(@NonNull DynamicContentProvider provider) {
     this.dynamicContentProvider = Objects.requireNonNull(provider, "provider");
     return this;
@@ -140,14 +295,55 @@ public final class MenuBuilder {
             id,
             InventoryType.CHEST,
             size,
-            Component.empty(),
+            title,
             new Int2ObjectOpenHashMap<>(slots),
-            null,
-            PaginationConfig.builder().build(),
+            fillItem,
+            pagination,
             List.copyOf(features),
-            true,
-            true);
+            blockPlayerInventoryClicks,
+            blockShiftClick,
+            playerInventoryClickHandler);
     return new MenuRegistrar(
         menuService, id, definition, dynamicContentProvider, List.copyOf(staticDynamicItems));
+  }
+
+  /** Predefined slot patterns for fill operations. */
+  /**
+   * @deprecated Use {@link SlotPatternStrategy} implementations instead.
+   */
+  @Deprecated
+  public enum SlotPattern implements SlotPatternStrategy {
+    /** Every other slot (checkerboard pattern). */
+    CHECKERBOARD {
+      @Override
+      public boolean matches(int slot, int rows) {
+        return (slot % 2) == 0;
+      }
+    },
+    /** All corners of the inventory. */
+    CORNERS {
+      @Override
+      public boolean matches(int slot, int rows) {
+        int cols = COLUMNS_PER_ROW;
+        return slot == 0
+            || slot == cols - 1
+            || slot == (rows - 1) * cols
+            || slot == rows * cols - 1;
+      }
+    },
+    /** Top row only. */
+    TOP_ROW {
+      @Override
+      public boolean matches(int slot, int rows) {
+        return slot < COLUMNS_PER_ROW;
+      }
+    },
+    /** Bottom row only. */
+    BOTTOM_ROW {
+      @Override
+      public boolean matches(int slot, int rows) {
+        return slot >= (rows - 1) * COLUMNS_PER_ROW;
+      }
+    };
   }
 }

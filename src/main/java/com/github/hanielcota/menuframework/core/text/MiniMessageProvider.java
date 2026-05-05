@@ -1,4 +1,4 @@
-package com.github.hanielcota.menuframework.internal.text;
+package com.github.hanielcota.menuframework.core.text;
 
 import java.util.Objects;
 import net.kyori.adventure.text.Component;

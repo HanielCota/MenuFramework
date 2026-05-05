@@ -48,8 +48,17 @@ final class MenuData {
   }
 
   void setDynamicContent(@NonNull String menuId, @NonNull List<SlotDefinition> items) {
-    dynamicContent.put(menuId, List.copyOf(items));
-    dynamicContentHash.put(menuId, java.util.Objects.hash(items.toArray()));
+    var copy = List.copyOf(items);
+    dynamicContent.put(menuId, copy);
+    dynamicContentHash.put(menuId, computeContentHash(copy));
+  }
+
+  private static int computeContentHash(@NonNull List<SlotDefinition> items) {
+    int result = 1;
+    for (SlotDefinition item : items) {
+      result = 31 * result + (item == null ? 0 : item.hashCode());
+    }
+    return result;
   }
 
   void setDynamicContentProvider(@NonNull String menuId, @NonNull DynamicContentProvider provider) {

@@ -1,20 +1,15 @@
 package com.github.hanielcota.menuframework;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import be.seeseemelk.mockbukkit.MockBukkit;
 import be.seeseemelk.mockbukkit.ServerMock;
-import be.seeseemelk.mockbukkit.entity.PlayerMock;
-import com.github.hanielcota.menuframework.api.MenuService;
-import com.github.hanielcota.menuframework.api.MenuSession;
-import com.github.hanielcota.menuframework.builder.MenuBuilder;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
-import java.util.UUID;
 import org.bukkit.Material;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests using MockBukkit for the MenuFramework library.

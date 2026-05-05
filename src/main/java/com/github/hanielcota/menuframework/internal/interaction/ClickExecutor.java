@@ -1,88 +1,116 @@
 package com.github.hanielcota.menuframework.internal.interaction;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.hanielcota.menuframework.api.ClickContext;
 import com.github.hanielcota.menuframework.api.ClickHandler;
-import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.api.MenuSession;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
-import com.github.hanielcota.menuframework.internal.session.ClickContextImpl;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.github.hanielcota.menuframework.definition.SlotDefinition;
+import com.github.hanielcota.menuframework.definition.ToggleState;
+import com.github.hanielcota.menuframework.interaction.cooldown.CooldownManager;
+import com.github.hanielcota.menuframework.interaction.feature.FeatureInvoker;
+import com.github.hanielcota.menuframework.interaction.permission.PermissionChecker;
+import com.github.hanielcota.menuframework.interaction.permission.PermissionFallbackRenderer;
+import com.github.hanielcota.menuframework.interaction.sound.SoundPlayer;
+import com.github.hanielcota.menuframework.interaction.toggle.ToggleManager;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.jspecify.annotations.NonNull;
 
-@Slf4j
-@RequiredArgsConstructor
+/**
+ * Orchestrates click handling by delegating to specialized services.
+ */
 public final class ClickExecutor {
 
-  private static final long DEFAULT_COOLDOWN_MS = 100;
-  private static final long COOLDOWN_CACHE_SECONDS = 1;
-  private static final float DEFAULT_SOUND_VOLUME = 1.0f;
-  private static final float DEFAULT_SOUND_PITCH = 1.0f;
-  @NonNull
-  private final MenuService menuService;
-  private final Cache<UUID, Long> cooldowns =
-      Caffeine.newBuilder().expireAfterWrite(COOLDOWN_CACHE_SECONDS, TimeUnit.SECONDS).build();
+  private static final Logger log = Logger.getLogger(ClickExecutor.class.getName());
+
+  private final CooldownManager cooldownManager;
+  private final PermissionChecker permissionChecker;
+  private final PermissionFallbackRenderer permissionFallbackRenderer;
+  private final ToggleManager toggleManager;
+  private final SoundPlayer soundPlayer;
+  private final FeatureInvoker featureInvoker;
+
+  public ClickExecutor(
+      @NonNull CooldownManager cooldownManager,
+      @NonNull PermissionChecker permissionChecker,
+      @NonNull PermissionFallbackRenderer permissionFallbackRenderer,
+      @NonNull ToggleManager toggleManager,
+      @NonNull SoundPlayer soundPlayer,
+      @NonNull FeatureInvoker featureInvoker) {
+    this.cooldownManager = cooldownManager;
+    this.permissionChecker = permissionChecker;
+    this.permissionFallbackRenderer = permissionFallbackRenderer;
+    this.toggleManager = toggleManager;
+    this.soundPlayer = soundPlayer;
+    this.featureInvoker = featureInvoker;
+  }
 
   public void execute(
-      MenuInteractionController.ClickExecutionContext context,
+      @NonNull MenuDefinition definition,
+      @NonNull MenuSession session,
       @NonNull Player player,
       int rawSlot,
       @NonNull ClickType clickType,
-      @NonNull ClickHandler handler) {
-    if (isOnCooldown(player)) return;
+      @NonNull ClickHandler handler,
+      @NonNull SlotDefinition slotDefinition,
+      @NonNull ClickContext clickContext) {
+    if (cooldownManager.isOnCooldown(player, slotDefinition)) {
+      return;
+    }
 
-    var session = resolveSession(player);
-    if (session == null) return;
+    if (!permissionChecker.hasPermission(player, slotDefinition)) {
+      permissionFallbackRenderer.renderFallback(player, rawSlot, slotDefinition);
+      return;
+    }
 
-    var clickContext = new ClickContextImpl(session, player, rawSlot, clickType, menuService);
+    soundPlayer.playClickSound(player, definition, rawSlot, session.view().getTopInventory().getSize());
+    featureInvoker.invokeOnClick(definition, clickContext);
 
-    playClickSound(player, context.definition(), rawSlot);
+    if (toggleManager.isToggleSlot(slotDefinition)) {
+      ToggleState toggleState = slotDefinition.toggleStateKey();
+      if (toggleState != null) {
+        handleToggle(player, session, rawSlot, clickType, slotDefinition, toggleState, clickContext);
+      }
+      return;
+    }
 
     try {
-      for (var feature : context.definition().features()) {
-        feature.onClick(clickContext);
-      }
       handler.onClick(clickContext);
     } catch (Exception exception) {
-      log.warn(
-          "menu.click.handler_error menuId={} playerUuid={} slot={} handlerType={}",
-          context.definition().id(),
-          player.getUniqueId(),
-          rawSlot,
-          handler.getClass().getSimpleName(),
-          exception);
+      log.log(
+          Level.WARNING,
+          exception,
+          () ->
+              "menu.click.handler_error menuId=%s playerUuid=%s slot=%d handlerType=%s"
+                  .formatted(
+                      definition.id(),
+                      player.getUniqueId(),
+                      rawSlot,
+                      handler.getClass().getSimpleName()));
     }
   }
 
-  private MenuSession resolveSession(@NonNull Player player) {
-    return menuService.getSession(player.getUniqueId()).orElse(null);
-  }
+  private void handleToggle(
+      @NonNull Player player,
+      @NonNull MenuSession session,
+      int rawSlot,
+      @NonNull ClickType clickType,
+      @NonNull SlotDefinition slotDefinition,
+      @NonNull ToggleState toggleState,
+      @NonNull ClickContext clickContext) {
+    toggleManager.handleToggle(player, session, rawSlot, clickType, slotDefinition, toggleState);
 
-  private boolean isOnCooldown(@NonNull Player player) {
-    var now = System.currentTimeMillis();
-    var uuid = player.getUniqueId();
-    var lastClick = cooldowns.getIfPresent(uuid);
-    if (lastClick != null && (now - lastClick) < DEFAULT_COOLDOWN_MS) {
-      return true;
-    }
-    cooldowns.put(uuid, now);
-    return false;
-  }
-
-  private void playClickSound(@NonNull Player player, @NonNull MenuDefinition definition, int slot) {
-    if (slot < 0 || slot >= definition.slots().size()) return;
-    var slotDef = definition.slots().get(slot);
-    if (slotDef != null && slotDef.template() != null && slotDef.template().clickSound() != null) {
-      player.playSound(
-          player.getLocation(),
-          slotDef.template().clickSound(),
-          DEFAULT_SOUND_VOLUME,
-          DEFAULT_SOUND_PITCH);
+    var toggleHandler = slotDefinition.toggleHandler();
+    if (toggleHandler != null) {
+      toggleManager.invokeToggleHandlerSafely(
+          toggleHandler,
+          clickContext,
+          toggleState.isEnabled(),
+          session.menuId(),
+          player.getUniqueId().toString(),
+          rawSlot);
     }
   }
 }

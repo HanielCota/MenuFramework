@@ -8,6 +8,7 @@ import com.github.hanielcota.menuframework.scheduler.PaperSchedulerAdapter;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 
@@ -43,6 +44,7 @@ import org.jspecify.annotations.NonNull;
 public final class MenuFramework {
 
   private static final AtomicReference<DefaultMenuService> SERVICE = new AtomicReference<>();
+  private static final ReentrantLock LOCK = new ReentrantLock();
 
   private MenuFramework() {}
 
@@ -166,11 +168,11 @@ public final class MenuFramework {
       @NonNull Plugin plugin, @NonNull Builder builder) {
     var existing = SERVICE.get();
     if (existing != null) return existing;
-    synchronized (SERVICE) {
-      existing = SERVICE.get();
-      if (existing != null) return existing;
-      return initialize(plugin, builder);
+    var service = createService(plugin, builder);
+    if (SERVICE.compareAndSet(null, (DefaultMenuService) service)) {
+      return service;
     }
+    return SERVICE.get();
   }
 
   /**
@@ -196,9 +198,12 @@ public final class MenuFramework {
    */
   public static @NonNull MenuService forceReinitialize(
       @NonNull Plugin plugin, @NonNull Builder builder) {
-    synchronized (SERVICE) {
+    LOCK.lock();
+    try {
       shutdown();
       return initialize(plugin, builder);
+    } finally {
+      LOCK.unlock();
     }
   }
 

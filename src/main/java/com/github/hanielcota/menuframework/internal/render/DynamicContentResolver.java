@@ -1,13 +1,11 @@
 package com.github.hanielcota.menuframework.internal.render;
 
+import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.api.MenuSession;
+import com.github.hanielcota.menuframework.core.server.ServerAccess;
 import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import com.github.hanielcota.menuframework.internal.registry.DynamicContentRegistry;
 import java.util.List;
-import java.util.Objects;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
@@ -19,12 +17,25 @@ import org.jspecify.annotations.Nullable;
  * <p>Handles player resolution, session context extraction, and performance monitoring for dynamic
  * content loading.
  */
-@Slf4j
-@RequiredArgsConstructor
 public final class DynamicContentResolver {
+
+  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(DynamicContentResolver.class.getName());
 
   @NonNull private final DynamicContentRegistry dynamicContentRegistry;
   @NonNull private final SlowRenderLogger slowRenderLogger;
+  @NonNull private final ServerAccess serverAccess;
+  @NonNull private final MenuService menuService;
+
+  public DynamicContentResolver(
+      @NonNull DynamicContentRegistry dynamicContentRegistry,
+      @NonNull SlowRenderLogger slowRenderLogger,
+      @NonNull ServerAccess serverAccess,
+      @NonNull MenuService menuService) {
+    this.dynamicContentRegistry = dynamicContentRegistry;
+    this.slowRenderLogger = slowRenderLogger;
+    this.serverAccess = serverAccess;
+    this.menuService = menuService;
+  }
 
   /**
    * Resolves dynamic content for the given render request.
@@ -58,19 +69,16 @@ public final class DynamicContentResolver {
 
   private @Nullable Player resolvePlayer(@NonNull InventoryView view) {
     var viewer = view.getPlayer();
-    if (viewer == null) return null;
-
-    var resolved = Bukkit.getPlayer(viewer.getUniqueId());
+    var resolved = serverAccess.findOnlinePlayer(viewer.getUniqueId()).orElse(null);
     if (resolved == null) {
-      log.debug("menu.player.resolved_offline playerUuid={}", viewer.getUniqueId());
+      log.log(java.util.logging.Level.FINE, "menu.player.resolved_offline playerUuid={0}", viewer.getUniqueId());
     }
     return resolved;
   }
 
   private @Nullable MenuSession resolveSession(@NonNull InventoryView view) {
-    var topInventory = view.getTopInventory();
-    Objects.requireNonNull(topInventory, "topInventory is null (view may be closed)");
-    var holder = topInventory.getHolder();
-    return holder instanceof MenuSession s ? s : null;
+    var viewer = view.getPlayer();
+    if (viewer == null) return null;
+    return menuService.getSession(viewer.getUniqueId()).orElse(null);
   }
 }

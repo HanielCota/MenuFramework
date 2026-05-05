@@ -62,6 +62,11 @@ menus.open(player, "shop");
 | **Custom Features** | Extensible feature system (sounds, refresh intervals, etc.) |
 | **Zero Leak Design** | Defensive ItemStack cloning at all boundaries |
 | **Static Analysis** | SpotBugs + PMD validated for production reliability |
+| **Menu History** | Navigate back to previous menus |
+| **Slot Cooldowns** | Global and per-slot click cooldowns |
+| **Permission System** | Slot-level permission checking with fallback templates |
+| **Toggle Slots** | Checkbox-style slots with state persistence |
+| **Inventory Integration** | Optional player inventory click handling |
 
 ---
 
@@ -264,6 +269,74 @@ MenuFramework.builder("live_stats", menus)
     .register();
 ```
 
+### Menu History & Navigation
+
+Navigate between menus automatically:
+
+```java
+// Open another menu (current menu is saved to history)
+builder.slot(11, settingsTemplate, ctx -> ctx.open("settings"));
+
+// Go back to previous menu
+builder.slot(15, backTemplate, ctx -> ctx.back());
+
+// Check if there is a previous menu
+if (ctx.hasPreviousMenu()) {
+    ctx.reply("<gray>Press ESC to go back");
+}
+```
+
+### Toggle Slots
+
+Checkbox-style slots that persist state across re-renders:
+
+```java
+builder.toggleSlot(15,
+    ItemTemplate.builder(Material.LIME_WOOL).name("<green>Enabled").build(),
+    ItemTemplate.builder(Material.RED_WOOL).name("<red>Disabled").build(),
+    true, // initial state
+    (ctx, enabled) -> {
+        plugin.getConfig().set("auto-save", enabled);
+        ctx.reply("Auto-save: " + (enabled ? "<green>ON" : "<red>OFF"));
+    }
+);
+```
+
+### Permission-Based Slots
+
+Show different items based on player permissions:
+
+```java
+builder.slotWithPermission(13,
+    adminTemplate,
+    ctx -> ctx.reply("<green>Admin access granted!"),
+    "menuframework.admin",
+    noPermissionTemplate // shown to players without permission
+);
+```
+
+### Slot Cooldowns
+
+Prevent click spam with per-slot cooldowns:
+
+```java
+// 20 ticks (1 second) cooldown for this specific slot
+builder.slotWithCooldown(13, template, handler, 20);
+```
+
+### Player Inventory Integration
+
+Allow interaction with the player's bottom inventory:
+
+```java
+builder
+    .allowPlayerInventoryClicks(true)
+    .allowShiftClick(true)
+    .onPlayerInventoryClick((player, clickType, slot, session) -> {
+        player.sendMessage("Clicked slot " + slot + " in your inventory!");
+    });
+```
+
 ---
 
 ## Architecture
@@ -275,13 +348,22 @@ MenuFramework
 │   ├── MenuService (register, open, manage sessions)
 │   ├── MenuSession (per-player menu instance)
 │   ├── ClickContext (interaction context)
-│   └── MenuBuilder (fluent menu construction)
+│   ├── MenuBuilder (fluent menu construction)
+│   └── MenuHistory (navigation history)
 │
 ├── Definitions (immutable configuration)
 │   ├── MenuDefinition
 │   ├── SlotDefinition
 │   ├── ItemTemplate
-│   └── PaginationConfig
+│   ├── PaginationConfig
+│   └── ToggleState
+│
+├── Core (shared utilities)
+│   ├── ServerAccess / BukkitServerAccess
+│   ├── PlayerProfileService / BukkitPlayerProfileService
+│   ├── MiniMessageProvider
+│   ├── ConfigValidator
+│   └── MenuCacheFactory
 │
 ├── Runtime (internal wiring)
 │   ├── MenuRuntime (orchestrates registries + engine)
@@ -295,11 +377,12 @@ MenuFramework
 │   └── Session cache (active lookups)
 │
 └── Session Lifecycle
-    ├── MenuSessionState (page, disposed flag)
+    ├── MenuSessionState (page, disposed flag, toggle states)
     ├── SessionRenderer (re-renders on refresh/page change)
     ├── MenuInteractionController (click routing)
     ├── SessionLifecycle (dispose, cancel tasks)
-    └── RefreshScheduler (feature tick bridge)
+    ├── RefreshScheduler (feature tick bridge)
+    └── PlayerMenuHistory (navigation stack)
 ```
 
 ---
@@ -316,6 +399,39 @@ MenuFramework is designed for **high-performance servers**:
   - Automatic session cleanup on player quit / menu close
   - Refresh task cancellation on dispose
 - **Smart Bridging**: All async operations safely bridged back to the Bukkit main thread
+
+---
+
+## Changelog
+
+### 1.0.0-SNAPSHOT
+
+#### Features
+- **MenuHistory**: Automatic navigation history between menus with `ctx.back()` and `ctx.hasPreviousMenu()`
+- **Toggle Slots**: Checkbox-style slots with state persistence across re-renders
+- **Permission Slots**: Slot-level permission checking with fallback item templates
+- **Slot Cooldowns**: Global (100ms) and per-slot configurable cooldowns
+- **Player Inventory Integration**: Optional handling of clicks in player inventory
+- **Title & Rows Builder**: Direct `.title()` and `.rows()` methods on MenuBuilder
+- **Fill Patterns**: Predefined patterns (checkerboard, corners, border, empty)
+
+#### Architecture
+- **Code Quality**: Removed Lombok dependency, all code is pure Java 21
+- **Package Restructure**: Utilities moved from `internal/` to `core/` (cache, config, server, text)
+- **Records**: BukkitServerAccess, BukkitPlayerProfileService, DefaultMessageService converted to records
+- **Logging**: Modernized to use `String.formatted()` and lazy lambda evaluation
+- **Bug Fixes**: Fixed dynamic content session resolution, pagination engine sharing, double dispose handling, toggle state persistence, and more
+
+#### Testing
+- **54 new tests** added covering:
+  - CooldownManager (6 tests)
+  - PermissionChecker (4 tests)
+  - ToggleManager (6 tests)
+  - PlayerMenuHistory (7 tests)
+  - ConfigValidator (13 tests)
+  - SlotDefinition (10 tests)
+  - PageView (9 tests)
+- **Total**: 112 tests, 0 failures
 
 ---
 

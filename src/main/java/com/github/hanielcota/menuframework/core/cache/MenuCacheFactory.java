@@ -1,4 +1,4 @@
-package com.github.hanielcota.menuframework.internal.cache;
+package com.github.hanielcota.menuframework.core.cache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

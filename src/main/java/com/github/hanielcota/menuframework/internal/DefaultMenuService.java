@@ -2,6 +2,7 @@ package com.github.hanielcota.menuframework.internal;
 
 import com.github.hanielcota.menuframework.MenuFrameworkConfig;
 import com.github.hanielcota.menuframework.api.DynamicContentProvider;
+import com.github.hanielcota.menuframework.api.MenuHistory;
 import com.github.hanielcota.menuframework.api.MenuMetrics;
 import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.api.MenuSession;
@@ -24,6 +25,7 @@ public final class DefaultMenuService implements MenuService {
   @NonNull private final Plugin plugin;
   private final SchedulerAdapter scheduler;
   @NonNull private final MenuRuntime runtime;
+  @NonNull private final MenuHistory menuHistory;
 
   public DefaultMenuService(
       @NonNull Plugin plugin,
@@ -31,7 +33,8 @@ public final class DefaultMenuService implements MenuService {
       @NonNull MenuFrameworkConfig config) {
     this.plugin = plugin;
     this.scheduler = scheduler;
-    this.runtime = MenuRuntime.create(this, config);
+    this.menuHistory = new com.github.hanielcota.menuframework.internal.session.PlayerMenuHistory();
+    this.runtime = MenuRuntime.create(this, config, menuHistory);
   }
 
   @Override
@@ -41,6 +44,10 @@ public final class DefaultMenuService implements MenuService {
 
   public @NonNull SchedulerAdapter getScheduler() {
     return scheduler;
+  }
+
+  public @NonNull MenuHistory getMenuHistory() {
+    return menuHistory;
   }
 
   @Override
@@ -116,6 +123,7 @@ public final class DefaultMenuService implements MenuService {
 
   @Override
   public void closeSession(@NonNull UUID playerUuid) {
+    menuHistory.clear(playerUuid);
     runtime.sessionCommands().closeSession(playerUuid);
   }
 

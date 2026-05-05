@@ -4,7 +4,6 @@ import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.internal.dispatch.MenuEventRouter;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -18,13 +17,23 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 
-@RequiredArgsConstructor
 public final class MenuListener implements Listener {
 
   @NonNull private final Plugin plugin;
   @NonNull private final MenuEventRouter router;
   @NonNull private final SchedulerAdapter scheduler;
   @NonNull private final MenuService menuService;
+
+  public MenuListener(
+      @NonNull Plugin plugin,
+      @NonNull MenuEventRouter router,
+      @NonNull SchedulerAdapter scheduler,
+      @NonNull MenuService menuService) {
+    this.plugin = plugin;
+    this.router = router;
+    this.scheduler = scheduler;
+    this.menuService = menuService;
+  }
 
   @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
   public void onClick(@NonNull InventoryClickEvent event) {

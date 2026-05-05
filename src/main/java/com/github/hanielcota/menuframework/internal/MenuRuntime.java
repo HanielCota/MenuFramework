@@ -1,6 +1,7 @@
 package com.github.hanielcota.menuframework.internal;
 
 import com.github.hanielcota.menuframework.MenuFrameworkConfig;
+import com.github.hanielcota.menuframework.api.MenuHistory;
 import com.github.hanielcota.menuframework.api.MenuMetrics;
 import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.internal.dispatch.MenuEventRouter;
@@ -40,8 +41,8 @@ public final class MenuRuntime {
   }
 
   public static @NonNull MenuRuntime create(
-      @NonNull MenuService menuService, @NonNull MenuFrameworkConfig config) {
-    return new MenuRuntimeFactory(menuService, config).create();
+      @NonNull MenuService menuService, @NonNull MenuFrameworkConfig config, @NonNull MenuHistory menuHistory) {
+    return new MenuRuntimeFactory(menuService, config, menuHistory).create();
   }
 
   public @NonNull PaginationEngine paginationEngine() {

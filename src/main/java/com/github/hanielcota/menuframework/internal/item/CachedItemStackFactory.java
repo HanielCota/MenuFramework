@@ -1,12 +1,10 @@
 package com.github.hanielcota.menuframework.internal.item;
 
-import com.destroystokyo.paper.profile.ProfileProperty;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.hanielcota.menuframework.MenuFrameworkConfig;
+import com.github.hanielcota.menuframework.core.cache.MenuCacheFactory;
+import com.github.hanielcota.menuframework.core.profile.PlayerProfileService;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
-import com.github.hanielcota.menuframework.internal.cache.MenuCacheFactory;
-import java.util.UUID;
-import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
@@ -16,15 +14,21 @@ import org.jspecify.annotations.NonNull;
 
 public final class CachedItemStackFactory implements ItemStackFactory {
 
-  private static final String TEXTURES_PROPERTY_KEY = "textures";
+  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(CachedItemStackFactory.class.getName());
+
   @NonNull
   private final Cache<ItemTemplate, ItemStack> baseCache;
+  @NonNull
+  private final PlayerProfileService playerProfileService;
 
-  public CachedItemStackFactory(@NonNull MenuFrameworkConfig configuration) {
+  public CachedItemStackFactory(
+      @NonNull MenuFrameworkConfig configuration,
+      @NonNull PlayerProfileService playerProfileService) {
     this.baseCache = MenuCacheFactory.createItemStackCache(configuration);
+    this.playerProfileService = playerProfileService;
   }
 
-  private static @NonNull ItemStack buildBase(@NonNull ItemTemplate template) {
+  private @NonNull ItemStack buildBase(@NonNull ItemTemplate template) {
     ItemStack item = new ItemStack(template.material(), template.amount());
     ItemMeta meta = item.getItemMeta();
     if (meta == null) return item;
@@ -37,7 +41,11 @@ public final class CachedItemStackFactory implements ItemStackFactory {
     applySpecialMeta(meta, template);
     applyPdc(meta, template);
 
-    item.setItemMeta(meta);
+    if (!item.setItemMeta(meta)) {
+      log.log(java.util.logging.Level.WARNING,
+          "Failed to apply ItemMeta for material: {0}. Some properties may be unsupported.",
+          template.material());
+    }
     return item;
   }
 
@@ -67,7 +75,7 @@ public final class CachedItemStackFactory implements ItemStackFactory {
     }
   }
 
-  private static void applySpecialMeta(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
+  private void applySpecialMeta(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
     if (meta instanceof SkullMeta skullMeta) {
       applySkullMeta(skullMeta, template);
     } else if (meta instanceof LeatherArmorMeta leatherMeta) {
@@ -75,19 +83,14 @@ public final class CachedItemStackFactory implements ItemStackFactory {
     }
   }
 
-  private static void applySkullMeta(@NonNull SkullMeta meta, @NonNull ItemTemplate template) {
+  private void applySkullMeta(@NonNull SkullMeta meta, @NonNull ItemTemplate template) {
     if (template.headUuid() != null) {
-      var offlinePlayer = Bukkit.getOfflinePlayer(template.headUuid());
-      if (offlinePlayer != null) {
-        meta.setOwningPlayer(offlinePlayer);
-      }
+      playerProfileService.applyPlayerUuid(meta, template.headUuid());
       return;
     }
-    if (template.headTexture() == null) return;
-    var profile = Bukkit.createProfile(UUID.randomUUID());
-    if (profile == null) return;
-    profile.setProperty(new ProfileProperty(TEXTURES_PROPERTY_KEY, template.headTexture()));
-    meta.setPlayerProfile(profile);
+    if (template.headTexture() != null) {
+      playerProfileService.applyBase64Texture(meta, template.headTexture());
+    }
   }
 
   private static void applyLeatherMeta(@NonNull LeatherArmorMeta meta, @NonNull ItemTemplate template) {
@@ -99,24 +102,23 @@ public final class CachedItemStackFactory implements ItemStackFactory {
   private static void applyPdc(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
     var pdc = meta.getPersistentDataContainer();
     for (var entry : template.pdcData().entrySet()) {
+      var key = entry.getKey();
       switch (entry.getValue()) {
-        case Integer i -> pdc.set(entry.getKey(), PersistentDataType.INTEGER, i);
-        case Double d -> pdc.set(entry.getKey(), PersistentDataType.DOUBLE, d);
-        case Long l -> pdc.set(entry.getKey(), PersistentDataType.LONG, l);
-        case Byte b -> pdc.set(entry.getKey(), PersistentDataType.BYTE, b);
-        case Short s -> pdc.set(entry.getKey(), PersistentDataType.SHORT, s);
-        case Float f -> pdc.set(entry.getKey(), PersistentDataType.FLOAT, f);
-        case null -> {
-          /* ignore */
-        }
-        default -> pdc.set(entry.getKey(), PersistentDataType.STRING, entry.getValue().toString());
+        case Integer i -> pdc.set(key, PersistentDataType.INTEGER, i);
+        case Double d -> pdc.set(key, PersistentDataType.DOUBLE, d);
+        case Long l -> pdc.set(key, PersistentDataType.LONG, l);
+        case Byte b -> pdc.set(key, PersistentDataType.BYTE, b);
+        case Short s -> pdc.set(key, PersistentDataType.SHORT, s);
+        case Float f -> pdc.set(key, PersistentDataType.FLOAT, f);
+        case null -> { /* ignored */ }
+        default -> pdc.set(key, PersistentDataType.STRING, entry.getValue().toString());
       }
     }
   }
 
   @Override
   public @NonNull ItemStack create(@NonNull ItemTemplate template) {
-    ItemStack base = baseCache.get(template, CachedItemStackFactory::buildBase);
+    ItemStack base = baseCache.get(template, this::buildBase);
     return base.clone();
   }
 

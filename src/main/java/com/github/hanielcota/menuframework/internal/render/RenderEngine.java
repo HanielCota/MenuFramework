@@ -1,15 +1,20 @@
 package com.github.hanielcota.menuframework.internal.render;
 
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
-@RequiredArgsConstructor
 public final class RenderEngine {
 
   @NonNull private final RenderStrategy staticStrategy;
   @NonNull private final RenderStrategy paginatedStrategy;
+
+  public RenderEngine(
+      @NonNull RenderStrategy staticStrategy,
+      @NonNull RenderStrategy paginatedStrategy) {
+    this.staticStrategy = staticStrategy;
+    this.paginatedStrategy = paginatedStrategy;
+  }
 
   public @NonNull RenderResult render(
       @NonNull InventoryView view, @NonNull MenuDefinition definition, int targetPage) {

@@ -1,6 +1,7 @@
 package com.github.hanielcota.menuframework.definition;
 
 import com.github.hanielcota.menuframework.api.MenuFeature;
+import com.github.hanielcota.menuframework.api.PlayerInventoryClickHandler;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -21,7 +22,8 @@ public record MenuDefinition(
     @NonNull PaginationConfig pagination,
     @NonNull List<MenuFeature> features,
     boolean blockPlayerInventoryClicks,
-    boolean blockShiftClick) {
+    boolean blockShiftClick,
+    @Nullable PlayerInventoryClickHandler playerInventoryClickHandler) {
 
   private static final int MIN_CHEST_SIZE = 9;
   private static final int MAX_CHEST_SIZE = 54;
@@ -37,14 +39,8 @@ public record MenuDefinition(
     if (type == InventoryType.CHEST
         && (size < MIN_CHEST_SIZE || size > MAX_CHEST_SIZE || size % MIN_CHEST_SIZE != 0)) {
       throw new IllegalArgumentException(
-          "Chest inventory size must be a multiple of "
-              + MIN_CHEST_SIZE
-              + " between "
-              + MIN_CHEST_SIZE
-              + " and "
-              + MAX_CHEST_SIZE
-              + ", got: "
-              + size);
+          "Chest inventory size must be a multiple of %d between %d and %d, got: %d"
+              .formatted(MIN_CHEST_SIZE, MIN_CHEST_SIZE, MAX_CHEST_SIZE, size));
     }
 
     int maxSlots = type == InventoryType.CHEST ? size : type.getDefaultSize();
@@ -63,12 +59,13 @@ public record MenuDefinition(
     features = List.copyOf(features);
   }
 
-  private static void validateSlots(
-      @NonNull List<Integer> slots, int maxSlots, @NonNull String label) {
+  private static void validateSlots(@NonNull List<Integer> slots, int maxSlots, @NonNull String label) {
     for (Integer slotObj : slots) {
-      if (slotObj == null) {
+
+        if (slotObj == null) {
         throw new IllegalArgumentException("Null slot found in " + label + " slots");
       }
+
       int slot = slotObj;
       if (slot < 0 || slot >= maxSlots) {
         throw new IllegalArgumentException(

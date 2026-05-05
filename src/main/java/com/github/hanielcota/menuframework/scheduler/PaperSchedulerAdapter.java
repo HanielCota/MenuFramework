@@ -33,8 +33,7 @@ public final class PaperSchedulerAdapter implements SchedulerAdapter {
   }
 
   @Override
-  public void runAsyncDelayed(
-      @NonNull Plugin plugin, @NonNull Runnable task, long delay, @NonNull TimeUnit unit) {
+  public void runAsyncDelayed(@NonNull Plugin plugin, @NonNull Runnable task, long delay, @NonNull TimeUnit unit) {
     Objects.requireNonNull(plugin, "plugin");
     Objects.requireNonNull(task, "task");
     Objects.requireNonNull(unit, "unit");

@@ -1,4 +1,4 @@
-package com.github.hanielcota.menuframework.internal.config;
+package com.github.hanielcota.menuframework.core.config;
 
 import java.util.Objects;
 import org.jspecify.annotations.NonNull;

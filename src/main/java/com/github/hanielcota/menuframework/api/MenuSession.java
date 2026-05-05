@@ -1,5 +1,7 @@
 package com.github.hanielcota.menuframework.api;
 
+import com.github.hanielcota.menuframework.definition.ItemTemplate;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.bukkit.inventory.InventoryView;
@@ -73,4 +75,21 @@ public interface MenuSession {
    * @return a future that completes when disposal is finished
    */
   @NonNull CompletableFuture<Void> dispose();
+
+  /**
+   * Updates a single slot with a new item template without re-rendering the entire page.
+   *
+   * <p>This is more efficient than {@link #refresh()} when only one slot changes.
+   *
+   * @param slot the slot index to update
+   * @param template the new item template
+   */
+  void updateSlot(int slot, @NonNull ItemTemplate template);
+
+  /**
+   * Updates multiple slots with new item templates without re-rendering the entire page.
+   *
+   * @param slots map of slot index to item template
+   */
+  void updateSlots(@NonNull Map<Integer, ItemTemplate> slots);
 }

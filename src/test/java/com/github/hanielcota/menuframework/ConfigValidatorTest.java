@@ -2,7 +2,7 @@ package com.github.hanielcota.menuframework;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.github.hanielcota.menuframework.internal.config.ConfigValidator;
+import com.github.hanielcota.menuframework.core.config.ConfigValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

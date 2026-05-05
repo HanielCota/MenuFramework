@@ -1,17 +1,16 @@
 package com.github.hanielcota.menuframework.internal.session;
 
 import com.github.hanielcota.menuframework.api.MenuSession;
-import com.github.hanielcota.menuframework.internal.server.ServerAccess;
+import com.github.hanielcota.menuframework.core.server.ServerAccess;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-@Slf4j
 public final class SessionLifecycle {
+  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SessionLifecycle.class.getName());
   @NonNull
   private final Plugin plugin;
   @NonNull
@@ -70,10 +69,11 @@ public final class SessionLifecycle {
   private void completeDisposal(@NonNull CompletableFuture<Void> future) {
     try {
       disposeImmediately();
-      future.complete(null);
     } catch (Exception exception) {
       future.completeExceptionally(exception);
+      return;
     }
+    future.complete(null);
   }
 
   private void cancelRefreshTask() {
@@ -97,11 +97,12 @@ public final class SessionLifecycle {
       try {
         feature.onClose(session);
       } catch (Exception exception) {
-        log.warn(
-            "menu.feature.onClose_failed menuId={} featureType={}",
-            state.definition().id(),
-            feature.getClass().getSimpleName(),
-            exception);
+        log.log(
+            java.util.logging.Level.WARNING,
+            exception,
+            () ->
+                "menu.feature.onClose_failed menuId=%s featureType=%s"
+                    .formatted(state.definition().id(), feature.getClass().getSimpleName()));
       }
     }
   }

@@ -1,7 +1,10 @@
 package com.github.hanielcota.menuframework.internal.session;
 
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
+import com.github.hanielcota.menuframework.definition.ToggleState;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
@@ -12,6 +15,7 @@ public final class MenuSessionState {
   @NonNull private final MenuDefinition definition;
   @NonNull private final InventoryView view;
   private final AtomicBoolean disposed = new AtomicBoolean(false);
+  private final Map<Integer, ToggleState> toggleStates = new ConcurrentHashMap<>();
   private int currentPage;
 
   public MenuSessionState(
@@ -50,5 +54,9 @@ public final class MenuSessionState {
 
   public boolean markDisposed() {
     return disposed.compareAndSet(false, true);
+  }
+
+  public @NonNull Map<Integer, ToggleState> toggleStates() {
+    return toggleStates;
   }
 }

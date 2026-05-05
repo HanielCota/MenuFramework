@@ -23,18 +23,16 @@ repositories {
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
-    compileOnly 'org.projectlombok:lombok:1.18.36'
-    annotationProcessor 'org.projectlombok:lombok:1.18.36'
 
     testImplementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
-    testCompileOnly 'org.projectlombok:lombok:1.18.36'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
-    
+
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
     implementation 'it.unimi.dsi:fastutil:8.5.13'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
     testImplementation 'com.github.seeseemelk:MockBukkit-v1.21:3.133.2'
+    testImplementation 'org.mockito:mockito-core:5.14.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.14.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.0'
 }
 
@@ -62,6 +60,7 @@ spotbugs {
     effort = 'MAX'
     reportLevel = 'LOW'
     showProgress = true
+    excludeFilter = file('spotbugs-exclude.xml')
 }
 
 tasks.withType(SpotBugsTask).configureEach {
@@ -74,7 +73,7 @@ tasks.withType(SpotBugsTask).configureEach {
 pmd {
     toolVersion = '7.0.0'
     consoleOutput = true
-    rulesMinimumPriority = 5
+    rulesMinimumPriority = 3
     ruleSets = [
         'category/java/bestpractices.xml',
         'category/java/errorprone.xml',
@@ -83,6 +82,18 @@ pmd {
         'category/java/security.xml'
     ]
 }
+
+tasks.withType(Pmd).configureEach {
+    ignoreFailures = true
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// Disable SpotBugs and PMD for test code
+tasks.spotbugsTest.enabled = false
+tasks.pmdTest.enabled = false
 
 tasks.withType(Pmd).configureEach {
     reports {

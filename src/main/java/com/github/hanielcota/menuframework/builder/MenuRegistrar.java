@@ -5,11 +5,9 @@ import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-@RequiredArgsConstructor
 public final class MenuRegistrar {
 
   @NonNull private final MenuService menuService;
@@ -18,6 +16,19 @@ public final class MenuRegistrar {
   @Nullable private final DynamicContentProvider dynamicContentProvider;
   @NonNull private final List<SlotDefinition> staticDynamicItems;
   private boolean registered = false;
+
+  public MenuRegistrar(
+      @NonNull MenuService menuService,
+      @NonNull String id,
+      @NonNull MenuDefinition definition,
+      @Nullable DynamicContentProvider dynamicContentProvider,
+      @NonNull List<SlotDefinition> staticDynamicItems) {
+    this.menuService = menuService;
+    this.id = id;
+    this.definition = definition;
+    this.dynamicContentProvider = dynamicContentProvider;
+    this.staticDynamicItems = staticDynamicItems;
+  }
 
   public synchronized void register() {
     if (registered) {

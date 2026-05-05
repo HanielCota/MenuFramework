@@ -1,6 +1,7 @@
 package com.github.hanielcota.menuframework.definition;
 
-import com.github.hanielcota.menuframework.internal.text.MiniMessageProvider;
+import com.github.hanielcota.menuframework.core.text.MiniMessageProvider;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,6 @@ public record ItemTemplate(
           "Amount must be between " + MIN_AMOUNT + " and " + MAX_AMOUNT + ", got: " + amount);
     }
     lore = List.copyOf(lore);
-    flags = flags.clone();
     pdcData = Map.copyOf(pdcData);
   }
 
@@ -55,6 +55,60 @@ public record ItemTemplate(
   @Override
   public @NonNull ItemFlag[] flags() {
     return flags.clone();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ItemTemplate other)) return false;
+    return glow == other.glow
+        && amount == other.amount
+        && customModelData == other.customModelData
+        && material == other.material
+        && Objects.equals(displayName, other.displayName)
+        && Objects.equals(lore, other.lore)
+        && Arrays.equals(flags, other.flags)
+        && Objects.equals(pdcData, other.pdcData)
+        && Objects.equals(headTexture, other.headTexture)
+        && Objects.equals(headUuid, other.headUuid)
+        && Objects.equals(leatherColor, other.leatherColor)
+        && clickSound == other.clickSound;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(
+        material,
+        displayName,
+        lore,
+        pdcData,
+        glow,
+        amount,
+        customModelData,
+        headTexture,
+        headUuid,
+        leatherColor,
+        clickSound);
+    result = 31 * result + Arrays.hashCode(flags);
+    return result;
+  }
+
+  @Override
+  public @NonNull String toString() {
+    return "ItemTemplate["
+        + "material=" + material
+        + ", displayName=" + displayName
+        + ", lore=" + lore
+        + ", flags=" + Arrays.toString(flags)
+        + ", pdcData=" + pdcData
+        + ", glow=" + glow
+        + ", amount=" + amount
+        + ", customModelData=" + customModelData
+        + ", headTexture=" + headTexture
+        + ", headUuid=" + headUuid
+        + ", leatherColor=" + leatherColor
+        + ", clickSound=" + clickSound
+        + ']';
   }
 
   public static final class Builder {
