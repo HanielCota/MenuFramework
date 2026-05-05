@@ -9,6 +9,7 @@ build/
 *.iml
 *.ipr
 *.iws
+*.iws.iml
 .vscode/
 *.swp
 *.swo
@@ -16,7 +17,6 @@ build/
 
 # Compiled files
 *.class
-*.jar
 *.war
 *.ear
 
@@ -26,10 +26,19 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Minecraft
-run/
-server/
+# Minecraft (run directories at root only, not source packages)
+/run/
+/server/
 
 # Local configuration
 local.properties
+*.env
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+# Generated annotation processors
+META-INF/services/javax.annotation.processing.Processor
