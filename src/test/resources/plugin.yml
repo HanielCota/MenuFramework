@@ -1,0 +1,4 @@
+name: MenuTestPlugin
+version: 1.0.0
+main: com.github.hanielcota.menuframework.MenuTestPlugin
+api-version: '1.21'

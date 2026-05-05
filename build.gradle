@@ -1,0 +1,93 @@
+import com.github.spotbugs.snom.SpotBugsTask
+
+plugins {
+    id 'java'
+    id 'com.diffplug.spotless' version '6.25.0'
+    id 'com.github.spotbugs' version '6.0.14'
+    id 'pmd'
+}
+
+group = 'com.github.hanielcota'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+    testImplementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    testCompileOnly 'org.projectlombok:lombok:1.18.36'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
+    
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+    implementation 'it.unimi.dsi:fastutil:8.5.13'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+    testImplementation 'com.github.seeseemelk:MockBukkit-v1.21:3.133.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.0'
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-parameters']
+    options.fork = false
+}
+
+spotless {
+    java {
+        target 'src/**/*.java'
+        importOrder()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+spotbugs {
+    effort = 'MAX'
+    reportLevel = 'LOW'
+    showProgress = true
+}
+
+tasks.withType(SpotBugsTask).configureEach {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+pmd {
+    toolVersion = '7.0.0'
+    consoleOutput = true
+    rulesMinimumPriority = 5
+    ruleSets = [
+        'category/java/bestpractices.xml',
+        'category/java/errorprone.xml',
+        'category/java/multithreading.xml',
+        'category/java/performance.xml',
+        'category/java/security.xml'
+    ]
+}
+
+tasks.withType(Pmd).configureEach {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
