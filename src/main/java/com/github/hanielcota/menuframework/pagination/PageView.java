@@ -32,6 +32,12 @@ public record PageView(int pageNumber, @Nullable ItemStack[] items, int totalPag
     return copy;
   }
 
+  private static boolean areItemsEqual(@Nullable ItemStack a, @Nullable ItemStack b) {
+    if (a == b) return true;
+    if (a == null || b == null) return false;
+    return a.isSimilar(b);
+  }
+
   public @Nullable ItemStack get(int slot) {
     if (slot < 0 || slot >= items.length) return null;
     ItemStack item = items[slot];
@@ -54,12 +60,6 @@ public record PageView(int pageNumber, @Nullable ItemStack[] items, int totalPag
       if (!areItemsEqual(items[i], otherItems[i])) return false;
     }
     return true;
-  }
-
-  private static boolean areItemsEqual(@Nullable ItemStack a, @Nullable ItemStack b) {
-    if (a == b) return true;
-    if (a == null || b == null) return false;
-    return a.isSimilar(b);
   }
 
   @Override

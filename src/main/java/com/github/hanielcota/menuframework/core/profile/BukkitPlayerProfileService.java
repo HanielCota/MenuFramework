@@ -6,9 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Bukkit implementation of {@link PlayerProfileService}.
- */
+/** Bukkit implementation of {@link PlayerProfileService}. */
 public record BukkitPlayerProfileService() implements PlayerProfileService {
 
   private static final String TEXTURES_PROPERTY_KEY = "textures";

@@ -14,13 +14,9 @@ import com.github.hanielcota.menuframework.interaction.sound.SoundPlayer;
 import com.github.hanielcota.menuframework.interaction.toggle.ToggleManager;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.ClickType;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Orchestrates click handling by delegating to specialized services.
- */
+/** Orchestrates click handling by delegating to specialized services. */
 public final class ClickExecutor {
 
   private static final Logger log = Logger.getLogger(ClickExecutor.class.getName());
@@ -49,13 +45,13 @@ public final class ClickExecutor {
 
   public void execute(
       @NonNull MenuDefinition definition,
-      @NonNull MenuSession session,
-      @NonNull Player player,
-      int rawSlot,
-      @NonNull ClickType clickType,
-      @NonNull ClickHandler handler,
       @NonNull SlotDefinition slotDefinition,
+      @NonNull ClickHandler handler,
       @NonNull ClickContext clickContext) {
+    var player = clickContext.player();
+    var session = clickContext.session();
+    var rawSlot = clickContext.rawSlot();
+
     if (cooldownManager.isOnCooldown(player, slotDefinition)) {
       return;
     }
@@ -65,13 +61,14 @@ public final class ClickExecutor {
       return;
     }
 
-    soundPlayer.playClickSound(player, definition, rawSlot, session.view().getTopInventory().getSize());
+    soundPlayer.playClickSound(
+        player, definition, rawSlot, session.view().getTopInventory().getSize());
     featureInvoker.invokeOnClick(definition, clickContext);
 
     if (toggleManager.isToggleSlot(slotDefinition)) {
       ToggleState toggleState = slotDefinition.toggleStateKey();
       if (toggleState != null) {
-        handleToggle(player, session, rawSlot, clickType, slotDefinition, toggleState, clickContext);
+        handleToggle(session, rawSlot, slotDefinition, toggleState, clickContext);
       }
       return;
     }
@@ -93,14 +90,12 @@ public final class ClickExecutor {
   }
 
   private void handleToggle(
-      @NonNull Player player,
       @NonNull MenuSession session,
       int rawSlot,
-      @NonNull ClickType clickType,
       @NonNull SlotDefinition slotDefinition,
       @NonNull ToggleState toggleState,
       @NonNull ClickContext clickContext) {
-    toggleManager.handleToggle(player, session, rawSlot, clickType, slotDefinition, toggleState);
+    toggleManager.handleToggle(session, rawSlot, toggleState);
 
     var toggleHandler = slotDefinition.toggleHandler();
     if (toggleHandler != null) {
@@ -109,7 +104,7 @@ public final class ClickExecutor {
           clickContext,
           toggleState.isEnabled(),
           session.menuId(),
-          player.getUniqueId().toString(),
+          clickContext.player().getUniqueId().toString(),
           rawSlot);
     }
   }

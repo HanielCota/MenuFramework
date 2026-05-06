@@ -53,7 +53,7 @@ public final class PaginatedRenderStrategy implements RenderStrategy {
       if (itemIndex >= contentSlots.size()) break;
       var slotDef = dynamicItems.get(start + itemIndex);
       if (slotDef.handler() == null) continue;
-      var slot = contentSlots.get(itemIndex);
+      int slot = contentSlots.get(itemIndex);
       if (slot >= 0) {
         slots.put(slot, slotDef);
       }
@@ -67,8 +67,7 @@ public final class PaginatedRenderStrategy implements RenderStrategy {
     PageApplier.apply(request.view(), pageView, request.slotCount());
     var slots = new Int2ObjectOpenHashMap<SlotDefinition>();
     collectStaticSlots(request, slots);
-    collectDynamicSlots(
-        dynamic, request.definition().pagination().contentSlots(), pageView, slots);
+    collectDynamicSlots(dynamic, request.definition().pagination().contentSlots(), pageView, slots);
     navigationRenderer.render(
         new NavigationRenderContext(
             request.view(),

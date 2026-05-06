@@ -16,7 +16,8 @@ import org.jspecify.annotations.Nullable;
 
 public final class SessionRegistry implements SessionQuery, SessionCommands {
 
-  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SessionRegistry.class.getName());
+  private static final java.util.logging.Logger log =
+      java.util.logging.Logger.getLogger(SessionRegistry.class.getName());
 
   @NonNull private final Cache<UUID, MenuSessionImpl> sessionCache;
 
@@ -29,7 +30,9 @@ public final class SessionRegistry implements SessionQuery, SessionCommands {
       @Nullable MenuSessionImpl removedSession,
       RemovalCause removalCause) {
     if (removedSession == null) return;
-    log.log(java.util.logging.Level.FINE, "Session removed: %s cause=%s".formatted(playerUuid, removalCause));
+    log.log(
+        java.util.logging.Level.FINE,
+        "Session removed: %s cause=%s".formatted(playerUuid, removalCause));
     try {
       removedSession.disposeImmediately();
     } catch (Exception exception) {
@@ -48,7 +51,8 @@ public final class SessionRegistry implements SessionQuery, SessionCommands {
   }
 
   @Override
-  public @NonNull Optional<@NonNull InteractiveMenuSession> getInteractiveSession(@NonNull UUID playerUuid) {
+  public @NonNull Optional<@NonNull InteractiveMenuSession> getInteractiveSession(
+      @NonNull UUID playerUuid) {
     return Optional.ofNullable(sessionCache.getIfPresent(playerUuid));
   }
 

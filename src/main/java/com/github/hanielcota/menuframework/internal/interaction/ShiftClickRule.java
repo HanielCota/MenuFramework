@@ -5,9 +5,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Cancels shift clicks if the menu is configured to block them.
- */
+/** Cancels shift clicks if the menu is configured to block them. */
 public final class ShiftClickRule implements InteractionRule {
 
   @Override

@@ -44,12 +44,15 @@ public final class MenuRuntimeFactory {
   public @NonNull MenuRuntime create() {
     if (!(menuService instanceof DefaultMenuService defaultMenuService)) {
       throw new IllegalArgumentException(
-          "MenuService must be an instance of DefaultMenuService, got: " + menuService.getClass().getName());
+          "MenuService must be an instance of DefaultMenuService, got: "
+              + menuService.getClass().getName());
     }
-    var plugin = java.util.Objects.requireNonNull(
-        menuService.getPlugin(), "menuService.getPlugin() returned null");
-    var scheduler = java.util.Objects.requireNonNull(
-        defaultMenuService.getScheduler(), "defaultMenuService.getScheduler() returned null");
+    var plugin =
+        java.util.Objects.requireNonNull(
+            menuService.getPlugin(), "menuService.getPlugin() returned null");
+    var scheduler =
+        java.util.Objects.requireNonNull(
+            defaultMenuService.getScheduler(), "defaultMenuService.getScheduler() returned null");
 
     var serverAccess = new BukkitServerAccess();
     var playerProfileService = new BukkitPlayerProfileService();
@@ -62,14 +65,30 @@ public final class MenuRuntimeFactory {
     var sessionRegistry = new SessionRegistry(config);
 
     var renderEngineFactory =
-        new RenderEngineFactory(menuRegistry, paginationEngine, slotRenderer, itemStackFactory, config, serverAccess, menuService);
+        new RenderEngineFactory(
+            menuRegistry,
+            paginationEngine,
+            slotRenderer,
+            itemStackFactory,
+            config,
+            serverAccess,
+            menuService);
     var renderEngine = renderEngineFactory.create();
 
     var refreshScheduler = new RefreshScheduler(plugin, scheduler, serverAccess);
     var messageService = new DefaultMessageService();
     var clickExecutor = createClickExecutor(menuService);
     var sessionImplFactory =
-        new MenuSessionImplFactory(plugin, scheduler, serverAccess, renderEngine, menuService, clickExecutor, itemStackFactory, menuHistory, messageService);
+        new MenuSessionImplFactory(
+            plugin,
+            scheduler,
+            serverAccess,
+            renderEngine,
+            menuService,
+            clickExecutor,
+            itemStackFactory,
+            menuHistory,
+            messageService);
 
     var sessionFactory =
         new SessionFactory(
@@ -85,17 +104,26 @@ public final class MenuRuntimeFactory {
     var clickDispatcher = new ClickDispatcher(sessionRegistry);
     var eventRouter = new DefaultMenuEventRouter(sessionRegistry, clickDispatcher);
 
-    return new MenuRuntime(
-        menuRegistry.paginationEngine(),
-        menuRegistry,
-        sessionRegistry,
-        sessionFactory,
-        eventRouter,
-        itemStackFactory);
+    // Use an atomic reference to allow the preloader to reference the runtime after creation
+    final java.util.concurrent.atomic.AtomicReference<MenuRuntime> runtimeRef = new java.util.concurrent.atomic.AtomicReference<>();
+    var preloader = new DefaultMenuPreloader(plugin, scheduler, runtimeRef::get);
+
+    var runtime =
+        new MenuRuntime(
+            menuRegistry.paginationEngine(),
+            menuRegistry,
+            sessionRegistry,
+            sessionFactory,
+            eventRouter,
+            itemStackFactory,
+            preloader);
+
+    runtimeRef.set(runtime);
+
+    return runtime;
   }
 
-  private @NonNull ClickExecutor createClickExecutor(
-      @NonNull MenuService menuService) {
+  private @NonNull ClickExecutor createClickExecutor(@NonNull MenuService menuService) {
     return new ClickExecutor(
         new CooldownManager(),
         new PermissionChecker(),

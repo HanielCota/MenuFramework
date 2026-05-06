@@ -4,18 +4,16 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Messaging and lifecycle actions available during a menu click.
- */
+/** Messaging and lifecycle actions available during a menu click. */
 public interface MessagingContext {
 
-    void reply(@NonNull Component message);
+  void reply(@NonNull Component message);
 
-    void reply(@NonNull String miniMessage);
+  void reply(@NonNull String miniMessage);
 
-    void close();
+  void close();
 
-    void refresh();
+  void refresh();
 
-    @NonNull Plugin plugin();
+  @NonNull Plugin plugin();
 }

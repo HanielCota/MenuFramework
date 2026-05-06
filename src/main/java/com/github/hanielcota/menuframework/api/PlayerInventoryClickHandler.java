@@ -21,8 +21,5 @@ public interface PlayerInventoryClickHandler {
    * @param session the active menu session
    */
   void onClick(
-      @NonNull Player player,
-      @NonNull ClickType clickType,
-      int slot,
-      @NonNull MenuSession session);
+      @NonNull Player player, @NonNull ClickType clickType, int slot, @NonNull MenuSession session);
 }

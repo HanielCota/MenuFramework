@@ -10,8 +10,7 @@ public final class RenderEngine {
   @NonNull private final RenderStrategy paginatedStrategy;
 
   public RenderEngine(
-      @NonNull RenderStrategy staticStrategy,
-      @NonNull RenderStrategy paginatedStrategy) {
+      @NonNull RenderStrategy staticStrategy, @NonNull RenderStrategy paginatedStrategy) {
     this.staticStrategy = staticStrategy;
     this.paginatedStrategy = paginatedStrategy;
   }
@@ -19,7 +18,7 @@ public final class RenderEngine {
   public @NonNull RenderResult render(
       @NonNull InventoryView view, @NonNull MenuDefinition definition, int targetPage) {
     var topInventory = view.getTopInventory();
-    java.util.Objects.requireNonNull(topInventory, "topInventory is null (view may be closed)");
+    java.util.Objects.requireNonNull(topInventory, "topInventory is null for menu: " + definition.id() + " (view may be closed)");
     var slots = topInventory.getSize();
     var pagination = definition.pagination();
     java.util.Objects.requireNonNull(pagination, "pagination");

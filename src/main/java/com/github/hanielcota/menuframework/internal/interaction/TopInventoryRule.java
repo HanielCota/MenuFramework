@@ -5,9 +5,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Cancels clicks in the top inventory (menu area).
- */
+/** Cancels clicks in the top inventory (menu area). */
 public final class TopInventoryRule implements InteractionRule {
 
   @Override

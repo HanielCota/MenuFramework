@@ -82,8 +82,9 @@ public final class PaperSchedulerAdapter implements SchedulerAdapter {
   public void cancel(@NonNull Object taskHandle) {
     Objects.requireNonNull(taskHandle, "taskHandle");
     if (!(taskHandle instanceof io.papermc.paper.threadedregions.scheduler.ScheduledTask task)) {
-      throw new IllegalArgumentException(
-          "Unexpected task handle type: " + taskHandle.getClass().getName());
+      java.util.logging.Logger.getLogger(PaperSchedulerAdapter.class.getName())
+          .warning("Unexpected task handle type: " + taskHandle.getClass().getName());
+      return;
     }
     task.cancel();
   }

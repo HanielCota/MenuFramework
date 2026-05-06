@@ -10,19 +10,15 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class SessionLifecycle {
-  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SessionLifecycle.class.getName());
-  @NonNull
-  private final Plugin plugin;
-  @NonNull
-  private final SchedulerAdapter scheduler;
-  @NonNull
-  private final MenuSessionState state;
-  @NonNull
-  private final ActiveSlotRegistry activeSlots;
-  @NonNull
-  private final ServerAccess serverAccess;
+  private static final java.util.logging.Logger log =
+      java.util.logging.Logger.getLogger(SessionLifecycle.class.getName());
+  @NonNull private final Plugin plugin;
+  @NonNull private final SchedulerAdapter scheduler;
+  @NonNull private final MenuSessionState state;
+  @NonNull private final ActiveSlotRegistry activeSlots;
+  @NonNull private final ServerAccess serverAccess;
   private @Nullable MenuSession session;
-  private @Nullable Object refreshTaskHandle;
+  private final java.util.concurrent.atomic.AtomicReference<Object> refreshTaskHandle = new java.util.concurrent.atomic.AtomicReference<>();
 
   public SessionLifecycle(
       @NonNull Plugin plugin,
@@ -44,17 +40,21 @@ public final class SessionLifecycle {
   }
 
   public void setRefreshTaskHandle(@NonNull Object refreshTaskHandle) {
-    this.refreshTaskHandle = Objects.requireNonNull(refreshTaskHandle, "refreshTaskHandle");
+    this.refreshTaskHandle.set(Objects.requireNonNull(refreshTaskHandle, "refreshTaskHandle"));
   }
 
   public @NonNull CompletableFuture<Void> dispose() {
     var future = new CompletableFuture<Void>();
+    if (state.disposed()) {
+      future.complete(null);
+      return future;
+    }
     scheduler.runSync(plugin, () -> completeDisposal(future));
     return future;
   }
 
   public void disposeImmediately() {
-    if (!serverAccess.isPrimaryThread()) {
+    if (serverAccess.isNotPrimaryThread()) {
       scheduler.runSync(plugin, this::disposeImmediately);
       return;
     }
@@ -77,10 +77,9 @@ public final class SessionLifecycle {
   }
 
   private void cancelRefreshTask() {
-    var taskHandle = refreshTaskHandle;
+    var taskHandle = refreshTaskHandle.getAndSet(null);
     if (taskHandle == null) return;
     scheduler.cancel(taskHandle);
-    refreshTaskHandle = null;
   }
 
   private void closePlayerInventory() {

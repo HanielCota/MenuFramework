@@ -43,6 +43,7 @@ public final class MenuBuilder {
   private boolean blockPlayerInventoryClicks = true;
   private boolean blockShiftClick = true;
   private PlayerInventoryClickHandler playerInventoryClickHandler;
+  private boolean built;
 
   public MenuBuilder(@NonNull String id, @NonNull MenuService menuService) {
     this.id = Objects.requireNonNull(id, "id");
@@ -282,6 +283,10 @@ public final class MenuBuilder {
   }
 
   public @NonNull MenuRegistrar build() {
+    if (built) {
+      throw new IllegalStateException("MenuBuilder has already been built. Create a new builder for each menu.");
+    }
+    built = true;
     applyLayout();
     int size =
         layout != null ? Math.min(layout.length * COLUMNS_PER_ROW, MAX_SLOTS) : DEFAULT_SLOTS;
@@ -307,8 +312,7 @@ public final class MenuBuilder {
         menuService, id, definition, dynamicContentProvider, List.copyOf(staticDynamicItems));
   }
 
-  /** Predefined slot patterns for fill operations. */
-  /**
+    /**
    * @deprecated Use {@link SlotPatternStrategy} implementations instead.
    */
   @Deprecated
@@ -344,6 +348,6 @@ public final class MenuBuilder {
       public boolean matches(int slot, int rows) {
         return slot >= (rows - 1) * COLUMNS_PER_ROW;
       }
-    };
+    }
   }
 }

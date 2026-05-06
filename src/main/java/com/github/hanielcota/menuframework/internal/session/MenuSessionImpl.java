@@ -54,7 +54,7 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
   }
 
   @Override
-  public void setPage(int page) {
+  public synchronized void setPage(int page) {
     if (state.disposed()) {
       throw new IllegalStateException("Session is disposed");
     }
@@ -117,12 +117,17 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
 
   @Override
   public @NonNull CompletableFuture<Void> dispose() {
+    if (lifecycle == null) {
+      return CompletableFuture.completedFuture(null);
+    }
     return lifecycle.dispose();
   }
 
   @Override
   public void disposeImmediately() {
-    lifecycle.disposeImmediately();
+    if (lifecycle != null) {
+      lifecycle.disposeImmediately();
+    }
   }
 
   List<com.github.hanielcota.menuframework.api.MenuFeature> features() {

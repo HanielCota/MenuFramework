@@ -28,27 +28,6 @@ public final class CachedItemStackFactory implements ItemStackFactory {
     this.playerProfileService = playerProfileService;
   }
 
-  private @NonNull ItemStack buildBase(@NonNull ItemTemplate template) {
-    ItemStack item = new ItemStack(template.material(), template.amount());
-    ItemMeta meta = item.getItemMeta();
-    if (meta == null) return item;
-
-    applyDisplayName(meta, template);
-    applyLore(meta, template);
-    applyFlags(meta, template);
-    applyGlow(meta, template);
-    applyCustomModelData(meta, template);
-    applySpecialMeta(meta, template);
-    applyPdc(meta, template);
-
-    if (!item.setItemMeta(meta)) {
-      log.log(java.util.logging.Level.WARNING,
-          "Failed to apply ItemMeta for material: {0}. Some properties may be unsupported.",
-          template.material());
-    }
-    return item;
-  }
-
   private static void applyDisplayName(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
     meta.displayName(template.displayName());
   }
@@ -75,24 +54,6 @@ public final class CachedItemStackFactory implements ItemStackFactory {
     }
   }
 
-  private void applySpecialMeta(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
-    if (meta instanceof SkullMeta skullMeta) {
-      applySkullMeta(skullMeta, template);
-    } else if (meta instanceof LeatherArmorMeta leatherMeta) {
-      applyLeatherMeta(leatherMeta, template);
-    }
-  }
-
-  private void applySkullMeta(@NonNull SkullMeta meta, @NonNull ItemTemplate template) {
-    if (template.headUuid() != null) {
-      playerProfileService.applyPlayerUuid(meta, template.headUuid());
-      return;
-    }
-    if (template.headTexture() != null) {
-      playerProfileService.applyBase64Texture(meta, template.headTexture());
-    }
-  }
-
   private static void applyLeatherMeta(@NonNull LeatherArmorMeta meta, @NonNull ItemTemplate template) {
     if (template.leatherColor() != null) {
       meta.setColor(template.leatherColor());
@@ -113,6 +74,51 @@ public final class CachedItemStackFactory implements ItemStackFactory {
         case null -> { /* ignored */ }
         default -> pdc.set(key, PersistentDataType.STRING, entry.getValue().toString());
       }
+    }
+  }
+
+  private @NonNull ItemStack buildBase(@NonNull ItemTemplate template) {
+    ItemStack item;
+    try {
+      item = new ItemStack(template.material(), template.amount());
+    } catch (Exception e) {
+      log.log(java.util.logging.Level.WARNING, "Failed to create ItemStack for material: {0}", template.material());
+      item = new ItemStack(org.bukkit.Material.STONE, template.amount());
+    }
+    ItemMeta meta = item.getItemMeta();
+    if (meta == null) return item;
+
+    applyDisplayName(meta, template);
+    applyLore(meta, template);
+    applyFlags(meta, template);
+    applyGlow(meta, template);
+    applyCustomModelData(meta, template);
+    applySpecialMeta(meta, template);
+    applyPdc(meta, template);
+
+    if (!item.setItemMeta(meta)) {
+      log.log(java.util.logging.Level.WARNING,
+          "Failed to apply ItemMeta for material: {0}. Some properties may be unsupported.",
+          template.material());
+    }
+    return item;
+  }
+
+  private void applySpecialMeta(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
+    if (meta instanceof SkullMeta skullMeta) {
+      applySkullMeta(skullMeta, template);
+    } else if (meta instanceof LeatherArmorMeta leatherMeta) {
+      applyLeatherMeta(leatherMeta, template);
+    }
+  }
+
+  private void applySkullMeta(@NonNull SkullMeta meta, @NonNull ItemTemplate template) {
+    if (template.headUuid() != null) {
+      playerProfileService.applyPlayerUuid(meta, template.headUuid());
+      return;
+    }
+    if (template.headTexture() != null) {
+      playerProfileService.applyBase64Texture(meta, template.headTexture());
     }
   }
 

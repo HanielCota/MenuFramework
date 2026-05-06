@@ -20,22 +20,12 @@ public final class SessionFactory {
 
   private static final Logger log = Logger.getLogger(SessionFactory.class.getName());
 
-  @NonNull
-  private final Plugin plugin;
-  @NonNull
-  private final SchedulerAdapter scheduler;
-  @NonNull
-  private final ServerAccess serverAccess;
-  @NonNull
-  private final RenderEngine renderEngine;
-  @NonNull
-  private final MenuService menuService;
-  @NonNull
-  private final SessionCommands sessionCommands;
-  @NonNull
-  private final RefreshScheduler refreshScheduler;
-  @NonNull
-  private final MenuSessionImplFactory sessionImplFactory;
+  @NonNull private final Plugin plugin;
+  @NonNull private final SchedulerAdapter scheduler;
+  @NonNull private final ServerAccess serverAccess;
+    @NonNull private final SessionCommands sessionCommands;
+  @NonNull private final RefreshScheduler refreshScheduler;
+  @NonNull private final MenuSessionImplFactory sessionImplFactory;
 
   public SessionFactory(
       @NonNull Plugin plugin,
@@ -49,14 +39,13 @@ public final class SessionFactory {
     this.plugin = plugin;
     this.scheduler = scheduler;
     this.serverAccess = serverAccess;
-    this.renderEngine = renderEngine;
-    this.menuService = menuService;
-    this.sessionCommands = sessionCommands;
+      this.sessionCommands = sessionCommands;
     this.refreshScheduler = refreshScheduler;
     this.sessionImplFactory = sessionImplFactory;
   }
 
-  private static void fireOpenFeatures(@NonNull MenuSessionImpl session, @NonNull MenuDefinition definition) {
+  private static void fireOpenFeatures(
+      @NonNull MenuSessionImpl session, @NonNull MenuDefinition definition) {
     for (MenuFeature feature : definition.features()) {
       try {
         feature.onOpen(session);
@@ -75,11 +64,13 @@ public final class SessionFactory {
       @NonNull UUID playerUuid, @NonNull MenuDefinition definition) {
     CompletableFuture<MenuSession> future = new CompletableFuture<>();
     scheduler.runSync(plugin, () -> completeSessionCreation(future, playerUuid, definition));
-    return future;
+    return future.orTimeout(30, java.util.concurrent.TimeUnit.SECONDS);
   }
 
   private void completeSessionCreation(
-      @NonNull CompletableFuture<MenuSession> future, @NonNull UUID playerUuid, @NonNull MenuDefinition definition) {
+      @NonNull CompletableFuture<MenuSession> future,
+      @NonNull UUID playerUuid,
+      @NonNull MenuDefinition definition) {
     try {
       var player = serverAccess.findOnlinePlayer(playerUuid).orElse(null);
       if (player == null) {
@@ -107,11 +98,15 @@ public final class SessionFactory {
     }
   }
 
-  private @Nullable MenuSessionImpl openSession(@NonNull Player player, @NonNull UUID playerUuid, @NonNull MenuDefinition definition) {
+  private @Nullable MenuSessionImpl openSession(
+      @NonNull Player player, @NonNull UUID playerUuid, @NonNull MenuDefinition definition) {
     var inventory = serverAccess.createInventory(player, definition);
     var view = player.openInventory(inventory);
 
-    if (view == null || !view.getTopInventory().equals(inventory)) {
+    if (view == null) {
+      return null;
+    }
+    if (view.getTopInventory() == null || !view.getTopInventory().equals(inventory)) {
       return null;
     }
 

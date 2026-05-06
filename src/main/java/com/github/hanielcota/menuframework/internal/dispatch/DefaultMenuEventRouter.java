@@ -15,8 +15,7 @@ public final class DefaultMenuEventRouter implements MenuEventRouter {
   @NonNull private final ClickDispatcher clickDispatcher;
 
   public DefaultMenuEventRouter(
-      @NonNull SessionRegistry sessionRegistry,
-      @NonNull ClickDispatcher clickDispatcher) {
+      @NonNull SessionRegistry sessionRegistry, @NonNull ClickDispatcher clickDispatcher) {
     this.sessionRegistry = sessionRegistry;
     this.clickDispatcher = clickDispatcher;
   }

@@ -12,7 +12,8 @@ public final class FeatureInvoker {
   private static final Logger log = Logger.getLogger(FeatureInvoker.class.getName());
 
   /** Invokes {@code onClick} for all features attached to the menu definition. */
-  public void invokeOnClick(@NonNull MenuDefinition definition, @NonNull ClickContext clickContext) {
+  public void invokeOnClick(
+      @NonNull MenuDefinition definition, @NonNull ClickContext clickContext) {
     for (var feature : definition.features()) {
       try {
         feature.onClick(clickContext);

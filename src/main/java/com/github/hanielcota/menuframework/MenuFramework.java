@@ -43,7 +43,7 @@ import org.jspecify.annotations.NonNull;
  */
 public final class MenuFramework {
 
-  private static final AtomicReference<DefaultMenuService> SERVICE = new AtomicReference<>();
+  private static final AtomicReference<MenuService> SERVICE = new AtomicReference<>();
   private static final ReentrantLock LOCK = new ReentrantLock();
 
   private MenuFramework() {}
@@ -135,7 +135,7 @@ public final class MenuFramework {
    */
   public static @NonNull MenuService initialize(@NonNull Plugin plugin, @NonNull Builder builder) {
     var service = createService(plugin, builder);
-    if (!SERVICE.compareAndSet(null, (DefaultMenuService) service)) {
+    if (!SERVICE.compareAndSet(null, service)) {
       throw new IllegalStateException("MenuFramework already initialized");
     }
     return service;
@@ -169,7 +169,7 @@ public final class MenuFramework {
     var existing = SERVICE.get();
     if (existing != null) return existing;
     var service = createService(plugin, builder);
-    if (SERVICE.compareAndSet(null, (DefaultMenuService) service)) {
+    if (SERVICE.compareAndSet(null, service)) {
       return service;
     }
     return SERVICE.get();

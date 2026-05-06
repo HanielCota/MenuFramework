@@ -7,12 +7,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Abstraction over Bukkit server operations for testability.
- */
+/** Abstraction over Bukkit server operations for testability. */
 public interface ServerAccess {
 
   boolean isPrimaryThread();
+
+  default boolean isNotPrimaryThread() {
+    return !isPrimaryThread();
+  }
 
   @NonNull Optional<@NonNull Player> findOnlinePlayer(@NonNull UUID playerUuid);
 

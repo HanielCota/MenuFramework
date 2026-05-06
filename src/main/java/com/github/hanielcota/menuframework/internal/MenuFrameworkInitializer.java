@@ -16,6 +16,9 @@ public final class MenuFrameworkInitializer {
       @NonNull Plugin plugin,
       @NonNull SchedulerAdapter scheduler,
       @NonNull MenuFrameworkConfig config) {
+    if (!plugin.isEnabled()) {
+      throw new IllegalStateException("Plugin is not enabled: " + plugin.getName());
+    }
     var service = new DefaultMenuService(plugin, scheduler, config);
     registerListener(plugin, scheduler, service.eventRouter(), service);
     return service;

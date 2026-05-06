@@ -5,9 +5,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Cancels clicks on negative slots (outside inventory).
- */
+/** Cancels clicks on negative slots (outside inventory). */
 public final class NegativeSlotRule implements InteractionRule {
 
   @Override

@@ -13,22 +13,14 @@ import org.jspecify.annotations.NonNull;
 public final class SessionRenderer {
   private static final Logger log = Logger.getLogger(SessionRenderer.class.getName());
 
-  @NonNull
-  private final Plugin plugin;
-  @NonNull
-  private final SchedulerAdapter scheduler;
-  @NonNull
-  private final RenderEngine renderEngine;
-  @NonNull
-  private final MenuSessionState state;
-  @NonNull
-  private final ActiveSlotRegistry activeSlots;
-  @NonNull
-  private final PlayerResolver playerResolver;
-  @NonNull
-  private final ServerAccess serverAccess;
-  @NonNull
-  private final ItemStackFactory itemStackFactory;
+  @NonNull private final Plugin plugin;
+  @NonNull private final SchedulerAdapter scheduler;
+  @NonNull private final RenderEngine renderEngine;
+  @NonNull private final MenuSessionState state;
+  @NonNull private final ActiveSlotRegistry activeSlots;
+  @NonNull private final PlayerResolver playerResolver;
+  @NonNull private final ServerAccess serverAccess;
+  @NonNull private final ItemStackFactory itemStackFactory;
 
   public SessionRenderer(
       @NonNull Plugin plugin,
@@ -51,7 +43,7 @@ public final class SessionRenderer {
 
   public void refresh() {
     if (state.disposed()) return;
-    if (!serverAccess.isPrimaryThread()) {
+    if (serverAccess.isNotPrimaryThread()) {
       scheduler.runSync(plugin, this::refresh);
       return;
     }
@@ -82,7 +74,7 @@ public final class SessionRenderer {
 
   public void updateSlot(int slot, @NonNull ItemTemplate template) {
     if (state.disposed()) return;
-    if (!serverAccess.isPrimaryThread()) {
+    if (serverAccess.isNotPrimaryThread()) {
       scheduler.runSync(plugin, () -> updateSlot(slot, template));
       return;
     }
@@ -95,7 +87,10 @@ public final class SessionRenderer {
         topInventory.setItem(slot, itemStackFactory.create(template));
       }
     } catch (Exception exception) {
-      log.log(Level.SEVERE, "Error updating slot " + slot + " in menu " + state.definition().id(), exception);
+      log.log(
+          Level.SEVERE,
+          "Error updating slot " + slot + " in menu " + state.definition().id(),
+          exception);
     }
   }
 }

@@ -24,6 +24,10 @@ final class MenuData {
   private final Map<String, MenuDefinition> definitions = new ConcurrentHashMap<>();
   private final Map<String, ItemTemplate> templates = new ConcurrentHashMap<>();
 
+  private static int computeContentHash(@NonNull List<SlotDefinition> items) {
+    return java.util.Arrays.deepHashCode(items.toArray());
+  }
+
   void registerDefinition(@NonNull MenuDefinition definition) {
     definitions.put(definition.id(), definition);
   }
@@ -51,14 +55,6 @@ final class MenuData {
     var copy = List.copyOf(items);
     dynamicContent.put(menuId, copy);
     dynamicContentHash.put(menuId, computeContentHash(copy));
-  }
-
-  private static int computeContentHash(@NonNull List<SlotDefinition> items) {
-    int result = 1;
-    for (SlotDefinition item : items) {
-      result = 31 * result + (item == null ? 0 : item.hashCode());
-    }
-    return result;
   }
 
   void setDynamicContentProvider(@NonNull String menuId, @NonNull DynamicContentProvider provider) {

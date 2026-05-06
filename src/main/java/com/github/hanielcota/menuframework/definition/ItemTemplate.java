@@ -77,18 +77,19 @@ public record ItemTemplate(
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(
-        material,
-        displayName,
-        lore,
-        pdcData,
-        glow,
-        amount,
-        customModelData,
-        headTexture,
-        headUuid,
-        leatherColor,
-        clickSound);
+    int result =
+        Objects.hash(
+            material,
+            displayName,
+            lore,
+            pdcData,
+            glow,
+            amount,
+            customModelData,
+            headTexture,
+            headUuid,
+            leatherColor,
+            clickSound);
     result = 31 * result + Arrays.hashCode(flags);
     return result;
   }
@@ -96,18 +97,30 @@ public record ItemTemplate(
   @Override
   public @NonNull String toString() {
     return "ItemTemplate["
-        + "material=" + material
-        + ", displayName=" + displayName
-        + ", lore=" + lore
-        + ", flags=" + Arrays.toString(flags)
-        + ", pdcData=" + pdcData
-        + ", glow=" + glow
-        + ", amount=" + amount
-        + ", customModelData=" + customModelData
-        + ", headTexture=" + headTexture
-        + ", headUuid=" + headUuid
-        + ", leatherColor=" + leatherColor
-        + ", clickSound=" + clickSound
+        + "material="
+        + material
+        + ", displayName="
+        + displayName
+        + ", lore="
+        + lore
+        + ", flags="
+        + Arrays.toString(flags)
+        + ", pdcData="
+        + pdcData
+        + ", glow="
+        + glow
+        + ", amount="
+        + amount
+        + ", customModelData="
+        + customModelData
+        + ", headTexture="
+        + headTexture
+        + ", headUuid="
+        + headUuid
+        + ", leatherColor="
+        + leatherColor
+        + ", clickSound="
+        + clickSound
         + ']';
   }
 

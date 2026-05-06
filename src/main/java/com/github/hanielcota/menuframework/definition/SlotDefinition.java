@@ -32,12 +32,12 @@ public record SlotDefinition(
 
   public static SlotDefinition of(
       int slot, @NonNull ItemTemplate template, @Nullable ClickHandler handler) {
-    return slot(slot, template, handler, false, DEFAULT_COOLDOWN, null, null, false, null, null);
+    return slot(slot, template, handler, false, DEFAULT_COOLDOWN, null, null);
   }
 
   public static SlotDefinition navigational(
       int slot, @NonNull ItemTemplate template, @Nullable ClickHandler handler) {
-    return slot(slot, template, handler, true, DEFAULT_COOLDOWN, null, null, false, null, null);
+    return slot(slot, template, handler, true, DEFAULT_COOLDOWN, null, null);
   }
 
   public static SlotDefinition withCooldown(
@@ -45,7 +45,7 @@ public record SlotDefinition(
       @NonNull ItemTemplate template,
       @Nullable ClickHandler handler,
       long cooldownTicks) {
-    return slot(slot, template, handler, false, cooldownTicks, null, null, false, null, null);
+    return slot(slot, template, handler, false, cooldownTicks, null, null);
   }
 
   public static SlotDefinition withPermission(
@@ -55,11 +55,18 @@ public record SlotDefinition(
       @NonNull String permission,
       @Nullable ItemTemplate fallbackTemplate) {
     return slot(
-        slot, template, handler, false, DEFAULT_COOLDOWN, permission, fallbackTemplate, false, null, null);
+        slot,
+        template,
+        handler,
+        false,
+        DEFAULT_COOLDOWN,
+        permission,
+        fallbackTemplate
+    );
   }
 
   public static SlotDefinition withHandler(int slot, @Nullable ClickHandler handler) {
-    return slot(slot, null, handler, false, DEFAULT_COOLDOWN, null, null, false, null, null);
+    return slot(slot, null, handler, false, DEFAULT_COOLDOWN, null, null);
   }
 
   private static SlotDefinition slot(
@@ -69,10 +76,8 @@ public record SlotDefinition(
       boolean navigational,
       long cooldownTicks,
       @Nullable String permission,
-      @Nullable ItemTemplate fallbackTemplate,
-      boolean toggle,
-      @Nullable ToggleHandler toggleHandler,
-      @Nullable ToggleState toggleState) {
+      @Nullable ItemTemplate fallbackTemplate
+  ) {
     return new SlotDefinition(
         slot,
         template,
@@ -81,9 +86,10 @@ public record SlotDefinition(
         cooldownTicks,
         permission,
         fallbackTemplate,
-        toggle,
-        toggleHandler,
-        toggleState);
+        false,
+        null,
+        null
+    );
   }
 
   public static SlotDefinition toggle(

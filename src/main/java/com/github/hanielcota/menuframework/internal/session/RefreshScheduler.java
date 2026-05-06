@@ -41,15 +41,18 @@ public final class RefreshScheduler {
     var intervalTicks = resolveIntervalTicks(session.features());
     if (intervalTicks <= 0) return null;
 
+    var sessionRef = new java.lang.ref.WeakReference<>(session);
     return scheduler.runSyncRepeating(
-        plugin, () -> refreshTick(session), intervalTicks, intervalTicks);
+        plugin, () -> refreshTick(sessionRef), intervalTicks, intervalTicks);
   }
 
-  private void refreshTick(@NonNull MenuSessionImpl session) {
-    if (session.disposed()) return;
+  private void refreshTick(java.lang.ref.WeakReference<MenuSessionImpl> sessionRef) {
+    var session = sessionRef.get();
+    if (session == null || session.disposed()) return;
     var viewer = serverAccess.findOnlinePlayer(session.viewerId()).orElse(null);
     if (viewer == null || !viewer.isOnline()) return;
-    if (!viewer.getOpenInventory().equals(session.view())) return;
+    var openInventory = viewer.getOpenInventory();
+    if (openInventory == null || !openInventory.equals(session.view())) return;
 
     session.refresh();
 

@@ -25,15 +25,15 @@ public final class MenuFrameworkConfig {
   private static final int DEFAULT_ITEMSTACK_CACHE_EXPIRE_MINUTES = 30;
   private static final long DEFAULT_SLOW_RENDER_THRESHOLD_MS = 50;
 
-  private int sessionCacheMaxSize = DEFAULT_SESSION_CACHE_MAX_SIZE;
-  private int sessionCacheExpireMinutes = DEFAULT_SESSION_CACHE_EXPIRE_MINUTES;
-  private int pageCacheMaxSize = DEFAULT_PAGE_CACHE_MAX_SIZE;
-  private int pageCacheExpireMinutes = DEFAULT_PAGE_CACHE_EXPIRE_MINUTES;
-  private int itemStackCacheMaxSize = DEFAULT_ITEMSTACK_CACHE_MAX_SIZE;
-  private int itemStackCacheExpireMinutes = DEFAULT_ITEMSTACK_CACHE_EXPIRE_MINUTES;
+  private volatile int sessionCacheMaxSize = DEFAULT_SESSION_CACHE_MAX_SIZE;
+  private volatile int sessionCacheExpireMinutes = DEFAULT_SESSION_CACHE_EXPIRE_MINUTES;
+  private volatile int pageCacheMaxSize = DEFAULT_PAGE_CACHE_MAX_SIZE;
+  private volatile int pageCacheExpireMinutes = DEFAULT_PAGE_CACHE_EXPIRE_MINUTES;
+  private volatile int itemStackCacheMaxSize = DEFAULT_ITEMSTACK_CACHE_MAX_SIZE;
+  private volatile int itemStackCacheExpireMinutes = DEFAULT_ITEMSTACK_CACHE_EXPIRE_MINUTES;
 
-  private boolean logSlowRenders = true;
-  private long slowRenderThresholdMillis = DEFAULT_SLOW_RENDER_THRESHOLD_MS;
+  private volatile boolean logSlowRenders = true;
+  private volatile long slowRenderThresholdMillis = DEFAULT_SLOW_RENDER_THRESHOLD_MS;
 
   public int sessionCacheMaxSize() {
     return sessionCacheMaxSize;

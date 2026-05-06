@@ -67,7 +67,7 @@ class ErrorHandlingTest {
 
   @Test
   @DisplayName("Should handle non-existent menu")
-  void shouldHandleNonExistentMenu() throws Exception {
+  void shouldHandleNonExistentMenu() {
     var service = MenuFramework.initialize(plugin);
     var player = server.addPlayer();
 

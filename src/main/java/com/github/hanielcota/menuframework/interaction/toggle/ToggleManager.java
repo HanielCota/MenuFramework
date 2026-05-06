@@ -8,8 +8,6 @@ import com.github.hanielcota.menuframework.definition.ToggleState;
 import com.github.hanielcota.menuframework.internal.session.MenuSessionImpl;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.ClickType;
 import org.jspecify.annotations.NonNull;
 
 /** Manages toggle slot state transitions and visual updates. */
@@ -23,13 +21,8 @@ public final class ToggleManager {
   }
 
   /** Handles a toggle click: flips state, updates visual, and invokes the toggle handler. */
-  public void handleToggle(
-      @NonNull Player player,
-      @NonNull MenuSession session,
-      int rawSlot,
-      @NonNull ClickType clickType,
-      @NonNull SlotDefinition slotDefinition,
-      @NonNull ToggleState toggleState) {
+  public synchronized void handleToggle(
+      @NonNull MenuSession session, int rawSlot, @NonNull ToggleState toggleState) {
     toggleState.setEnabled(!toggleState.isEnabled());
     session.updateSlot(rawSlot, toggleState.currentTemplate());
     if (session instanceof MenuSessionImpl impl) {

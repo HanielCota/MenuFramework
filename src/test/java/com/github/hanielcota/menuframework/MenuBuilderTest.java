@@ -18,14 +18,12 @@ import org.junit.jupiter.api.Test;
 @DisplayName("MenuBuilder Tests")
 class MenuBuilderTest {
 
-  private ServerMock server;
-  private MenuTestPlugin plugin;
-  private MenuService service;
+    private MenuService service;
 
   @BeforeEach
   void setUp() {
-    server = MockBukkit.mock();
-    plugin = MockBukkit.load(MenuTestPlugin.class);
+      ServerMock server = MockBukkit.mock();
+      MenuTestPlugin plugin = MockBukkit.load(MenuTestPlugin.class);
     service = MenuFramework.initialize(plugin);
   }
 

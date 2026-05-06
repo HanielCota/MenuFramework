@@ -5,9 +5,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Cancels clicks in the player inventory if the menu is configured to block them.
- */
+/** Cancels clicks in the player inventory if the menu is configured to block them. */
 public final class PlayerInventoryRule implements InteractionRule {
 
   @Override

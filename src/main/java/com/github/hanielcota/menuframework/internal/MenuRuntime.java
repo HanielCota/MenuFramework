@@ -3,6 +3,7 @@ package com.github.hanielcota.menuframework.internal;
 import com.github.hanielcota.menuframework.MenuFrameworkConfig;
 import com.github.hanielcota.menuframework.api.MenuHistory;
 import com.github.hanielcota.menuframework.api.MenuMetrics;
+import com.github.hanielcota.menuframework.api.MenuPreloader;
 import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.internal.dispatch.MenuEventRouter;
 import com.github.hanielcota.menuframework.internal.item.ItemStackFactory;
@@ -24,6 +25,7 @@ public final class MenuRuntime {
   @NonNull private final SessionFactory sessionFactory;
   @NonNull private final MenuEventRouter eventRouter;
   @NonNull private final ItemStackFactory itemStackFactory;
+  @NonNull private final MenuPreloader preloader;
 
   MenuRuntime(
       @NonNull PaginationEngine paginationEngine,
@@ -31,17 +33,21 @@ public final class MenuRuntime {
       @NonNull SessionRegistry sessionRegistry,
       @NonNull SessionFactory sessionFactory,
       @NonNull MenuEventRouter eventRouter,
-      @NonNull ItemStackFactory itemStackFactory) {
+      @NonNull ItemStackFactory itemStackFactory,
+      @NonNull MenuPreloader preloader) {
     this.paginationEngine = paginationEngine;
     this.menuRegistry = menuRegistry;
     this.sessionRegistry = sessionRegistry;
     this.sessionFactory = sessionFactory;
     this.eventRouter = eventRouter;
     this.itemStackFactory = itemStackFactory;
+    this.preloader = preloader;
   }
 
   public static @NonNull MenuRuntime create(
-      @NonNull MenuService menuService, @NonNull MenuFrameworkConfig config, @NonNull MenuHistory menuHistory) {
+      @NonNull MenuService menuService,
+      @NonNull MenuFrameworkConfig config,
+      @NonNull MenuHistory menuHistory) {
     return new MenuRuntimeFactory(menuService, config, menuHistory).create();
   }
 
@@ -55,6 +61,10 @@ public final class MenuRuntime {
 
   public @NonNull MenuEventRouter eventRouter() {
     return eventRouter;
+  }
+
+  public @NonNull MenuPreloader preloader() {
+    return preloader;
   }
 
   public @NonNull MenuRegistry definitions() {

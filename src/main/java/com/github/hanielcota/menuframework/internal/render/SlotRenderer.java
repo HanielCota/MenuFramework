@@ -104,7 +104,7 @@ public final class SlotRenderer {
     var fillStack = itemStackFactory.create(fill);
     for (int slot = 0; slot < slotCount; slot++) {
       if (target[slot] == null) {
-        target[slot] = fillStack.clone();
+        target[slot] = fillStack;
       }
     }
   }
@@ -117,7 +117,7 @@ public final class SlotRenderer {
     var fillStack = itemStackFactory.create(fill);
     for (int slot = 0; slot < slotCount; slot++) {
       if (view.getItem(slot) == null) {
-        view.setItem(slot, fillStack.clone());
+        view.setItem(slot, fillStack);
       }
     }
   }

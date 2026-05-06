@@ -6,19 +6,18 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Determines whether unhandled clicks should be cancelled using a composable set of rules.
- */
+/** Determines whether unhandled clicks should be cancelled using a composable set of rules. */
 public final class InteractionPolicy {
 
   private final List<InteractionRule> rules;
 
   public InteractionPolicy() {
-    this(List.of(
-        new NegativeSlotRule(),
-        new TopInventoryRule(),
-        new ShiftClickRule(),
-        new PlayerInventoryRule()));
+    this(
+        List.of(
+            new NegativeSlotRule(),
+            new TopInventoryRule(),
+            new ShiftClickRule(),
+            new PlayerInventoryRule()));
   }
 
   public InteractionPolicy(@NonNull List<InteractionRule> rules) {

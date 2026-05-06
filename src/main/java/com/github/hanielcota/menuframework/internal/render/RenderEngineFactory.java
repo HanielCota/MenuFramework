@@ -39,7 +39,8 @@ public final class RenderEngineFactory {
     var navigationRenderer = new NavigationRenderer(menuRegistry, itemStackFactory);
     java.util.Objects.requireNonNull(paginationEngine, "paginationEngine is null");
     var slowRenderLogger = new SlowRenderLogger(config);
-    var contentResolver = new DynamicContentResolver(menuRegistry, slowRenderLogger, serverAccess, menuService);
+    var contentResolver =
+        new DynamicContentResolver(menuRegistry, slowRenderLogger, serverAccess, menuService);
     return new RenderEngine(
         new StaticRenderStrategy(slotRenderer),
         new PaginatedRenderStrategy(

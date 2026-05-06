@@ -18,9 +18,11 @@ public final class NavigationRenderer {
   @NonNull private final List<NavigationButtonStrategy> buttons;
 
   public NavigationRenderer(
-      @NonNull ItemTemplateRegistry templateRegistry,
-      @NonNull ItemStackFactory itemStackFactory) {
-    this(templateRegistry, itemStackFactory, List.of(new PreviousButtonStrategy(), new NextButtonStrategy()));
+      @NonNull ItemTemplateRegistry templateRegistry, @NonNull ItemStackFactory itemStackFactory) {
+    this(
+        templateRegistry,
+        itemStackFactory,
+        List.of(new PreviousButtonStrategy(), new NextButtonStrategy()));
   }
 
   public NavigationRenderer(
@@ -45,7 +47,7 @@ public final class NavigationRenderer {
     var navSlots = context.navSlots();
     if (navSlots.size() <= button.navigationSlotIndex()) return;
 
-    var slot = navSlots.get(button.navigationSlotIndex());
+    int slot = navSlots.get(button.navigationSlotIndex());
     var maxSlots = context.view().getTopInventory().getSize();
     if (slot < 0 || slot >= maxSlots) return;
 
@@ -56,23 +58,30 @@ public final class NavigationRenderer {
     var item = itemStackFactory.create(template);
 
     if (!canNavigate) {
-      item.editMeta(meta -> meta.setEnchantmentGlintOverride(false));
+      var cloned = item.clone();
+      cloned.editMeta(meta -> meta.setEnchantmentGlintOverride(false));
+      item = cloned;
     }
 
     context.view().setItem(slot, item);
     if (canNavigate) {
-      context.activeHandlers().put(slot, SlotDefinition.navigational(slot, template, button.handler()));
+      context
+          .activeHandlers()
+          .put(slot, SlotDefinition.navigational(slot, template, button.handler()));
     }
   }
 
   private @Nullable ItemTemplate resolveTemplate(
-      @NonNull NavigationRenderContext context, int slot, @NonNull NavigationButtonStrategy button) {
+      @NonNull NavigationRenderContext context,
+      int slot,
+      @NonNull NavigationButtonStrategy button) {
     var slotDef = context.definition().slots().get(slot);
     if (slotDef != null && slotDef.template() != null) {
       return slotDef.template();
     }
 
-    String templateId = button.resolveTemplateId(context.definition()).orElse(button.defaultTemplateId());
+    String templateId =
+        button.resolveTemplateId(context.definition()).orElse(button.defaultTemplateId());
     return templateRegistry.getTemplate(templateId).orElse(null);
   }
 }

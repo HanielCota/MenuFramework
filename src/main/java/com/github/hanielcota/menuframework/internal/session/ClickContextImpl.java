@@ -21,7 +21,8 @@ public record ClickContextImpl(
     @NonNull ClickType clickType,
     @NonNull MenuService menuService,
     @NonNull MenuHistory menuHistory,
-    @NonNull MessageService messageService) implements ClickContext {
+    @NonNull MessageService messageService)
+    implements ClickContext {
 
   @Override
   public @NonNull Audience audience() {
@@ -83,16 +84,17 @@ public record ClickContextImpl(
   @Override
   public void back() {
     var previous = menuHistory.pop(player.getUniqueId());
-    previous.ifPresent(menuId -> {
-      var future = menuService.open(player.getUniqueId(), menuId);
-      if (future != null) {
-        future.exceptionally(
-            openFailure -> {
-              messageService.send(player, MessageKey.MENU_OPEN_ERROR, openFailure.getMessage());
-              return null;
-            });
-      }
-    });
+    previous.ifPresent(
+        menuId -> {
+          var future = menuService.open(player.getUniqueId(), menuId);
+          if (future != null) {
+            future.exceptionally(
+                openFailure -> {
+                  messageService.send(player, MessageKey.MENU_OPEN_ERROR, openFailure.getMessage());
+                  return null;
+                });
+          }
+        });
   }
 
   @Override

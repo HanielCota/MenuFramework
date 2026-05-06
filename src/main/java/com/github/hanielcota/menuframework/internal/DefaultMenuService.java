@@ -82,7 +82,7 @@ public final class DefaultMenuService implements MenuService {
   }
 
   @Override
-  public @NonNull List<SlotDefinition> getDynamicContent(@NonNull String menuId) {
+  public List<SlotDefinition> getDynamicContent(@NonNull String menuId) {
     return runtime.dynamicContent().getDynamicContent(menuId);
   }
 
@@ -112,8 +112,10 @@ public final class DefaultMenuService implements MenuService {
 
   private @NonNull CompletableFuture<MenuSession> open(
       @NonNull UUID playerUuid, @NonNull MenuDefinition definition) {
-    closeSession(playerUuid);
-    return runtime.sessionFactory().create(playerUuid, definition);
+    synchronized (playerUuid.toString().intern()) {
+      closeSession(playerUuid);
+      return runtime.sessionFactory().create(playerUuid, definition);
+    }
   }
 
   @Override
@@ -149,5 +151,10 @@ public final class DefaultMenuService implements MenuService {
 
   public @NonNull MenuEventRouter eventRouter() {
     return runtime.eventRouter();
+  }
+
+  @Override
+  public com.github.hanielcota.menuframework.api.MenuPreloader preloader() {
+    return runtime.preloader();
   }
 }

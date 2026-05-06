@@ -10,7 +10,6 @@ import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import com.github.hanielcota.menuframework.definition.ToggleState;
 import org.bukkit.Material;
-import org.bukkit.event.inventory.ClickType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +45,7 @@ class ToggleManagerTest {
     var state = new ToggleState(enabled, disabled, true);
     var session = mock(MenuSession.class);
 
-    toggleManager.handleToggle(null, session, 0, ClickType.LEFT, null, state);
+    toggleManager.handleToggle(session, 0, state);
 
     assertFalse(state.isEnabled());
     verify(session).updateSlot(0, disabled);
@@ -82,7 +81,7 @@ class ToggleManagerTest {
     var state = new ToggleState(enabled, disabled, false);
     var session = mock(MenuSession.class);
 
-    toggleManager.handleToggle(null, session, 0, ClickType.LEFT, null, state);
+    toggleManager.handleToggle(session, 0, state);
 
     assertTrue(state.isEnabled());
     verify(session).updateSlot(0, enabled);

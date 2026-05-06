@@ -16,6 +16,8 @@ public interface DynamicMenuContentService {
   /** Sets a dynamic content provider for a menu. */
   void setDynamicContentProvider(@NonNull String menuId, @NonNull DynamicContentProvider provider);
 
-  /** Returns the dynamic content currently registered for a menu. */
+  /**
+   * Returns the dynamic content currently registered for a menu.
+   */
   @NonNull List<SlotDefinition> getDynamicContent(@NonNull String menuId);
 }

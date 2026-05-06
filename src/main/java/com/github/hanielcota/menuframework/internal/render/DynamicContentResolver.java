@@ -19,7 +19,8 @@ import org.jspecify.annotations.Nullable;
  */
 public final class DynamicContentResolver {
 
-  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(DynamicContentResolver.class.getName());
+  private static final java.util.logging.Logger log =
+      java.util.logging.Logger.getLogger(DynamicContentResolver.class.getName());
 
   @NonNull private final DynamicContentRegistry dynamicContentRegistry;
   @NonNull private final SlowRenderLogger slowRenderLogger;
@@ -51,7 +52,7 @@ public final class DynamicContentResolver {
       return dynamicContentRegistry.getDynamicContent(menuId);
     }
 
-    var start = System.currentTimeMillis();
+    var start = System.nanoTime();
     var resolvedPlayer = resolvePlayer(view);
     var session = resolveSession(view);
 
@@ -60,7 +61,7 @@ public final class DynamicContentResolver {
     }
 
     var items = providerOpt.get().provide(resolvedPlayer, session);
-    var duration = System.currentTimeMillis() - start;
+    var duration = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 
     slowRenderLogger.logIfSlow(menuId, duration);
 
@@ -71,7 +72,10 @@ public final class DynamicContentResolver {
     var viewer = view.getPlayer();
     var resolved = serverAccess.findOnlinePlayer(viewer.getUniqueId()).orElse(null);
     if (resolved == null) {
-      log.log(java.util.logging.Level.FINE, "menu.player.resolved_offline playerUuid={0}", viewer.getUniqueId());
+      log.log(
+          java.util.logging.Level.FINE,
+          "menu.player.resolved_offline playerUuid={0}",
+          viewer.getUniqueId());
     }
     return resolved;
   }

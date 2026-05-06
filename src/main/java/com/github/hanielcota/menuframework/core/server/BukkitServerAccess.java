@@ -32,10 +32,10 @@ public record BukkitServerAccess() implements ServerAccess {
     if (definition.type() == InventoryType.CHEST) {
       return Objects.requireNonNull(
           Bukkit.createInventory(owner, definition.size(), definition.title()),
-          "Bukkit.createInventory returned null");
+          "Bukkit.createInventory returned null for menu: " + definition.id());
     }
     return Objects.requireNonNull(
         Bukkit.createInventory(owner, definition.type(), definition.title()),
-        "Bukkit.createInventory returned null");
+        "Bukkit.createInventory returned null for menu: " + definition.id());
   }
 }

@@ -35,30 +35,27 @@ public final class MenuListener implements Listener {
     this.menuService = menuService;
   }
 
-  @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+  @EventHandler(priority = EventPriority.LOWEST)
   public void onClick(@NonNull InventoryClickEvent event) {
     if (!(event.getWhoClicked() instanceof Player player)) return;
-    if (event.getView() == null || event.getClick() == null) return;
 
     if (router.dispatchClick(player, event.getView(), event.getRawSlot(), event.getClick())) {
       event.setCancelled(true);
     }
   }
 
-  @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+  @EventHandler(priority = EventPriority.LOWEST)
   public void onDrag(@NonNull InventoryDragEvent event) {
     if (!(event.getWhoClicked() instanceof Player player)) return;
-    if (event.getView() == null) return;
 
     if (router.dispatchDrag(player, event.getView())) {
       event.setCancelled(true);
     }
   }
 
-  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+  @EventHandler(priority = EventPriority.MONITOR)
   public void onClose(@NonNull InventoryCloseEvent event) {
     if (!(event.getPlayer() instanceof Player player)) return;
-    if (event.getView() == null) return;
 
     UUID playerUuid = player.getUniqueId();
     if (!router.dispatchClose(player, event.getView())) return;
@@ -67,19 +64,20 @@ public final class MenuListener implements Listener {
         plugin, () -> closeSessionIfViewStillMatches(playerUuid, event.getView()), 1);
   }
 
-  private void closeSessionIfViewStillMatches(@NonNull UUID playerUuid, @NonNull InventoryView view) {
+  private void closeSessionIfViewStillMatches(
+      @NonNull UUID playerUuid, @NonNull InventoryView view) {
     router
         .getSession(playerUuid)
         .filter(session -> session.isSameView(view))
         .ifPresent(session -> router.closeSession(playerUuid));
   }
 
-  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+  @EventHandler(priority = EventPriority.MONITOR)
   public void onQuit(@NonNull PlayerQuitEvent event) {
     router.closeSession(event.getPlayer().getUniqueId());
   }
 
-  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+  @EventHandler(priority = EventPriority.MONITOR)
   public void onPluginDisable(@NonNull PluginDisableEvent event) {
     if (event.getPlugin().equals(plugin)) {
       menuService.shutdown();

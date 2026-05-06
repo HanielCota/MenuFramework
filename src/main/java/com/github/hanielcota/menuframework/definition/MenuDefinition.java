@@ -59,10 +59,11 @@ public record MenuDefinition(
     features = List.copyOf(features);
   }
 
-  private static void validateSlots(@NonNull List<Integer> slots, int maxSlots, @NonNull String label) {
+  private static void validateSlots(
+      @NonNull List<Integer> slots, int maxSlots, @NonNull String label) {
     for (Integer slotObj : slots) {
 
-        if (slotObj == null) {
+      if (slotObj == null) {
         throw new IllegalArgumentException("Null slot found in " + label + " slots");
       }
 

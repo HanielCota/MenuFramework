@@ -16,7 +16,7 @@ public final class MenuSessionState {
   @NonNull private final InventoryView view;
   private final AtomicBoolean disposed = new AtomicBoolean(false);
   private final Map<Integer, ToggleState> toggleStates = new ConcurrentHashMap<>();
-  private int currentPage;
+  private volatile int currentPage;
 
   public MenuSessionState(
       @NonNull UUID viewerId, @NonNull MenuDefinition definition, @NonNull InventoryView view) {

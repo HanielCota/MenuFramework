@@ -5,17 +5,16 @@ import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import java.util.Optional;
 import org.jspecify.annotations.NonNull;
 
-/**
- * Previous page navigation button.
- */
+/** Previous page navigation button. */
 public final class PreviousButtonStrategy implements NavigationButtonStrategy {
 
   private static final int INDEX = 0;
   private static final String DEFAULT_TEMPLATE_ID = "prev_button";
-  private static final ClickHandler HANDLER = ctx -> {
-    var session = ctx.session();
-    session.setPage(session.currentPage() - 1);
-  };
+  private static final ClickHandler HANDLER =
+      ctx -> {
+        var session = ctx.session();
+        session.setPage(session.currentPage() - 1);
+      };
 
   @Override
   public int navigationSlotIndex() {

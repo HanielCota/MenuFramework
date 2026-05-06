@@ -43,7 +43,7 @@ public final class MenuInteractionController {
     this.messageService = messageService;
   }
 
-  public boolean handleClick(int rawSlot, @NonNull ClickType clickType) {
+  public synchronized boolean handleClick(int rawSlot, @NonNull ClickType clickType) {
     if (state.disposed()) return true;
 
     Player player = playerResolver.resolveOnline(state.viewerId());
@@ -51,15 +51,16 @@ public final class MenuInteractionController {
 
     var definition = state.definition();
     var view = state.view();
-    if (definition == null || view == null) return true;
 
     int topSize = view.getTopInventory().getSize();
+
+    // Resolve session once to avoid inconsistency
+    var session = menuService.getSession(player.getUniqueId()).orElse(null);
 
     // Handle clicks in player inventory (bottom inventory)
     if (rawSlot >= topSize) {
       PlayerInventoryClickHandler inventoryHandler = definition.playerInventoryClickHandler();
       if (inventoryHandler != null) {
-        var session = menuService.getSession(player.getUniqueId()).orElse(null);
         if (session != null) {
           inventoryHandler.onClick(player, clickType, rawSlot - topSize, session);
         }
@@ -71,10 +72,11 @@ public final class MenuInteractionController {
     // Handle clicks in top inventory (menu)
     SlotDefinition slotDef = rawSlot >= 0 ? activeSlots.get(rawSlot) : null;
     if (slotDef != null && slotDef.handler() != null) {
-      var session = menuService.getSession(player.getUniqueId()).orElse(null);
       if (session != null) {
-        var clickContext = new ClickContextImpl(session, player, rawSlot, clickType, menuService, menuHistory, messageService);
-        clickExecutor.execute(definition, session, player, rawSlot, clickType, slotDef.handler(), slotDef, clickContext);
+        var clickContext =
+            new ClickContextImpl(
+                session, player, rawSlot, clickType, menuService, menuHistory, messageService);
+        clickExecutor.execute(definition, slotDef, slotDef.handler(), clickContext);
       }
       return true;
     }

@@ -24,7 +24,7 @@ public final class CooldownManager {
    * Checks if the player is on cooldown for the given slot. Also records the cooldown if not
    * already on cooldown.
    */
-  public boolean isOnCooldown(@NonNull Player player, @NonNull SlotDefinition slotDefinition) {
+  public synchronized boolean isOnCooldown(@NonNull Player player, @NonNull SlotDefinition slotDefinition) {
     var now = System.currentTimeMillis();
     var uuid = player.getUniqueId();
 
@@ -44,7 +44,8 @@ public final class CooldownManager {
     return lastGlobalClick != null && (now - lastGlobalClick) < DEFAULT_COOLDOWN_MS;
   }
 
-  private boolean isOnSlotCooldown(@NonNull UUID uuid, @NonNull SlotDefinition slotDefinition, long now) {
+  private boolean isOnSlotCooldown(
+      @NonNull UUID uuid, @NonNull SlotDefinition slotDefinition, long now) {
     long slotCooldown = slotDefinition.cooldownTicks() * 50; // Convert ticks to ms
     if (slotCooldown <= 0) {
       return false;
@@ -55,7 +56,8 @@ public final class CooldownManager {
     return lastSlotClick != null && (now - lastSlotClick) < slotCooldown;
   }
 
-  private void registerSlotCooldown(@NonNull UUID uuid, @NonNull SlotDefinition slotDefinition, long now) {
+  private void registerSlotCooldown(
+      @NonNull UUID uuid, @NonNull SlotDefinition slotDefinition, long now) {
     long slotCooldown = slotDefinition.cooldownTicks() * 50;
     if (slotCooldown > 0) {
       String slotKey = uuid + ":" + slotDefinition.slot();

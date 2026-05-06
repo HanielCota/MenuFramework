@@ -57,13 +57,28 @@ public final class MenuSessionImplFactory {
 
     var renderer =
         new SessionRenderer(
-            plugin, scheduler, renderEngine, state, activeSlots, playerResolver, serverAccess, itemStackFactory);
+            plugin,
+            scheduler,
+            renderEngine,
+            state,
+            activeSlots,
+            playerResolver,
+            serverAccess,
+            itemStackFactory);
     var interactions =
         new MenuInteractionController(
-            state, activeSlots, playerResolver, clickExecutor, new InteractionPolicy(), menuService, menuHistory, messageService);
+            state,
+            activeSlots,
+            playerResolver,
+            clickExecutor,
+            new InteractionPolicy(),
+            menuService,
+            menuHistory,
+            messageService);
 
     var session = new MenuSessionImpl(state, renderer, interactions, null);
-    var lifecycle = new SessionLifecycle(plugin, scheduler, session, state, activeSlots, serverAccess);
+    var lifecycle =
+        new SessionLifecycle(plugin, scheduler, session, state, activeSlots, serverAccess);
     session.setLifecycle(lifecycle);
     return session;
   }

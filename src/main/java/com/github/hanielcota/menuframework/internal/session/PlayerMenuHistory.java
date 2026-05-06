@@ -16,16 +16,21 @@ public final class PlayerMenuHistory implements MenuHistory {
 
   @Override
   public void push(@NonNull UUID playerUuid, @NonNull String menuId) {
-    var history = histories.computeIfAbsent(playerUuid, k -> new ArrayDeque<>());
-    // Don't push the same menu twice in a row
-    if (!history.isEmpty() && history.peekLast().equals(menuId)) {
-      return;
-    }
-    history.addLast(menuId);
-    // Limit history size
-    while (history.size() > MAX_HISTORY_SIZE) {
-      history.removeFirst();
-    }
+    histories.compute(playerUuid, (k, history) -> {
+      var deque = history != null ? history : new ArrayDeque<String>();
+      synchronized (deque) {
+        // Don't push the same menu twice in a row
+        if (!deque.isEmpty() && deque.peekLast().equals(menuId)) {
+          return deque;
+        }
+        deque.addLast(menuId);
+        // Limit history size
+        while (deque.size() > MAX_HISTORY_SIZE) {
+          deque.removeFirst();
+        }
+      }
+      return deque;
+    });
   }
 
   @Override

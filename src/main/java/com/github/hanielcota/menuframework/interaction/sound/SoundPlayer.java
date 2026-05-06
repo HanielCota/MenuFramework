@@ -13,12 +13,17 @@ public final class SoundPlayer {
   private static final float DEFAULT_PITCH = 1.0f;
 
   /** Plays the configured click sound for the given slot, if any. */
-  public void playClickSound(@NonNull Player player, @NonNull MenuDefinition definition, int slot, int inventorySize) {
+  public void playClickSound(
+      @NonNull Player player, @NonNull MenuDefinition definition, int slot, int inventorySize) {
     if (slot < 0 || slot >= inventorySize) return;
     var slotDef = definition.slots().get(slot);
-    if (slotDef == null || slotDef.template() == null) return;
+    if (slotDef == null) return;
+    var template = slotDef.template();
+    if (template == null) return;
 
-    Sound sound = slotDef.template().clickSound();
+    if (!player.isOnline()) return;
+
+    Sound sound = template.clickSound();
     if (sound == null) return;
 
     Location location = player.getLocation();

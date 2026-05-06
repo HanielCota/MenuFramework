@@ -2,18 +2,16 @@ package com.github.hanielcota.menuframework.api;
 
 import org.jspecify.annotations.NonNull;
 
-/**
- * Navigation actions available during a menu click.
- */
+/** Navigation actions available during a menu click. */
 public interface NavigationContext {
 
-    void open(@NonNull String menuId);
+  void open(@NonNull String menuId);
 
-    void back();
+  void back();
 
-    boolean hasPreviousMenu();
+  boolean hasPreviousMenu();
 
-    void setPage(int page);
+  void setPage(int page);
 
-    int currentPage();
+  int currentPage();
 }

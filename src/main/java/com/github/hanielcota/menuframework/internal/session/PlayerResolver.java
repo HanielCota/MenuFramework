@@ -6,9 +6,7 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Resolves an online player by UUID.
- */
+/** Resolves an online player by UUID. */
 public final class PlayerResolver {
 
   @NonNull private final ServerAccess serverAccess;
@@ -17,9 +15,7 @@ public final class PlayerResolver {
     this.serverAccess = serverAccess;
   }
 
-  /**
-   * Returns the online player for the given UUID, or null if offline.
-   */
+  /** Returns the online player for the given UUID, or null if offline. */
   public @Nullable Player resolveOnline(@NonNull UUID viewerId) {
     return serverAccess.findOnlinePlayer(viewerId).orElse(null);
   }
