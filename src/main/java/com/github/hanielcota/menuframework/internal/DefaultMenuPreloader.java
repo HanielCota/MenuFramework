@@ -1,12 +1,10 @@
 package com.github.hanielcota.menuframework.internal;
 
-import com.github.hanielcota.menuframework.api.DynamicContentProvider;
 import com.github.hanielcota.menuframework.api.MenuPreloader;
 import com.github.hanielcota.menuframework.api.MenuSession;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import com.github.hanielcota.menuframework.definition.SlotDefinition;
-import com.github.hanielcota.menuframework.pagination.PaginationEngine;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import java.util.Arrays;
 import java.util.List;
@@ -138,7 +136,7 @@ public final class DefaultMenuPreloader implements MenuPreloader {
     if (providerOpt.isPresent() && player != null) {
       try {
         var session = new MockSession(player.getUniqueId(), definition);
-        return providerOpt.get().provide(player, session);
+        return sanitizeDynamicContent(providerOpt.get().provide(player, session));
       } catch (Exception e) {
         log.log(
             Level.WARNING, e, () -> "Dynamic content provider failed for '%s'".formatted(menuId));
@@ -146,6 +144,14 @@ public final class DefaultMenuPreloader implements MenuPreloader {
     }
 
     return runtime().definitions().getDynamicContent(menuId);
+  }
+
+  private static @NonNull List<SlotDefinition> sanitizeDynamicContent(
+      List<SlotDefinition> items) {
+    if (items == null || items.isEmpty()) {
+      return List.of();
+    }
+    return items.stream().filter(Objects::nonNull).toList();
   }
 
   /** Returns the preload state for a menu, or null if not preloaded. */

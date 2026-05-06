@@ -52,7 +52,7 @@ public final class RefreshScheduler {
     var viewer = serverAccess.findOnlinePlayer(session.viewerId()).orElse(null);
     if (viewer == null || !viewer.isOnline()) return;
     var openInventory = viewer.getOpenInventory();
-    if (openInventory == null || !openInventory.equals(session.view())) return;
+    if (!openInventory.equals(session.view())) return;
 
     session.refresh();
 

@@ -6,6 +6,7 @@ import com.github.hanielcota.menuframework.core.server.ServerAccess;
 import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import com.github.hanielcota.menuframework.internal.registry.DynamicContentRegistry;
 import java.util.List;
+import java.util.Objects;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
@@ -65,7 +66,14 @@ public final class DynamicContentResolver {
 
     slowRenderLogger.logIfSlow(menuId, duration);
 
-    return items != null ? items : List.of();
+    return sanitizeDynamicContent(items);
+  }
+
+  private static @NonNull List<SlotDefinition> sanitizeDynamicContent(List<SlotDefinition> items) {
+    if (items == null || items.isEmpty()) {
+      return List.of();
+    }
+    return items.stream().filter(Objects::nonNull).toList();
   }
 
   private @Nullable Player resolvePlayer(@NonNull InventoryView view) {

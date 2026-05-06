@@ -86,7 +86,9 @@ public final class SlotRenderer {
 
     for (int i = 0; i < count; i++) {
       if (i >= contentSlots.size()) break;
-      ItemTemplate template = items.get(start + i).template();
+      var item = items.get(start + i);
+      if (item == null) continue;
+      ItemTemplate template = item.template();
       if (template == null) continue;
 
       int slot = contentSlots.get(i);

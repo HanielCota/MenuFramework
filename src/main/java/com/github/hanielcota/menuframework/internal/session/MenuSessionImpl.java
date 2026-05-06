@@ -5,6 +5,7 @@ import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.internal.interaction.MenuInteractionController;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.bukkit.event.inventory.ClickType;
@@ -84,6 +85,7 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
 
   @Override
   public void updateSlot(int slot, @NonNull ItemTemplate template) {
+    Objects.requireNonNull(template, "template");
     if (state.disposed()) {
       throw new IllegalStateException("Session is disposed");
     }
@@ -92,11 +94,14 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
 
   @Override
   public void updateSlots(@NonNull Map<Integer, ItemTemplate> slots) {
+    Objects.requireNonNull(slots, "slots");
     if (state.disposed()) {
       throw new IllegalStateException("Session is disposed");
     }
     for (var entry : slots.entrySet()) {
-      renderer.updateSlot(entry.getKey(), entry.getValue());
+      var slot = Objects.requireNonNull(entry.getKey(), "slot");
+      var template = Objects.requireNonNull(entry.getValue(), "template");
+      renderer.updateSlot(slot, template);
     }
   }
 

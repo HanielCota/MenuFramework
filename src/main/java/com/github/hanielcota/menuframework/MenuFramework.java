@@ -2,7 +2,6 @@ package com.github.hanielcota.menuframework;
 
 import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.builder.MenuBuilder;
-import com.github.hanielcota.menuframework.internal.DefaultMenuService;
 import com.github.hanielcota.menuframework.internal.MenuFrameworkInitializer;
 import com.github.hanielcota.menuframework.scheduler.PaperSchedulerAdapter;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
@@ -172,7 +171,7 @@ public final class MenuFramework {
     if (SERVICE.compareAndSet(null, service)) {
       return service;
     }
-    return SERVICE.get();
+    return service();
   }
 
   /**

@@ -5,6 +5,7 @@ import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.internal.item.ItemStackFactory;
 import com.github.hanielcota.menuframework.internal.render.RenderEngine;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.plugin.Plugin;
@@ -73,6 +74,7 @@ public final class SessionRenderer {
   }
 
   public void updateSlot(int slot, @NonNull ItemTemplate template) {
+    Objects.requireNonNull(template, "template");
     if (state.disposed()) return;
     if (serverAccess.isNotPrimaryThread()) {
       scheduler.runSync(plugin, () -> updateSlot(slot, template));

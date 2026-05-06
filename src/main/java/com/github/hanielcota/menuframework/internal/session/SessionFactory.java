@@ -106,7 +106,7 @@ public final class SessionFactory {
     if (view == null) {
       return null;
     }
-    if (view.getTopInventory() == null || !view.getTopInventory().equals(inventory)) {
+    if (!view.getTopInventory().equals(inventory)) {
       return null;
     }
 
