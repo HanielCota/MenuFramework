@@ -5,6 +5,8 @@ import com.github.hanielcota.menuframework.MenuFrameworkConfig;
 import com.github.hanielcota.menuframework.core.cache.MenuCacheFactory;
 import com.github.hanielcota.menuframework.core.profile.PlayerProfileService;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
@@ -14,12 +16,11 @@ import org.jspecify.annotations.NonNull;
 
 public final class CachedItemStackFactory implements ItemStackFactory {
 
-  private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(CachedItemStackFactory.class.getName());
+  private static final Logger log =
+      Logger.getLogger(CachedItemStackFactory.class.getName());
 
-  @NonNull
-  private final Cache<ItemTemplate, ItemStack> baseCache;
-  @NonNull
-  private final PlayerProfileService playerProfileService;
+  @NonNull private final Cache<ItemTemplate, ItemStack> baseCache;
+  @NonNull private final PlayerProfileService playerProfileService;
 
   public CachedItemStackFactory(
       @NonNull MenuFrameworkConfig configuration,
@@ -54,7 +55,8 @@ public final class CachedItemStackFactory implements ItemStackFactory {
     }
   }
 
-  private static void applyLeatherMeta(@NonNull LeatherArmorMeta meta, @NonNull ItemTemplate template) {
+  private static void applyLeatherMeta(
+      @NonNull LeatherArmorMeta meta, @NonNull ItemTemplate template) {
     if (template.leatherColor() != null) {
       meta.setColor(template.leatherColor());
     }
@@ -71,7 +73,9 @@ public final class CachedItemStackFactory implements ItemStackFactory {
         case Byte b -> pdc.set(key, PersistentDataType.BYTE, b);
         case Short s -> pdc.set(key, PersistentDataType.SHORT, s);
         case Float f -> pdc.set(key, PersistentDataType.FLOAT, f);
-        case null -> { /* ignored */ }
+        case null -> {
+          /* ignored */
+        }
         default -> pdc.set(key, PersistentDataType.STRING, entry.getValue().toString());
       }
     }
@@ -82,7 +86,10 @@ public final class CachedItemStackFactory implements ItemStackFactory {
     try {
       item = new ItemStack(template.material(), template.amount());
     } catch (Exception e) {
-      log.log(java.util.logging.Level.WARNING, "Failed to create ItemStack for material: {0}", template.material());
+      log.log(
+          Level.WARNING,
+          "Failed to create ItemStack for material: {0}",
+          template.material());
       item = new ItemStack(org.bukkit.Material.STONE, template.amount());
     }
     ItemMeta meta = item.getItemMeta();
@@ -97,7 +104,8 @@ public final class CachedItemStackFactory implements ItemStackFactory {
     applyPdc(meta, template);
 
     if (!item.setItemMeta(meta)) {
-      log.log(java.util.logging.Level.WARNING,
+      log.log(
+          Level.WARNING,
           "Failed to apply ItemMeta for material: {0}. Some properties may be unsupported.",
           template.material());
     }

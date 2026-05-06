@@ -1,5 +1,6 @@
 package com.github.hanielcota.menuframework.internal.session;
 
+import com.github.hanielcota.menuframework.api.MenuFeature;
 import com.github.hanielcota.menuframework.api.MenuSession;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.internal.interaction.MenuInteractionController;
@@ -135,7 +136,7 @@ public final class MenuSessionImpl implements MenuSession, InteractiveMenuSessio
     }
   }
 
-  List<com.github.hanielcota.menuframework.api.MenuFeature> features() {
+  List<MenuFeature> features() {
     return state.definition().features();
   }
 

@@ -134,6 +134,7 @@ public final class MenuFramework {
    */
   public static @NonNull MenuService initialize(@NonNull Plugin plugin, @NonNull Builder builder) {
     var service = createService(plugin, builder);
+
     if (!SERVICE.compareAndSet(null, service)) {
       throw new IllegalStateException("MenuFramework already initialized");
     }
@@ -163,11 +164,11 @@ public final class MenuFramework {
    * @param builder the configuration builder
    * @return the existing or newly initialized menu service
    */
-  public static @NonNull MenuService initializeOrGet(
-      @NonNull Plugin plugin, @NonNull Builder builder) {
+  public static @NonNull MenuService initializeOrGet(@NonNull Plugin plugin, @NonNull Builder builder) {
     var existing = SERVICE.get();
     if (existing != null) return existing;
     var service = createService(plugin, builder);
+
     if (SERVICE.compareAndSet(null, service)) {
       return service;
     }
@@ -175,7 +176,7 @@ public final class MenuFramework {
   }
 
   /**
-   * Forcefully reinitializes the singleton service.
+   * Forcefully reinitialized the singleton service.
    *
    * <p>Shuts down the existing service (if any) and creates a new one.
    *
@@ -187,7 +188,7 @@ public final class MenuFramework {
   }
 
   /**
-   * Forcefully reinitializes the singleton service with custom configuration.
+   * Forcefully reinitialized the singleton service with custom configuration.
    *
    * <p>Shuts down the existing service (if any) and creates a new one.
    *

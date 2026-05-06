@@ -10,8 +10,7 @@ public final class PaginationEngineFactory {
   @NonNull private final MenuFrameworkConfig config;
   @NonNull private final SlotRenderer slotRenderer;
 
-  public PaginationEngineFactory(
-      @NonNull MenuFrameworkConfig config, @NonNull SlotRenderer slotRenderer) {
+  public PaginationEngineFactory(@NonNull MenuFrameworkConfig config, @NonNull SlotRenderer slotRenderer) {
     this.config = java.util.Objects.requireNonNull(config, "config");
     this.slotRenderer = java.util.Objects.requireNonNull(slotRenderer, "slotRenderer");
   }

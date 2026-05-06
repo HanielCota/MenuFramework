@@ -4,6 +4,7 @@ import org.jspecify.annotations.NonNull;
 
 /** Internal state holder for toggle slots. */
 public final class ToggleState {
+
   private final ItemTemplate enabledTemplate;
   private final ItemTemplate disabledTemplate;
   private boolean enabled;

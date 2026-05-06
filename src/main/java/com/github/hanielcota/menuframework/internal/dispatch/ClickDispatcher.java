@@ -34,8 +34,7 @@ public final class ClickDispatcher {
     return findSession(player, view).isPresent();
   }
 
-  private @NonNull Optional<@NonNull InteractiveMenuSession> findSession(
-      @NonNull Player player, @NonNull InventoryView view) {
+  private @NonNull Optional<@NonNull InteractiveMenuSession> findSession(@NonNull Player player, @NonNull InventoryView view) {
     return sessionQuery
         .getInteractiveSession(player.getUniqueId())
         .filter(session -> session.isSameView(view));

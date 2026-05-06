@@ -24,8 +24,7 @@ public record BukkitServerAccess() implements ServerAccess {
   }
 
   @Override
-  public @NonNull Inventory createInventory(
-      @NonNull Player owner, @NonNull MenuDefinition definition) {
+  public @NonNull Inventory createInventory(@NonNull Player owner, @NonNull MenuDefinition definition) {
     Objects.requireNonNull(owner, "owner");
     Objects.requireNonNull(definition, "definition");
 

@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.entity.Player;
@@ -29,18 +31,25 @@ public final class DefaultMenuPreloader implements MenuPreloader {
 
   @NonNull private final Plugin plugin;
   @NonNull private final SchedulerAdapter scheduler;
-  private final java.util.function.Supplier<MenuRuntime> runtimeSupplier;
+  private final Supplier<MenuRuntime> runtimeSupplier;
   private final ConcurrentHashMap<String, PreloadState> preloadStates = new ConcurrentHashMap<>();
-  private final java.util.concurrent.Executor asyncExecutor;
+  private final Executor asyncExecutor;
 
   public DefaultMenuPreloader(
       @NonNull Plugin plugin,
       @NonNull SchedulerAdapter scheduler,
-      java.util.function.Supplier<MenuRuntime> runtimeSupplier) {
+      Supplier<MenuRuntime> runtimeSupplier) {
     this.plugin = Objects.requireNonNull(plugin, "plugin");
     this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
     this.runtimeSupplier = Objects.requireNonNull(runtimeSupplier, "runtimeSupplier");
     this.asyncExecutor = task -> scheduler.runAsync(plugin, task);
+  }
+
+  private static @NonNull List<SlotDefinition> sanitizeDynamicContent(List<SlotDefinition> items) {
+    if (items == null || items.isEmpty()) {
+      return List.of();
+    }
+    return items.stream().filter(Objects::nonNull).toList();
   }
 
   private MenuRuntime runtime() {
@@ -74,8 +83,7 @@ public final class DefaultMenuPreloader implements MenuPreloader {
     runtime()
         .definitions()
         .getDefinition(menuId)
-        .ifPresent(
-            def -> runtime().paginationEngine().invalidate(menuId));
+        .ifPresent(def -> runtime().paginationEngine().invalidate(menuId));
   }
 
   @Override
@@ -146,14 +154,6 @@ public final class DefaultMenuPreloader implements MenuPreloader {
     return runtime().definitions().getDynamicContent(menuId);
   }
 
-  private static @NonNull List<SlotDefinition> sanitizeDynamicContent(
-      List<SlotDefinition> items) {
-    if (items == null || items.isEmpty()) {
-      return List.of();
-    }
-    return items.stream().filter(Objects::nonNull).toList();
-  }
-
   /** Returns the preload state for a menu, or null if not preloaded. */
   public PreloadState getState(@NonNull String menuId) {
     return preloadStates.get(menuId);
@@ -203,61 +203,61 @@ public final class DefaultMenuPreloader implements MenuPreloader {
     }
   }
 
-    /** Minimal mock session for dynamic content providers during preload. */
-      private record MockSession(UUID viewerId, MenuDefinition definition) implements MenuSession {
+  /** Minimal mock session for dynamic content providers during preload. */
+  private record MockSession(UUID viewerId, MenuDefinition definition) implements MenuSession {
 
-        @Override
-        public String menuId() {
-          return definition.id();
-        }
+    @Override
+    public String menuId() {
+      return definition.id();
+    }
 
-        @Override
-        public InventoryView view() {
-          throw new UnsupportedOperationException("Mock session has no view");
-        }
+    @Override
+    public InventoryView view() {
+      throw new UnsupportedOperationException("Mock session has no view");
+    }
 
-        @Override
-        public int currentPage() {
-          return 0;
-        }
+    @Override
+    public int currentPage() {
+      return 0;
+    }
 
-        @Override
-        public void setPage(int page) {
-          throw new UnsupportedOperationException("Mock session cannot change page");
-        }
+    @Override
+    public void setPage(int page) {
+      throw new UnsupportedOperationException("Mock session cannot change page");
+    }
 
-        @Override
-        public void refresh() {
-          // No-op for mock
-        }
+    @Override
+    public void refresh() {
+      // No-op for mock
+    }
 
-        @Override
-        public void updateSlot(int slot, ItemTemplate template) {
-          throw new UnsupportedOperationException("Mock session cannot update slots");
-        }
+    @Override
+    public void updateSlot(int slot, ItemTemplate template) {
+      throw new UnsupportedOperationException("Mock session cannot update slots");
+    }
 
-        @Override
-        public void updateSlots(Map<Integer, ItemTemplate> slots) {
-          throw new UnsupportedOperationException("Mock session cannot update slots");
-        }
+    @Override
+    public void updateSlots(Map<Integer, ItemTemplate> slots) {
+      throw new UnsupportedOperationException("Mock session cannot update slots");
+    }
 
-        @Override
-        public void close() {
-          // No-op for mock
-        }
+    @Override
+    public void close() {
+      // No-op for mock
+    }
 
-        @Override
-        public boolean isSameView(InventoryView other) {
-          return false;
-        }
+    @Override
+    public boolean isSameView(InventoryView other) {
+      return false;
+    }
 
-        @Override
-        public CompletableFuture<Void> dispose() {
-          return CompletableFuture.completedFuture(null);
-        }
+    @Override
+    public @NonNull CompletableFuture<Void> dispose() {
+      return CompletableFuture.completedFuture(null);
+    }
 
-        public void disposeImmediately() {
-          // No-op for mock
-        }
-      }
+    public void disposeImmediately() {
+      // No-op for mock
+    }
+  }
 }

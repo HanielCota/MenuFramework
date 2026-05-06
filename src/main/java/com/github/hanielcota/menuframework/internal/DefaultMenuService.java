@@ -4,12 +4,14 @@ import com.github.hanielcota.menuframework.MenuFrameworkConfig;
 import com.github.hanielcota.menuframework.api.DynamicContentProvider;
 import com.github.hanielcota.menuframework.api.MenuHistory;
 import com.github.hanielcota.menuframework.api.MenuMetrics;
+import com.github.hanielcota.menuframework.api.MenuPreloader;
 import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.api.MenuSession;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import com.github.hanielcota.menuframework.internal.dispatch.MenuEventRouter;
+import com.github.hanielcota.menuframework.internal.session.PlayerMenuHistory;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import java.util.List;
 import java.util.Objects;
@@ -36,8 +38,16 @@ public final class DefaultMenuService implements MenuService {
       @NonNull MenuFrameworkConfig config) {
     this.plugin = plugin;
     this.scheduler = scheduler;
-    this.menuHistory = new com.github.hanielcota.menuframework.internal.session.PlayerMenuHistory();
+    this.menuHistory = new PlayerMenuHistory();
     this.runtime = MenuRuntime.create(this, config, menuHistory);
+  }
+
+  private static Object[] createSessionLocks() {
+    Object[] locks = new Object[SESSION_LOCK_COUNT];
+    for (int index = 0; index < locks.length; index++) {
+      locks[index] = new Object();
+    }
+    return locks;
   }
 
   @Override
@@ -85,7 +95,7 @@ public final class DefaultMenuService implements MenuService {
   }
 
   @Override
-  public List<SlotDefinition> getDynamicContent(@NonNull String menuId) {
+  public @NonNull List<SlotDefinition> getDynamicContent(@NonNull String menuId) {
     return runtime.dynamicContent().getDynamicContent(menuId);
   }
 
@@ -125,14 +135,6 @@ public final class DefaultMenuService implements MenuService {
     return sessionLocks[Math.floorMod(playerUuid.hashCode(), sessionLocks.length)];
   }
 
-  private static Object[] createSessionLocks() {
-    Object[] locks = new Object[SESSION_LOCK_COUNT];
-    for (int index = 0; index < locks.length; index++) {
-      locks[index] = new Object();
-    }
-    return locks;
-  }
-
   @Override
   public @NonNull Optional<@NonNull MenuSession> getSession(@NonNull UUID playerUuid) {
     return runtime.sessions().getSession(playerUuid);
@@ -169,7 +171,7 @@ public final class DefaultMenuService implements MenuService {
   }
 
   @Override
-  public com.github.hanielcota.menuframework.api.MenuPreloader preloader() {
+  public @NonNull MenuPreloader preloader() {
     return runtime.preloader();
   }
 }

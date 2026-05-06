@@ -13,13 +13,14 @@ import org.jspecify.annotations.NonNull;
 /**
  * In-memory storage for all menu-related data.
  *
- * <p>Groups related maps (definitions, templates, dynamic content) to ensure consistent cleanup
- * and lifecycle management.
+ * <p>Groups related maps (definitions, templates, dynamic content) to ensure consistent cleanup and
+ * lifecycle management.
  */
 final class MenuData {
 
   private final Map<String, List<SlotDefinition>> dynamicContent = new ConcurrentHashMap<>();
-  private final Map<String, DynamicContentProvider> dynamicContentProviders = new ConcurrentHashMap<>();
+  private final Map<String, DynamicContentProvider> dynamicContentProviders =
+      new ConcurrentHashMap<>();
   private final Map<String, Integer> dynamicContentHash = new ConcurrentHashMap<>();
   private final Map<String, MenuDefinition> definitions = new ConcurrentHashMap<>();
   private final Map<String, ItemTemplate> templates = new ConcurrentHashMap<>();

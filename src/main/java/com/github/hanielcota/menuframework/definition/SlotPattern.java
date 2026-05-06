@@ -1,6 +1,7 @@
 package com.github.hanielcota.menuframework.definition;
 
 import java.util.List;
+import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import org.jspecify.annotations.NonNull;
 
@@ -25,9 +26,9 @@ public enum SlotPattern {
 
   private static final int MAX_ROWS = 6;
 
-  private final java.util.function.IntFunction<List<Integer>> factory;
+  private final IntFunction<List<Integer>> factory;
 
-  SlotPattern(java.util.function.IntFunction<List<Integer>> factory) {
+  SlotPattern(IntFunction<List<Integer>> factory) {
     this.factory = factory;
   }
 

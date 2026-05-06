@@ -57,7 +57,7 @@ public final class SessionRenderer {
       activeSlots.replaceWith(result);
       reapplyToggleStates();
     } catch (Exception exception) {
-      log.log(Level.SEVERE, "Render error in menu " + state.definition().id(), exception);
+      log.log(Level.SEVERE, exception, () -> "Render error in menu " + state.definition().id());
     }
   }
 
@@ -91,8 +91,8 @@ public final class SessionRenderer {
     } catch (Exception exception) {
       log.log(
           Level.SEVERE,
-          "Error updating slot " + slot + " in menu " + state.definition().id(),
-          exception);
+          exception,
+          () -> "Error updating slot " + slot + " in menu " + state.definition().id());
     }
   }
 }

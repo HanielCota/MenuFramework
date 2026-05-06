@@ -24,6 +24,7 @@ import com.github.hanielcota.menuframework.internal.session.RefreshScheduler;
 import com.github.hanielcota.menuframework.internal.session.SessionFactory;
 import com.github.hanielcota.menuframework.messaging.DefaultMessageService;
 import com.github.hanielcota.menuframework.pagination.PaginationEngineFactory;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.NonNull;
 
 public final class MenuRuntimeFactory {
@@ -105,7 +106,8 @@ public final class MenuRuntimeFactory {
     var eventRouter = new DefaultMenuEventRouter(sessionRegistry, clickDispatcher);
 
     // Use an atomic reference to allow the preloader to reference the runtime after creation
-    final java.util.concurrent.atomic.AtomicReference<MenuRuntime> runtimeRef = new java.util.concurrent.atomic.AtomicReference<>();
+    final AtomicReference<MenuRuntime> runtimeRef =
+        new AtomicReference<>();
     var preloader = new DefaultMenuPreloader(plugin, scheduler, runtimeRef::get);
 
     var runtime =

@@ -11,13 +11,15 @@ import com.github.hanielcota.menuframework.internal.session.SessionCommands;
 import com.github.hanielcota.menuframework.internal.session.SessionQuery;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class SessionRegistry implements SessionQuery, SessionCommands {
 
-  private static final java.util.logging.Logger log =
-      java.util.logging.Logger.getLogger(SessionRegistry.class.getName());
+  private static final Logger log =
+      Logger.getLogger(SessionRegistry.class.getName());
 
   @NonNull private final Cache<UUID, MenuSessionImpl> sessionCache;
 
@@ -31,12 +33,12 @@ public final class SessionRegistry implements SessionQuery, SessionCommands {
       RemovalCause removalCause) {
     if (removedSession == null) return;
     log.log(
-        java.util.logging.Level.FINE,
-        "Session removed: %s cause=%s".formatted(playerUuid, removalCause));
+        Level.FINE,
+        () -> "Session removed: %s cause=%s".formatted(playerUuid, removalCause));
     try {
       removedSession.disposeImmediately();
     } catch (Exception exception) {
-      log.log(java.util.logging.Level.WARNING, "Error disposing session on removal", exception);
+      log.log(Level.WARNING, "Error disposing session on removal", exception);
     }
   }
 

@@ -4,6 +4,7 @@ import com.github.hanielcota.menuframework.api.MenuFeature;
 import com.github.hanielcota.menuframework.api.RefreshingMenuFeature;
 import com.github.hanielcota.menuframework.core.server.ServerAccess;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
+import java.lang.ref.WeakReference;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -41,16 +42,18 @@ public final class RefreshScheduler {
     var intervalTicks = resolveIntervalTicks(session.features());
     if (intervalTicks <= 0) return null;
 
-    var sessionRef = new java.lang.ref.WeakReference<>(session);
+    var sessionRef = new WeakReference<>(session);
     return scheduler.runSyncRepeating(
         plugin, () -> refreshTick(sessionRef), intervalTicks, intervalTicks);
   }
 
-  private void refreshTick(java.lang.ref.WeakReference<MenuSessionImpl> sessionRef) {
+  private void refreshTick(WeakReference<MenuSessionImpl> sessionRef) {
     var session = sessionRef.get();
     if (session == null || session.disposed()) return;
-    var viewer = serverAccess.findOnlinePlayer(session.viewerId()).orElse(null);
-    if (viewer == null || !viewer.isOnline()) return;
+    var viewerOpt = serverAccess.findOnlinePlayer(session.viewerId());
+    if (viewerOpt.isEmpty()) return;
+    var viewer = viewerOpt.get();
+    if (!viewer.isOnline()) return;
     var openInventory = viewer.getOpenInventory();
     if (!openInventory.equals(session.view())) return;
 

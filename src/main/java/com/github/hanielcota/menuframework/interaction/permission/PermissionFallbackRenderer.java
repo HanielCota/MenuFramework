@@ -15,14 +15,13 @@ public final class PermissionFallbackRenderer {
   }
 
   /** Updates the slot with the fallback template if one is configured. */
-  public void renderFallback(
-      @NonNull Player player, int rawSlot, @NonNull SlotDefinition slotDefinition) {
+  public void renderFallback(@NonNull Player player, int rawSlot, @NonNull SlotDefinition slotDefinition) {
     var fallback = slotDefinition.permissionFallbackTemplate();
     if (fallback == null) {
       return;
     }
-    var session = menuService.getSession(player.getUniqueId()).orElse(null);
-    if (session == null) return;
-    session.updateSlot(rawSlot, fallback);
+    menuService
+        .getSession(player.getUniqueId())
+        .ifPresent(session -> session.updateSlot(rawSlot, fallback));
   }
 }

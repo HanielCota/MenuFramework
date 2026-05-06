@@ -82,6 +82,7 @@ public final class NavigationRenderer {
 
     String templateId =
         button.resolveTemplateId(context.definition()).orElse(button.defaultTemplateId());
-    return templateRegistry.getTemplate(templateId).orElse(null);
+    var templateOpt = templateRegistry.getTemplate(templateId);
+    return templateOpt.isPresent() ? templateOpt.get() : null;
   }
 }

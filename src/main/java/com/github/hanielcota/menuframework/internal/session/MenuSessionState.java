@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
 
@@ -16,7 +17,7 @@ public final class MenuSessionState {
   @NonNull private final InventoryView view;
   private final AtomicBoolean disposed = new AtomicBoolean(false);
   private final Map<Integer, ToggleState> toggleStates = new ConcurrentHashMap<>();
-  private volatile int currentPage;
+  private final AtomicInteger currentPage = new AtomicInteger(0);
 
   public MenuSessionState(
       @NonNull UUID viewerId, @NonNull MenuDefinition definition, @NonNull InventoryView view) {
@@ -38,14 +39,14 @@ public final class MenuSessionState {
   }
 
   public int currentPage() {
-    return currentPage;
+    return currentPage.get();
   }
 
   public void currentPage(int currentPage) {
     if (currentPage < 0) {
       throw new IllegalArgumentException("currentPage cannot be negative: " + currentPage);
     }
-    this.currentPage = currentPage;
+    this.currentPage.set(currentPage);
   }
 
   public boolean disposed() {

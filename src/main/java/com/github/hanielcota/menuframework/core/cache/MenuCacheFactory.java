@@ -43,8 +43,7 @@ public final class MenuCacheFactory {
         .build();
   }
 
-  public static @NonNull Cache<PageCacheKey, PageView> createPageCache(
-      @NonNull MenuFrameworkConfig configuration) {
+  public static @NonNull Cache<PageCacheKey, PageView> createPageCache(@NonNull MenuFrameworkConfig configuration) {
     Objects.requireNonNull(configuration, "configuration");
     int maxSize = configuration.pageCacheMaxSize();
     if (maxSize <= 0) {
@@ -62,8 +61,7 @@ public final class MenuCacheFactory {
         .build();
   }
 
-  public static @NonNull Cache<ItemTemplate, ItemStack> createItemStackCache(
-      @NonNull MenuFrameworkConfig configuration) {
+  public static @NonNull Cache<ItemTemplate, ItemStack> createItemStackCache(@NonNull MenuFrameworkConfig configuration) {
     Objects.requireNonNull(configuration, "configuration");
     int maxSize = configuration.itemStackCacheMaxSize();
     if (maxSize <= 0) {

@@ -17,6 +17,7 @@ public final class PlayerResolver {
 
   /** Returns the online player for the given UUID, or null if offline. */
   public @Nullable Player resolveOnline(@NonNull UUID viewerId) {
-    return serverAccess.findOnlinePlayer(viewerId).orElse(null);
+    var opt = serverAccess.findOnlinePlayer(viewerId);
+    return opt.isPresent() ? opt.get() : null;
   }
 }

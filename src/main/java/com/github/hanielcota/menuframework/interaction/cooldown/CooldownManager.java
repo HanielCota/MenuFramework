@@ -24,7 +24,8 @@ public final class CooldownManager {
    * Checks if the player is on cooldown for the given slot. Also records the cooldown if not
    * already on cooldown.
    */
-  public synchronized boolean isOnCooldown(@NonNull Player player, @NonNull SlotDefinition slotDefinition) {
+  public synchronized boolean isOnCooldown(
+      @NonNull Player player, @NonNull SlotDefinition slotDefinition) {
     var now = System.currentTimeMillis();
     var uuid = player.getUniqueId();
 

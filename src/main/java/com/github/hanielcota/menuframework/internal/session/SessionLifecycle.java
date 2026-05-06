@@ -5,20 +5,23 @@ import com.github.hanielcota.menuframework.core.server.ServerAccess;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class SessionLifecycle {
-  private static final java.util.logging.Logger log =
-      java.util.logging.Logger.getLogger(SessionLifecycle.class.getName());
+  private static final Logger log =
+      Logger.getLogger(SessionLifecycle.class.getName());
   @NonNull private final Plugin plugin;
   @NonNull private final SchedulerAdapter scheduler;
   @NonNull private final MenuSessionState state;
   @NonNull private final ActiveSlotRegistry activeSlots;
   @NonNull private final ServerAccess serverAccess;
+  private final AtomicReference<Object> refreshTaskHandle = new AtomicReference<>();
   private @Nullable MenuSession session;
-  private final java.util.concurrent.atomic.AtomicReference<Object> refreshTaskHandle = new java.util.concurrent.atomic.AtomicReference<>();
 
   public SessionLifecycle(
       @NonNull Plugin plugin,
@@ -83,8 +86,9 @@ public final class SessionLifecycle {
   }
 
   private void closePlayerInventory() {
-    var player = serverAccess.findOnlinePlayer(state.viewerId()).orElse(null);
-    if (player == null) return;
+    var playerOpt = serverAccess.findOnlinePlayer(state.viewerId());
+    if (playerOpt.isEmpty()) return;
+    var player = playerOpt.get();
     if (!player.getOpenInventory().getTopInventory().equals(state.view().getTopInventory())) return;
     player.closeInventory();
   }
@@ -97,7 +101,7 @@ public final class SessionLifecycle {
         feature.onClose(session);
       } catch (Exception exception) {
         log.log(
-            java.util.logging.Level.WARNING,
+            Level.WARNING,
             exception,
             () ->
                 "menu.feature.onClose_failed menuId=%s featureType=%s"

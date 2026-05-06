@@ -21,10 +21,10 @@ public final class ToggleManager {
   }
 
   /** Handles a toggle click: flips state, updates visual, and invokes the toggle handler. */
-  public synchronized void handleToggle(
-      @NonNull MenuSession session, int rawSlot, @NonNull ToggleState toggleState) {
+  public synchronized void handleToggle(@NonNull MenuSession session, int rawSlot, @NonNull ToggleState toggleState) {
     toggleState.setEnabled(!toggleState.isEnabled());
     session.updateSlot(rawSlot, toggleState.currentTemplate());
+
     if (session instanceof MenuSessionImpl impl) {
       impl.state().toggleStates().put(rawSlot, toggleState);
     }

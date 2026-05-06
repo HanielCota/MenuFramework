@@ -2,6 +2,7 @@ package com.github.hanielcota.menuframework.scheduler;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.NonNull;
@@ -33,7 +34,8 @@ public final class PaperSchedulerAdapter implements SchedulerAdapter {
   }
 
   @Override
-  public void runAsyncDelayed(@NonNull Plugin plugin, @NonNull Runnable task, long delay, @NonNull TimeUnit unit) {
+  public void runAsyncDelayed(
+      @NonNull Plugin plugin, @NonNull Runnable task, long delay, @NonNull TimeUnit unit) {
     Objects.requireNonNull(plugin, "plugin");
     Objects.requireNonNull(task, "task");
     Objects.requireNonNull(unit, "unit");
@@ -64,8 +66,7 @@ public final class PaperSchedulerAdapter implements SchedulerAdapter {
   }
 
   @Override
-  public @NonNull Object runSyncRepeating(
-      @NonNull Plugin plugin, @NonNull Runnable task, long delayTicks, long periodTicks) {
+  public @NonNull Object runSyncRepeating(@NonNull Plugin plugin, @NonNull Runnable task, long delayTicks, long periodTicks) {
     Objects.requireNonNull(plugin, "plugin");
     Objects.requireNonNull(task, "task");
     if (delayTicks < 0) {
@@ -82,7 +83,7 @@ public final class PaperSchedulerAdapter implements SchedulerAdapter {
   public void cancel(@NonNull Object taskHandle) {
     Objects.requireNonNull(taskHandle, "taskHandle");
     if (!(taskHandle instanceof io.papermc.paper.threadedregions.scheduler.ScheduledTask task)) {
-      java.util.logging.Logger.getLogger(PaperSchedulerAdapter.class.getName())
+      Logger.getLogger(PaperSchedulerAdapter.class.getName())
           .warning("Unexpected task handle type: " + taskHandle.getClass().getName());
       return;
     }

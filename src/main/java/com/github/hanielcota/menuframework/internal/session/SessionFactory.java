@@ -9,6 +9,7 @@ import com.github.hanielcota.menuframework.internal.render.RenderEngine;
 import com.github.hanielcota.menuframework.scheduler.SchedulerAdapter;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.entity.Player;
@@ -23,7 +24,7 @@ public final class SessionFactory {
   @NonNull private final Plugin plugin;
   @NonNull private final SchedulerAdapter scheduler;
   @NonNull private final ServerAccess serverAccess;
-    @NonNull private final SessionCommands sessionCommands;
+  @NonNull private final SessionCommands sessionCommands;
   @NonNull private final RefreshScheduler refreshScheduler;
   @NonNull private final MenuSessionImplFactory sessionImplFactory;
 
@@ -39,7 +40,7 @@ public final class SessionFactory {
     this.plugin = plugin;
     this.scheduler = scheduler;
     this.serverAccess = serverAccess;
-      this.sessionCommands = sessionCommands;
+    this.sessionCommands = sessionCommands;
     this.refreshScheduler = refreshScheduler;
     this.sessionImplFactory = sessionImplFactory;
   }
@@ -64,7 +65,7 @@ public final class SessionFactory {
       @NonNull UUID playerUuid, @NonNull MenuDefinition definition) {
     CompletableFuture<MenuSession> future = new CompletableFuture<>();
     scheduler.runSync(plugin, () -> completeSessionCreation(future, playerUuid, definition));
-    return future.orTimeout(30, java.util.concurrent.TimeUnit.SECONDS);
+    return future.orTimeout(30, TimeUnit.SECONDS);
   }
 
   private void completeSessionCreation(
@@ -72,11 +73,12 @@ public final class SessionFactory {
       @NonNull UUID playerUuid,
       @NonNull MenuDefinition definition) {
     try {
-      var player = serverAccess.findOnlinePlayer(playerUuid).orElse(null);
-      if (player == null) {
+      var playerOpt = serverAccess.findOnlinePlayer(playerUuid);
+      if (playerOpt.isEmpty()) {
         future.completeExceptionally(new IllegalStateException("Player offline"));
         return;
       }
+      var player = playerOpt.get();
 
       var session = openSession(player, playerUuid, definition);
       if (session == null) {

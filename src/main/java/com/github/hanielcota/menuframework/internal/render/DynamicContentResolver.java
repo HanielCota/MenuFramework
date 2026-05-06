@@ -7,6 +7,9 @@ import com.github.hanielcota.menuframework.definition.SlotDefinition;
 import com.github.hanielcota.menuframework.internal.registry.DynamicContentRegistry;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryView;
 import org.jspecify.annotations.NonNull;
@@ -20,8 +23,8 @@ import org.jspecify.annotations.Nullable;
  */
 public final class DynamicContentResolver {
 
-  private static final java.util.logging.Logger log =
-      java.util.logging.Logger.getLogger(DynamicContentResolver.class.getName());
+  private static final Logger log =
+      Logger.getLogger(DynamicContentResolver.class.getName());
 
   @NonNull private final DynamicContentRegistry dynamicContentRegistry;
   @NonNull private final SlowRenderLogger slowRenderLogger;
@@ -37,6 +40,13 @@ public final class DynamicContentResolver {
     this.slowRenderLogger = slowRenderLogger;
     this.serverAccess = serverAccess;
     this.menuService = menuService;
+  }
+
+  private static @NonNull List<SlotDefinition> sanitizeDynamicContent(List<SlotDefinition> items) {
+    if (items == null || items.isEmpty()) {
+      return List.of();
+    }
+    return items.stream().filter(Objects::nonNull).toList();
   }
 
   /**
@@ -62,35 +72,30 @@ public final class DynamicContentResolver {
     }
 
     var items = providerOpt.get().provide(resolvedPlayer, session);
-    var duration = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    var duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 
     slowRenderLogger.logIfSlow(menuId, duration);
 
     return sanitizeDynamicContent(items);
   }
 
-  private static @NonNull List<SlotDefinition> sanitizeDynamicContent(List<SlotDefinition> items) {
-    if (items == null || items.isEmpty()) {
-      return List.of();
-    }
-    return items.stream().filter(Objects::nonNull).toList();
-  }
-
   private @Nullable Player resolvePlayer(@NonNull InventoryView view) {
     var viewer = view.getPlayer();
-    var resolved = serverAccess.findOnlinePlayer(viewer.getUniqueId()).orElse(null);
-    if (resolved == null) {
+    var resolvedOpt = serverAccess.findOnlinePlayer(viewer.getUniqueId());
+    if (resolvedOpt.isEmpty()) {
       log.log(
-          java.util.logging.Level.FINE,
+          Level.FINE,
           "menu.player.resolved_offline playerUuid={0}",
           viewer.getUniqueId());
+      return null;
     }
-    return resolved;
+    return resolvedOpt.get();
   }
 
   private @Nullable MenuSession resolveSession(@NonNull InventoryView view) {
     var viewer = view.getPlayer();
     if (viewer == null) return null;
-    return menuService.getSession(viewer.getUniqueId()).orElse(null);
+    var sessionOpt = menuService.getSession(viewer.getUniqueId());
+    return sessionOpt.isPresent() ? sessionOpt.get() : null;
   }
 }

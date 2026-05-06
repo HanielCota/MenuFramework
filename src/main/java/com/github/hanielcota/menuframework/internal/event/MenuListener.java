@@ -64,8 +64,7 @@ public final class MenuListener implements Listener {
         plugin, () -> closeSessionIfViewStillMatches(playerUuid, event.getView()), 1);
   }
 
-  private void closeSessionIfViewStillMatches(
-      @NonNull UUID playerUuid, @NonNull InventoryView view) {
+  private void closeSessionIfViewStillMatches(@NonNull UUID playerUuid, @NonNull InventoryView view) {
     router
         .getSession(playerUuid)
         .filter(session -> session.isSameView(view))

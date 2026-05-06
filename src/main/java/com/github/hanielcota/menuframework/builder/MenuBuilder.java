@@ -7,6 +7,7 @@ import com.github.hanielcota.menuframework.api.MenuService;
 import com.github.hanielcota.menuframework.api.PlayerInventoryClickHandler;
 import com.github.hanielcota.menuframework.api.ToggleHandler;
 import com.github.hanielcota.menuframework.builder.pattern.SlotPatternStrategy;
+import com.github.hanielcota.menuframework.core.text.MiniMessageProvider;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import com.github.hanielcota.menuframework.definition.MenuDefinition;
 import com.github.hanielcota.menuframework.definition.PaginationConfig;
@@ -57,7 +58,7 @@ public final class MenuBuilder {
 
   public @NonNull MenuBuilder title(@NonNull String miniMessage) {
     this.title =
-        com.github.hanielcota.menuframework.core.text.MiniMessageProvider.deserialize(
+        MiniMessageProvider.deserialize(
             Objects.requireNonNull(miniMessage, "miniMessage"));
     return this;
   }
@@ -208,8 +209,8 @@ public final class MenuBuilder {
       int row = slot / COLUMNS_PER_ROW;
       int col = slot % COLUMNS_PER_ROW;
       boolean isBorder = row == 0 || row == rows - 1 || col == 0 || col == COLUMNS_PER_ROW - 1;
-      if (isBorder && !slots.containsKey(slot)) {
-        slots.put(slot, SlotDefinition.of(slot, template, null));
+      if (isBorder) {
+        slots.computeIfAbsent(slot, s -> SlotDefinition.of(s, template, null));
       }
     }
     return this;
@@ -229,8 +230,8 @@ public final class MenuBuilder {
     int size = Math.min(rows * COLUMNS_PER_ROW, MAX_SLOTS);
 
     for (int slot = 0; slot < size; slot++) {
-      if (pattern.matches(slot, rows) && !slots.containsKey(slot)) {
-        slots.put(slot, SlotDefinition.of(slot, template, null));
+      if (pattern.matches(slot, rows)) {
+        slots.computeIfAbsent(slot, s -> SlotDefinition.of(s, template, null));
       }
     }
     return this;
@@ -284,7 +285,8 @@ public final class MenuBuilder {
 
   public @NonNull MenuRegistrar build() {
     if (built) {
-      throw new IllegalStateException("MenuBuilder has already been built. Create a new builder for each menu.");
+      throw new IllegalStateException(
+          "MenuBuilder has already been built. Create a new builder for each menu.");
     }
     built = true;
     applyLayout();
@@ -312,7 +314,7 @@ public final class MenuBuilder {
         menuService, id, definition, dynamicContentProvider, List.copyOf(staticDynamicItems));
   }
 
-    /**
+  /**
    * @deprecated Use {@link SlotPatternStrategy} implementations instead.
    */
   @Deprecated
