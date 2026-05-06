@@ -26,7 +26,7 @@ dependencies {
 
     testImplementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
 
-    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.2.4'
     implementation 'it.unimi.dsi:fastutil:8.5.13'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
