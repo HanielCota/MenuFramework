@@ -2,8 +2,8 @@ import com.github.spotbugs.snom.SpotBugsTask
 
 plugins {
     id 'java'
-    id 'com.diffplug.spotless' version '6.25.0'
-    id 'com.github.spotbugs' version '6.0.14'
+    id 'com.diffplug.spotless' version '8.4.0'
+    id 'com.github.spotbugs' version '6.5.4'
     id 'pmd'
 }
 
@@ -26,13 +26,13 @@ dependencies {
 
     testImplementation 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
 
-    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
-    implementation 'it.unimi.dsi:fastutil:8.5.13'
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.2.4'
+    implementation 'it.unimi.dsi:fastutil:8.5.18'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.0.3'
     testImplementation 'com.github.seeseemelk:MockBukkit-v1.21:3.133.2'
-    testImplementation 'org.mockito:mockito-core:5.14.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.14.0'
+    testImplementation 'org.mockito:mockito-core:5.23.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.23.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.0'
 }
 
