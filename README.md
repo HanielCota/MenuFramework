@@ -600,4 +600,4 @@ See [GitHub Releases](https://github.com/HanielCota/MenuFramework/releases) for 
 
 ## License
 
-No license file is currently present in this repository. Add one before publishing the framework publicly.
+[MIT](LICENSE)
