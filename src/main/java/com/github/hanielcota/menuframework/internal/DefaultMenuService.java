@@ -22,10 +22,13 @@ import org.jspecify.annotations.NonNull;
 
 public final class DefaultMenuService implements MenuService {
 
+  private static final int SESSION_LOCK_COUNT = 64;
+
   @NonNull private final Plugin plugin;
   private final SchedulerAdapter scheduler;
   @NonNull private final MenuRuntime runtime;
   @NonNull private final MenuHistory menuHistory;
+  private final Object[] sessionLocks = createSessionLocks();
 
   public DefaultMenuService(
       @NonNull Plugin plugin,
@@ -112,10 +115,22 @@ public final class DefaultMenuService implements MenuService {
 
   private @NonNull CompletableFuture<MenuSession> open(
       @NonNull UUID playerUuid, @NonNull MenuDefinition definition) {
-    synchronized (playerUuid.toString().intern()) {
+    synchronized (sessionLock(playerUuid)) {
       closeSession(playerUuid);
       return runtime.sessionFactory().create(playerUuid, definition);
     }
+  }
+
+  private Object sessionLock(UUID playerUuid) {
+    return sessionLocks[Math.floorMod(playerUuid.hashCode(), sessionLocks.length)];
+  }
+
+  private static Object[] createSessionLocks() {
+    Object[] locks = new Object[SESSION_LOCK_COUNT];
+    for (int index = 0; index < locks.length; index++) {
+      locks[index] = new Object();
+    }
+    return locks;
   }
 
   @Override

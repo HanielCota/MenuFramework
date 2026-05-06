@@ -107,7 +107,9 @@ public final class CachedItemStackFactory implements ItemStackFactory {
   private void applySpecialMeta(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
     if (meta instanceof SkullMeta skullMeta) {
       applySkullMeta(skullMeta, template);
-    } else if (meta instanceof LeatherArmorMeta leatherMeta) {
+      return;
+    }
+    if (meta instanceof LeatherArmorMeta leatherMeta) {
       applyLeatherMeta(leatherMeta, template);
     }
   }
