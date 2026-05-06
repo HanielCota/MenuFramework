@@ -32,7 +32,9 @@ The project targets a modern Java style:
 - Paper API 1.21.1+
 - Gradle wrapper included in the repository
 
-Runtime dependency coordinates are not published in this repository yet. Use the project directly, publish it to your own Maven repository, or include it as a composite/build dependency until a release artifact exists.
+Runtime dependency coordinates are published via [GitHub Releases](https://github.com/HanielCota/MenuFramework/releases) and [JitPack](https://jitpack.io/#HanielCota/MenuFramework).
+
+📖 **[How to use MenuFramework in your plugin → see USAGE.md](USAGE.md)**
 
 ## Quick Start
 
