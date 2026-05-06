@@ -31,7 +31,7 @@ repositories {
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
     
-    // MenuFramework + dependências transitivas (caffeine, fastutil)
+    // MenuFramework já inclui Caffeine e FastUtil (fat-jar)
     implementation 'com.github.HanielCota:MenuFramework:v1.0.0'
 }
 ```
@@ -48,17 +48,15 @@ dependencies {
 ```groovy
 shadowJar {
     relocate 'com.github.hanielcota.menuframework', 'seuplugin.libs.menuframework'
-    relocate 'com.github.ben_manes.caffeine', 'seuplugin.libs.caffeine'
-    relocate 'it.unimi.dsi.fastutil', 'seuplugin.libs.fastutil'
-    
     archiveClassifier.set('')
-    minimize()
 }
 
 tasks.build.dependsOn tasks.shadowJar
 ```
 
 > Troque `seuplugin` pelo package do seu plugin (ex: `me.haniel.minhaloja`).
+>
+> **Não precisa mais fazer relocate de `caffeine` ou `fastutil`** — eles já vêm embutidos dentro do MenuFramework.
 
 ---
 
@@ -131,9 +129,9 @@ Ele já contém o MenuFramework + Caffeine + FastUtil embutidos.
 
 | Componente | Função |
 |-----------|--------|
-| `implementation` | Inclui o MenuFramework e suas dependências no classpath de compilação |
-| `shadowJar` | Empacota todas as dependências `implementation` dentro do seu JAR |
-| `relocate` | Renomeia os pacotes internamente para evitar conflitos com outros plugins |
+| `implementation` | Inclui o MenuFramework (já contém Caffeine e FastUtil embutidos) |
+| `shadowJar` | Empacota o MenuFramework dentro do seu JAR |
+| `relocate` | Renomeia o pacote do MenuFramework para evitar conflitos com outros plugins |
 
 ---
 

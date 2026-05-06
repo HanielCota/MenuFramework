@@ -87,11 +87,13 @@ dependencies {
 
 **Important:** Always shade and relocate MenuFramework to avoid conflicts with other plugins:
 
+> **Note:** MenuFramework is published as a **fat-jar** — it already includes Caffeine and FastUtil. You only need the single dependency above.
+
+**Important:** Always shade and relocate MenuFramework to avoid conflicts with other plugins:
+
 ```groovy
 shadowJar {
     relocate 'com.github.hanielcota.menuframework', 'yourplugin.libs.menuframework'
-    relocate 'com.github.ben_manes.caffeine', 'yourplugin.libs.caffeine'
-    relocate 'it.unimi.dsi.fastutil', 'yourplugin.libs.fastutil'
     archiveClassifier.set('')
 }
 
@@ -99,6 +101,8 @@ tasks.build.dependsOn tasks.shadowJar
 ```
 
 > Replace `yourplugin` with your plugin's package (e.g., `me.haniel.myplugin`).
+>
+> You no longer need to relocate `caffeine` or `fastutil` separately — they are already bundled inside MenuFramework.
 
 For a complete step-by-step guide, see **[USAGE.md](USAGE.md)**.
 
