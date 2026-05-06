@@ -1,0 +1,24 @@
+name: Labeler
+
+on:
+  pull_request_target:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  label:
+    name: Apply labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Label pull request
+        uses: actions/labeler@v6
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+

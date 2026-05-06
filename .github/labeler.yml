@@ -1,0 +1,36 @@
+"area: api":
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/main/java/com/github/hanielcota/menuframework/api/**
+          - src/main/java/com/github/hanielcota/menuframework/MenuFramework.java
+
+"area: rendering":
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/main/java/com/github/hanielcota/menuframework/internal/render/**
+          - src/main/java/com/github/hanielcota/menuframework/pagination/**
+
+"area: ci":
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+          - build.gradle
+          - gradle.properties
+          - settings.gradle
+          - gradle/**
+
+"type: documentation":
+  - changed-files:
+      - any-glob-to-any-file:
+          - README.md
+          - LLM.md
+          - CODE_REVIEW_REPORT.md
+          - .github/**/*.md
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - build.gradle
+          - gradle/wrapper/gradle-wrapper.properties
+          - .github/dependabot.yml
+

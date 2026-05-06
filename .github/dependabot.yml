@@ -1,0 +1,31 @@
+version: 2
+
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+    groups:
+      test-dependencies:
+        patterns:
+          - org.junit.jupiter:*
+          - org.mockito:*
+          - com.github.seeseemelk:*
+      build-plugins:
+        patterns:
+          - com.diffplug.spotless
+          - com.github.spotbugs
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:30"
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+

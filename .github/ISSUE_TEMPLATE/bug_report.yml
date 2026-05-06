@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible framework bug.
+title: "[Bug]: "
+labels:
+  - "type: bug"
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting an issue. Please include a minimal reproduction when possible.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps or code needed to reproduce the issue.
+      placeholder: |
+        1. Register menu...
+        2. Open menu...
+        3. Click slot...
+    validations:
+      required: true
+  - type: input
+    id: java-version
+    attributes:
+      label: Java version
+      placeholder: "21"
+    validations:
+      required: true
+  - type: input
+    id: paper-version
+    attributes:
+      label: Paper version
+      placeholder: "1.21.1"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or stack trace
+      render: text
