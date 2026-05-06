@@ -39,9 +39,10 @@ public final class MenuRegistrar {
 
     if (dynamicContentProvider != null) {
       menuService.setDynamicContentProvider(id, dynamicContentProvider);
-    } else if (!staticDynamicItems.isEmpty()) {
-      menuService.setDynamicContent(id, staticDynamicItems);
+      return;
     }
+    if (staticDynamicItems.isEmpty()) return;
+    menuService.setDynamicContent(id, staticDynamicItems);
   }
 
   public @NonNull MenuDefinition definition() {
