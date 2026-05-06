@@ -14,11 +14,7 @@ public record PageView(int pageNumber, @Nullable ItemStack[] items, int totalPag
     if (totalPages < 1) {
       throw new IllegalArgumentException("totalPages must be >= 1, got: " + totalPages);
     }
-    if (items == null) {
-      items = new ItemStack[0];
-    } else {
-      items = cloneItems(items);
-    }
+    items = items == null ? new ItemStack[0] : cloneItems(items);
   }
 
   private static @NonNull ItemStack[] cloneItems(@Nullable ItemStack[] source) {
