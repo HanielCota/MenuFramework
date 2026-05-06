@@ -39,5 +39,4 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Run tests and SpotBugs
-        run: ./gradlew test spotbugsMain --stacktrace
-
+        run: ./gradlew test spotbugsMain --stacktrace -Dorg.gradle.java.home="$JAVA_HOME"
