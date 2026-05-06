@@ -2,13 +2,14 @@ import com.github.spotbugs.snom.SpotBugsTask
 
 plugins {
     id 'java'
+    id 'maven-publish'
     id 'com.diffplug.spotless' version '8.4.0'
     id 'com.github.spotbugs' version '6.5.4'
     id 'pmd'
 }
 
 group = 'com.github.hanielcota'
-version = '1.0.0-SNAPSHOT'
+version = findProperty('releaseVersion') ?: '1.0.0-SNAPSHOT'
 
 java {
     toolchain {
@@ -102,3 +103,44 @@ tasks.withType(Pmd).configureEach {
     }
 }
 
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+
+            pom {
+                name = 'MenuFramework'
+                description = 'A flexible menu framework for Paper Minecraft servers'
+                url = 'https://github.com/HanielCota/MenuFramework'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'hanielcota'
+                        name = 'Haniel Cota'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/HanielCota/MenuFramework.git'
+                    developerConnection = 'scm:git:ssh://github.com:HanielCota/MenuFramework.git'
+                    url = 'https://github.com/HanielCota/MenuFramework'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'GitHubPackages'
+            url = uri("https://maven.pkg.github.com/${System.getenv('GITHUB_REPOSITORY') ?: 'HanielCota/MenuFramework'}")
+            credentials {
+                username = System.getenv('GITHUB_ACTOR')
+                password = System.getenv('GITHUB_TOKEN')
+            }
+        }
+    }
+}
