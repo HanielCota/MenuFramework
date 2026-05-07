@@ -1,0 +1,414 @@
+# MenuFramework LLM Guide
+
+This file is the canonical usage guide for AI assistants generating code with MenuFramework.
+Follow the API below exactly. Do not invent classes, methods, annotations, YAML loaders, XML
+formats, or plugin lifecycle abstractions that are not listed here.
+
+## What MenuFramework Is
+
+MenuFramework is a Java 21 library for Paper inventory menus. It is not a standalone Bukkit/Paper
+plugin and it does not provide a `plugin.yml`. A consuming plugin must shade it into its own jar.
+
+Primary package:
+
+```java
+com.github.hanielcota.menuframework
+```
+
+Use these entry points:
+
+```java
+MenuService service = MenuFramework.create(plugin);
+MenuService service = MenuFramework.initialize(plugin);
+MenuBuilder builder = MenuFramework.builder("menu-id", service);
+MenuBuilder builder = MenuFramework.builder("menu-id"); // only after initialize(...)
+```
+
+Do not use:
+
+```java
+new MenuFramework(...)
+MenuFramework.create(plugin).service()
+MenuBuilder.builder()
+builder.id(...)
+builder.build(service)
+```
+
+Those APIs do not exist.
+
+## Installation With JitPack
+
+Use JitPack coordinates:
+
+```groovy
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    maven { url = 'https://jitpack.io' }
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    implementation 'com.github.HanielCota:MenuFramework:v1.0.0'
+}
+```
+
+MenuFramework is published as a shadowed jar that already contains its runtime dependencies. In a
+Paper plugin, still shade and relocate MenuFramework to avoid class conflicts between plugins:
+
+```groovy
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '9.3.2'
+}
+
+shadowJar {
+    relocate 'com.github.hanielcota.menuframework', 'yourplugin.libs.menuframework'
+    archiveClassifier.set('')
+}
+
+tasks.build.dependsOn tasks.shadowJar
+```
+
+## Plugin Lifecycle
+
+Use one `MenuService` owned by your plugin. Shut it down in `onDisable`.
+
+```java
+public final class MyPlugin extends JavaPlugin {
+    private MenuService menus;
+
+    @Override
+    public void onEnable() {
+        menus = MenuFramework.create(this);
+        registerMenus();
+    }
+
+    @Override
+    public void onDisable() {
+        if (menus != null) {
+            menus.shutdown();
+        }
+    }
+}
+```
+
+Use `MenuFramework.initialize(plugin)` only when you intentionally want singleton access through
+`MenuFramework.service()` or `MenuFramework.builder("id")`.
+
+## Basic Menu
+
+Use `ItemTemplate` for menu items. Use `ctx` helpers for menu actions and messaging.
+
+```java
+private void registerMenus() {
+    ItemTemplate filler = ItemTemplate.builder(Material.BLACK_STAINED_GLASS_PANE)
+        .name(" ")
+        .build();
+
+    ItemTemplate shop = ItemTemplate.builder(Material.EMERALD)
+        .name("<green>Shop")
+        .lore(List.of(Component.text("Open the shop")))
+        .glow(true)
+        .build();
+
+    MenuFramework.builder("main", menus)
+        .rows(3)
+        .title("<green>Main Menu")
+        .fillEmpty(filler)
+        .slot(13, shop, ctx -> {
+            ctx.reply("<gray>Opening shop...");
+            ctx.open("shop");
+        })
+        .build()
+        .register();
+}
+
+public void openMain(Player player) {
+    menus.open(player, "main").exceptionally(error -> {
+        player.sendMessage(Component.text("Could not open menu."));
+        return null;
+    });
+}
+```
+
+`MenuService.open(...)` returns `CompletableFuture<MenuSession>`.
+
+## MenuBuilder API
+
+Construct builders only through:
+
+```java
+MenuFramework.builder("id", menus)
+MenuFramework.builder("id")
+```
+
+Supported builder methods:
+
+```java
+title(Component title)
+title(String miniMessage)
+rows(int rows)                         // 1..6 chest rows
+layout(String... layout)               // each row uses up to 9 chars
+bind(char c, ItemTemplate template)
+bind(char c, ItemTemplate template, ClickHandler handler)
+bindNavigational(char c, ItemTemplate template)
+slot(int slot, ItemTemplate template, ClickHandler handler)
+navigational(int slot, ItemTemplate template, ClickHandler handler)
+slotWithCooldown(int slot, ItemTemplate template, ClickHandler handler, long cooldownTicks)
+slotWithPermission(int slot, ItemTemplate template, ClickHandler handler, String permission, ItemTemplate fallback)
+toggleSlot(int slot, ItemTemplate enabled, ItemTemplate disabled, boolean initialState, ToggleHandler handler)
+fillBorder(ItemTemplate template)
+fillEmpty(ItemTemplate template)
+fillPattern(SlotPatternStrategy pattern, ItemTemplate template)
+pagination(PaginationConfig pagination)
+feature(MenuFeature feature)
+allowPlayerInventoryClicks(boolean allow)
+allowShiftClick(boolean allow)
+onPlayerInventoryClick(PlayerInventoryClickHandler handler)
+dynamicContent(DynamicContentProvider provider)
+addItem(ItemTemplate template, ClickHandler handler)
+build()
+```
+
+After `build()`, call `.register()`. A `MenuBuilder` is single-use; do not call `build()` twice.
+
+## ItemTemplate API
+
+Use `ItemTemplate.builder(Material)`:
+
+```java
+ItemTemplate item = ItemTemplate.builder(Material.DIAMOND)
+    .name("<aqua>Diamond")
+    .lore(List.of(Component.text("A menu item")))
+    .amount(1)
+    .glow(false)
+    .customModelData(0)
+    .build();
+```
+
+Supported builder methods:
+
+```java
+name(Component)
+name(String miniMessage)
+lore(List<Component>)
+flags(ItemFlag...)
+glow(boolean)
+amount(int)              // 1..64
+customModelData(int)
+head(UUID)
+head(String base64Texture)
+leatherColor(Color)
+clickSound(org.bukkit.Sound)
+pdc(NamespacedKey, Object)
+build()
+```
+
+Do not pass raw `ItemStack` into menu slots. Slots expect `ItemTemplate`.
+
+## ClickContext API
+
+Slot handlers receive `ClickContext ctx`.
+
+Available methods:
+
+```java
+Player player()
+Audience audience()
+ClickType clickType()
+MenuSession session()
+int slot()
+int rawSlot()
+void open(String menuId)
+void back()
+boolean hasPreviousMenu()
+void setPage(int page)
+int currentPage()
+void reply(Component message)
+void reply(String miniMessage)
+void close()
+void refresh()
+Plugin plugin()
+```
+
+Use `ctx.open("other-menu")` for menu navigation. Use `ctx.close()` to close. Use `ctx.refresh()`
+to re-render the current menu.
+
+## MenuSession API
+
+`MenuSession` represents one open menu view:
+
+```java
+UUID viewerId()
+String menuId()
+InventoryView view()
+int currentPage()
+void setPage(int page)
+void refresh()
+void close()
+boolean isSameView(InventoryView other)
+CompletableFuture<Void> dispose()
+void updateSlot(int slot, ItemTemplate template)
+void updateSlots(Map<Integer, ItemTemplate> slots)
+```
+
+Prefer `updateSlot` or `updateSlots` for small visual changes. Use `refresh` when dynamic content
+or pagination must be recalculated.
+
+## Pagination
+
+Use `PaginationConfig.builder()`.
+
+```java
+menus.registerTemplate("prev", ItemTemplate.builder(Material.ARROW).name("<yellow>Previous").build());
+menus.registerTemplate("next", ItemTemplate.builder(Material.ARROW).name("<yellow>Next").build());
+
+PaginationConfig pagination = PaginationConfig.builder()
+    .contentSlots(List.of(10, 11, 12, 13, 14, 15, 16))
+    .navigationSlots(List.of(45, 53))
+    .previousTemplate("prev")
+    .nextTemplate("next")
+    .build();
+
+MenuFramework.builder("shop", menus)
+    .rows(6)
+    .pagination(pagination)
+    .dynamicContent((player, session) -> products.stream()
+        .map(product -> SlotDefinition.of(-1, product.icon(), ctx -> buy(product, ctx.player())))
+        .toList())
+    .build()
+    .register();
+```
+
+Dynamic content items for pagination normally use slot `-1`; the pagination engine projects them
+into configured content slots.
+
+Built-in `SlotPattern` values for pagination content:
+
+```java
+SlotPattern.FULL
+SlotPattern.BORDERED
+SlotPattern.CHEST_6
+```
+
+`PaginationConfig.Builder.contentSlots(SlotPattern pattern)` uses `pattern.slots()` with 6 rows.
+For custom row counts, pass an explicit `List<Integer>`.
+
+## Dynamic Content
+
+Two valid approaches:
+
+```java
+builder.dynamicContent((player, session) -> List<SlotDefinition>);
+menus.setDynamicContentProvider("menu-id", provider);
+menus.setDynamicContent("menu-id", List<SlotDefinition>);
+```
+
+Use `DynamicContentProvider.of(list)` for fixed lists. Avoid blocking database or web calls inside
+`provide(...)`; preload or cache external data before rendering when possible.
+
+## Permissions, Cooldowns, Toggles
+
+Permission slot:
+
+```java
+.slotWithPermission(22, adminItem, ctx -> openAdmin(ctx.player()), "myplugin.admin", deniedItem)
+```
+
+Cooldown slot:
+
+```java
+.slotWithCooldown(20, button, ctx -> runAction(ctx.player()), 20L)
+```
+
+Toggle slot:
+
+```java
+.toggleSlot(24, enabledItem, disabledItem, false, (ctx, enabled) -> {
+    ctx.reply(enabled ? "<green>Enabled" : "<red>Disabled");
+})
+```
+
+## Player Inventory Clicks
+
+By default, player inventory clicks and shift-clicks are blocked while a menu is open.
+
+```java
+.allowPlayerInventoryClicks(true)
+.allowShiftClick(false)
+.onPlayerInventoryClick((player, clickType, slot, session) -> {
+    player.sendMessage(Component.text("Clicked player inventory slot " + slot));
+})
+```
+
+`onPlayerInventoryClick` only runs when player inventory clicks are allowed.
+
+## Features
+
+Built-in feature factories:
+
+```java
+MenuFeatures.soundOnOpen(net.kyori.adventure.sound.Sound sound)
+MenuFeatures.soundOnClick(net.kyori.adventure.sound.Sound sound)
+MenuFeatures.refreshInterval(long ticks)
+```
+
+Attach features with:
+
+```java
+.feature(MenuFeatures.soundOnOpen(sound))
+.feature(MenuFeatures.refreshInterval(20L))
+```
+
+Custom features implement `MenuFeature` and override only needed callbacks:
+
+```java
+onOpen(MenuSession session)
+onClose(MenuSession session)
+onClick(ClickContext context)
+onTick(MenuSession session, Player viewer)
+```
+
+## Preloading
+
+Use the service preloader for expensive menus:
+
+```java
+menus.preloader().preload("shop");
+menus.preloader().preload(player, "leaderboard");
+menus.preloader().preloadAll("shop", "profile", "leaderboard");
+menus.preloader().invalidate("shop");
+menus.preloader().invalidateAll();
+```
+
+Preload methods return `CompletableFuture<Void>`.
+
+## Diagnostics And Cleanup
+
+Service methods:
+
+```java
+Optional<MenuDefinition> getDefinition(String id)
+void unregisterDefinition(String menuId)
+Optional<ItemTemplate> getTemplate(String id)
+Optional<MenuSession> getSession(UUID playerUuid)
+void closeSession(UUID playerUuid)
+void closeAllSessions()
+MenuMetrics getMetrics()
+void shutdown()
+```
+
+Always call `shutdown()` from the owning plugin's `onDisable`.
+
+## Common Mistakes To Avoid
+
+Do not invent config-file loaders. This framework is code-first.
+Do not create Bukkit inventories manually for MenuFramework menus.
+Do not use raw `ItemStack` in `slot(...)`; use `ItemTemplate`.
+Do not forget `.build().register()`.
+Do not use `MenuFramework.builder("id")` unless singleton mode was initialized.
+Do not assume menu opening is synchronous; handle the returned `CompletableFuture`.
+Do not store a `MenuSession` forever; sessions are per open inventory and are disposed on close.
+Do not create one `MenuService` per menu; create one service per plugin.
+Do not skip shading and relocation in production plugins.

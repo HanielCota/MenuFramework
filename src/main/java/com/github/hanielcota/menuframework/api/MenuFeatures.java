@@ -1,5 +1,6 @@
 package com.github.hanielcota.menuframework.api;
 
+import com.github.hanielcota.menuframework.feature.internal.RefreshIntervalFeature;
 import com.github.hanielcota.menuframework.feature.internal.SoundOnClickFeature;
 import com.github.hanielcota.menuframework.feature.internal.SoundOnOpenFeature;
 import java.util.Objects;
@@ -29,9 +30,7 @@ public final class MenuFeatures {
    *
    * <p>The task is automatically canceled when the menu closes.
    */
-  public static void refreshInterval(long ticks) {
-    if (ticks <= 0) {
-      throw new IllegalArgumentException("ticks must be positive: " + ticks);
-    }
+  public static @NonNull RefreshingMenuFeature refreshInterval(long ticks) {
+    return new RefreshIntervalFeature(ticks);
   }
 }

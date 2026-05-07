@@ -38,5 +38,5 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Run tests and SpotBugs
-        run: ./gradlew test spotbugsMain --stacktrace -Dorg.gradle.java.home="$JAVA_HOME"
+      - name: Run verification and Maven local publish
+        run: ./gradlew build publishToMavenLocal --stacktrace

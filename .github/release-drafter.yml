@@ -26,6 +26,24 @@ template: |
 
   $CHANGES
 
+  ## Installation
+
+  ```groovy
+  repositories {
+      maven { url = 'https://jitpack.io' }
+  }
+
+  dependencies {
+      implementation 'com.github.HanielCota:MenuFramework:v$RESOLVED_VERSION'
+  }
+  ```
+
+  ## Release Assets
+
+  - `MenuFramework-$RESOLVED_VERSION.jar`: shadowed production artifact.
+  - `MenuFramework-$RESOLVED_VERSION-sources.jar`: source jar for IDE navigation.
+  - `llms.txt`: canonical AI usage guide for MenuFramework.
+
   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
 version-resolver:
   major:

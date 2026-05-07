@@ -85,8 +85,6 @@ dependencies {
 }
 ```
 
-**Important:** Always shade and relocate MenuFramework to avoid conflicts with other plugins:
-
 > **Note:** MenuFramework is published as a **fat-jar** — it already includes Caffeine and FastUtil. You only need the single dependency above.
 
 **Important:** Always shade and relocate MenuFramework to avoid conflicts with other plugins:
@@ -581,20 +579,9 @@ PMD is configured but currently has style-oriented findings and `ignoreFailures 
 
 ## Changelog
 
-### Current Snapshot
+See [CHANGELOG.md](CHANGELOG.md) for unreleased changes and version history.
 
-- Added JSpecify null-safety annotations across public and internal APIs.
-- Added menu preloader service for async warm-up and page pre-computation.
-- Hardened dynamic content providers against null returns and null entries.
-- Added defensive null checks for partial slot updates.
-- Removed `else` branches from production code in favor of early-return style.
-- Added title and row configuration to `MenuBuilder`.
-- Added slot permissions, cooldowns, toggle slots, player-inventory click integration, menu history, metrics, and preloading.
-- Added Caffeine-backed caches for sessions, pages, and item stacks.
-- Added Paper scheduler abstraction.
-- Removed Lombok usage and kept the implementation in Java 21.
-
-See [GitHub Releases](https://github.com/HanielCota/MenuFramework/releases) for versioned releases.
+See [GitHub Releases](https://github.com/HanielCota/MenuFramework/releases) for published release artifacts.
 
 ---
 

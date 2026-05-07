@@ -1,21 +1,41 @@
+import com.github.spotbugs.snom.Confidence
+import com.github.spotbugs.snom.Effort
 import com.github.spotbugs.snom.SpotBugsTask
 
 plugins {
     id 'java'
     id 'maven-publish'
-    id 'com.gradleup.shadow' version '9.0.0-beta4'
+    id 'com.gradleup.shadow' version '9.3.2'
     id 'com.diffplug.spotless' version '8.4.0'
     id 'com.github.spotbugs' version '6.5.4'
     id 'pmd'
 }
 
-group = 'com.github.hanielcota'
-version = findProperty('releaseVersion') ?: '1.0.0-SNAPSHOT'
+group = 'com.github.HanielCota'
+version = findProperty('releaseVersion') ?: gitReleaseVersion() ?: '1.0.0-SNAPSHOT'
+
+String gitReleaseVersion() {
+    def process = new ProcessBuilder('git', 'describe', '--tags', '--exact-match')
+        .directory(rootDir)
+        .redirectErrorStream(true)
+        .start()
+    def output = process.inputStream.getText('UTF-8').trim()
+    if (process.waitFor() != 0) {
+        return null
+    }
+    def tag = output
+    if (tag.isEmpty()) {
+        return null
+    }
+    return tag.startsWith('v') ? tag.substring(1) : tag
+}
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+
+    withSourcesJar()
 }
 
 repositories {
@@ -59,8 +79,8 @@ spotless {
 }
 
 spotbugs {
-    effort = 'MAX'
-    reportLevel = 'LOW'
+    effort = Effort.valueOf('MAX')
+    reportLevel = Confidence.valueOf('LOW')
     showProgress = true
     excludeFilter = file('spotbugs-exclude.xml')
 }
@@ -104,6 +124,10 @@ tasks.withType(Pmd).configureEach {
     }
 }
 
+jar {
+    archiveClassifier.set('plain')
+}
+
 shadowJar {
     archiveClassifier.set('')
 }
@@ -112,8 +136,9 @@ tasks.build.dependsOn tasks.shadowJar
 
 publishing {
     publications {
-        maven(MavenPublication) {
-            artifact tasks.shadowJar
+        shadow(MavenPublication) {
+            from components.shadow
+            artifact tasks.sourcesJar
 
             pom {
                 name = 'MenuFramework'

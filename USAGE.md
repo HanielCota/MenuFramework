@@ -19,7 +19,7 @@ No `build.gradle` do **seu plugin**:
 ```groovy
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.gradleup.shadow' version '9.3.2'
 }
 
 repositories {
@@ -66,9 +66,8 @@ tasks.build.dependsOn tasks.shadowJar
 package me.haniel.minhaloja;
 
 import com.github.hanielcota.menuframework.MenuFramework;
-import com.github.hanielcota.menuframework.api.ClickContext;
 import com.github.hanielcota.menuframework.api.MenuService;
-import com.github.hanielcota.menuframework.builder.MenuBuilder;
+import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -80,30 +79,51 @@ public class MinhaLojaPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Inicializa o framework vinculado ao seu plugin
-        MenuFramework framework = MenuFramework.create(this);
-        this.menuService = framework.service();
+        this.menuService = MenuFramework.create(this);
+        registrarMenus();
 
         getLogger().info("MenuFramework inicializado!");
     }
 
-    public void abrirLoja(Player player) {
-        MenuBuilder.builder()
-            .id("loja-principal")
+    @Override
+    public void onDisable() {
+        if (menuService != null) {
+            menuService.shutdown();
+        }
+    }
+
+    private void registrarMenus() {
+        ItemTemplate espada = ItemTemplate.builder(Material.DIAMOND_SWORD)
+            .name("<aqua>Espada de Diamante")
+            .build();
+
+        ItemTemplate maca = ItemTemplate.builder(Material.GOLDEN_APPLE)
+            .name("<gold>Maca Dourada")
+            .build();
+
+        ItemTemplate fechar = ItemTemplate.builder(Material.BARRIER)
+            .name("<red>Fechar")
+            .build();
+
+        MenuFramework.builder("loja-principal", menuService)
             .title("<green>Loja de Itens")
             .rows(3)
-            .slot(10, new ItemStack(Material.DIAMOND_SWORD), ctx -> {
-                ctx.player().sendMessage("§aVocê comprou uma Espada de Diamante!");
+            .slot(10, espada, ctx -> {
                 ctx.player().getInventory().addItem(new ItemStack(Material.DIAMOND_SWORD));
+                ctx.reply("<green>Voce comprou uma Espada de Diamante!");
                 ctx.close();
             })
-            .slot(13, new ItemStack(Material.GOLDEN_APPLE), ctx -> {
-                ctx.player().sendMessage("§aVocê comprou uma Maçã Dourada!");
+            .slot(13, maca, ctx -> {
                 ctx.player().getInventory().addItem(new ItemStack(Material.GOLDEN_APPLE));
+                ctx.reply("<green>Voce comprou uma Maca Dourada!");
             })
-            .slot(16, new ItemStack(Material.BARRIER), ClickContext::close)
-            .build(menuService)
-            .open(player);
+            .slot(16, fechar, ctx -> ctx.close())
+            .build()
+            .register();
+    }
+
+    public void abrirLoja(Player player) {
+        menuService.open(player, "loja-principal");
     }
 }
 ```
