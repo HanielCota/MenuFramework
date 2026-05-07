@@ -66,7 +66,8 @@ jobs:
           name: MenuFramework ${{ steps.version.outputs.version }}
           generate_release_notes: true
           files: |
-            build/libs/*.jar
+            build/libs/MenuFramework-${{ steps.version.outputs.version }}.jar
+            build/libs/MenuFramework-${{ steps.version.outputs.version }}-sources.jar
             CHANGELOG.md
             llms.txt
         env:
