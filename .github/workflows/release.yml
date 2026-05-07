@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
@@ -56,12 +55,6 @@ jobs:
 
       - name: Build and test
         run: ./gradlew build -PreleaseVersion=${{ steps.version.outputs.version }} --stacktrace
-
-      - name: Publish to GitHub Packages
-        run: ./gradlew publish -PreleaseVersion=${{ steps.version.outputs.version }} --stacktrace
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
 
       - name: Verify JitPack publication
         run: ./gradlew publishToMavenLocal -PreleaseVersion=${{ steps.version.outputs.version }} --stacktrace
