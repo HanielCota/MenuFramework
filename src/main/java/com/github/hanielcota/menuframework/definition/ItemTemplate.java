@@ -28,7 +28,8 @@ public record ItemTemplate(
     @Nullable String headTexture,
     @Nullable UUID headUuid,
     @Nullable Color leatherColor,
-    @Nullable Sound clickSound) {
+    @Nullable Sound clickSound,
+    boolean italic) {
 
   private static final int MIN_AMOUNT = 1;
   private static final int MAX_AMOUNT = 64;
@@ -135,6 +136,7 @@ public record ItemTemplate(
     return glow == other.glow
         && amount == other.amount
         && customModelData == other.customModelData
+        && italic == other.italic
         && material == other.material
         && Objects.equals(displayName, other.displayName)
         && Objects.equals(lore, other.lore)
@@ -160,7 +162,8 @@ public record ItemTemplate(
             headTexture,
             headUuid,
             leatherColor,
-            clickSound);
+            clickSound,
+            italic);
     result = 31 * result + Arrays.hashCode(flags);
     return result;
   }
@@ -192,6 +195,8 @@ public record ItemTemplate(
         + leatherColor
         + ", clickSound="
         + clickSound
+        + ", italic="
+        + italic
         + ']';
   }
 
@@ -208,6 +213,7 @@ public record ItemTemplate(
     private UUID headUuid;
     private Color leatherColor;
     private Sound clickSound;
+    private boolean italic = true;
 
     private Builder(@NonNull Material material) {
       this.material = Objects.requireNonNull(material, "material");
@@ -290,6 +296,16 @@ public record ItemTemplate(
       return this;
     }
 
+    public Builder italic(boolean italic) {
+      this.italic = italic;
+      return this;
+    }
+
+    public Builder italic() {
+      this.italic = true;
+      return this;
+    }
+
     public ItemTemplate build() {
       return new ItemTemplate(
           material,
@@ -303,7 +319,8 @@ public record ItemTemplate(
           headTexture,
           headUuid,
           leatherColor,
-          clickSound);
+          clickSound,
+          italic);
     }
   }
 }

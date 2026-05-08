@@ -7,6 +7,7 @@ import com.github.hanielcota.menuframework.core.profile.PlayerProfileService;
 import com.github.hanielcota.menuframework.definition.ItemTemplate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
@@ -30,12 +31,20 @@ public final class CachedItemStackFactory implements ItemStackFactory {
   }
 
   private static void applyDisplayName(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
-    meta.displayName(template.displayName());
+    var name = template.displayName();
+    if (!template.italic()) {
+      name = name.decoration(TextDecoration.ITALIC, false);
+    }
+    meta.displayName(name);
   }
 
   private static void applyLore(@NonNull ItemMeta meta, @NonNull ItemTemplate template) {
     if (!template.lore().isEmpty()) {
-      meta.lore(template.lore());
+      var lore = template.lore();
+      if (!template.italic()) {
+        lore = lore.stream().map(line -> line.decoration(TextDecoration.ITALIC, false)).toList();
+      }
+      meta.lore(lore);
     }
   }
 
