@@ -110,6 +110,7 @@ private void registerMenus() {
         .name("<green>Shop")
         .lore(List.of(Component.text("Open the shop")))
         .glow(true)
+        .italic(false)
         .build();
 
     MenuFramework.builder("main", menus)
@@ -193,8 +194,10 @@ Supported builder methods:
 name(Component)
 name(String miniMessage)
 lore(List<Component>)
+lore(String... miniMessageLines)
 flags(ItemFlag...)
 glow(boolean)
+glow()
 amount(int)              // 1..64
 customModelData(int)
 head(UUID)
@@ -202,7 +205,28 @@ head(String base64Texture)
 leatherColor(Color)
 clickSound(org.bukkit.Sound)
 pdc(NamespacedKey, Object)
+italic(boolean)          // default true (Bukkit behavior)
+italic()                 // enable italic explicitly
 build()
+```
+
+Factory shortcuts:
+
+```java
+ItemTemplate.of(Material, String name)
+ItemTemplate.of(Material, String name, String... lore)
+ItemTemplate.glowing(Material, String name)
+ItemTemplate.head(UUID uuid, String name)
+ItemTemplate.head(String base64Texture, String name)
+```
+
+Italic control example:
+
+```java
+ItemTemplate item = ItemTemplate.builder(Material.DIAMOND)
+    .name("<blue>Diamond")
+    .italic(false)  // removes default italic styling
+    .build();
 ```
 
 Do not pass raw `ItemStack` into menu slots. Slots expect `ItemTemplate`.
