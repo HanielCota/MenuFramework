@@ -52,6 +52,77 @@ public record ItemTemplate(
     return new Builder(Objects.requireNonNull(material, "material"));
   }
 
+  /**
+   * Creates a simple item template with just a material and display name.
+   *
+   * <p>Example: {@code ItemTemplate.of(Material.DIAMOND, "<aqua>Diamond")}
+   *
+   * @param material the item material
+   * @param name the display name as a MiniMessage string
+   * @return a new item template
+   */
+  public static @NonNull ItemTemplate of(@NonNull Material material, @NonNull String name) {
+    return builder(material).name(name).build();
+  }
+
+  /**
+   * Creates an item template with material, name, and lore lines.
+   *
+   * <p>Example: {@code ItemTemplate.of(Material.DIAMOND, "<aqua>Diamond", "<gray>Click to buy")}
+   *
+   * @param material the item material
+   * @param name the display name as a MiniMessage string
+   * @param lore lore lines as MiniMessage strings
+   * @return a new item template
+   */
+  public static @NonNull ItemTemplate of(
+      @NonNull Material material, @NonNull String name, @NonNull String... lore) {
+    var builder = builder(material).name(name);
+    if (lore.length > 0) {
+      builder.lore(lore);
+    }
+    return builder.build();
+  }
+
+  /**
+   * Creates a glowing item template.
+   *
+   * <p>Example: {@code ItemTemplate.glowing(Material.NETHER_STAR, "<rainbow>Special Item")}
+   *
+   * @param material the item material
+   * @param name the display name as a MiniMessage string
+   * @return a new glowing item template
+   */
+  public static @NonNull ItemTemplate glowing(@NonNull Material material, @NonNull String name) {
+    return builder(material).name(name).glow(true).build();
+  }
+
+  /**
+   * Creates a player head item template.
+   *
+   * <p>Example: {@code ItemTemplate.head(player.getUniqueId(), "<yellow>Profile")}
+   *
+   * @param uuid the player's UUID
+   * @param name the display name as a MiniMessage string
+   * @return a new player head item template
+   */
+  public static @NonNull ItemTemplate head(@NonNull UUID uuid, @NonNull String name) {
+    return builder(Material.PLAYER_HEAD).name(name).head(uuid).build();
+  }
+
+  /**
+   * Creates a player head item template with a base64 texture.
+   *
+   * <p>Example: {@code ItemTemplate.head(textureBase64, "<yellow>Custom Head")}
+   *
+   * @param base64Texture the base64 encoded texture
+   * @param name the display name as a MiniMessage string
+   * @return a new player head item template
+   */
+  public static @NonNull ItemTemplate head(@NonNull String base64Texture, @NonNull String name) {
+    return builder(Material.PLAYER_HEAD).name(name).head(base64Texture).build();
+  }
+
   @Override
   public @NonNull ItemFlag[] flags() {
     return flags.clone();
@@ -158,6 +229,13 @@ public record ItemTemplate(
       return this;
     }
 
+    public Builder lore(@NonNull String... miniMessageLines) {
+      this.lore = Arrays.stream(miniMessageLines)
+          .map(MiniMessageProvider::deserialize)
+          .toList();
+      return this;
+    }
+
     public Builder flags(@NonNull ItemFlag... flags) {
       this.flags = Objects.requireNonNull(flags, "flags").clone();
       return this;
@@ -165,6 +243,11 @@ public record ItemTemplate(
 
     public Builder glow(boolean glow) {
       this.glow = glow;
+      return this;
+    }
+
+    public Builder glow() {
+      this.glow = true;
       return this;
     }
 
