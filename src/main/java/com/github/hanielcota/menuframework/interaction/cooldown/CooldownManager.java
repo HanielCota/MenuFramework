@@ -13,12 +13,17 @@ public final class CooldownManager {
 
   private static final long DEFAULT_COOLDOWN_MS = 100;
   private static final long COOLDOWN_CACHE_SECONDS = 1;
+  // Must be >= the longest slot cooldown a developer could configure (in seconds).
+  // 6000 ticks = 300 s; raise this if you allow longer cooldowns.
+  private static final long MAX_SLOT_COOLDOWN_SECONDS = 300;
 
   private final Cache<UUID, Long> globalCooldowns =
       Caffeine.newBuilder().expireAfterWrite(COOLDOWN_CACHE_SECONDS, TimeUnit.SECONDS).build();
 
+  // Values are absolute expiry timestamps (ms), not last-click timestamps.
+  // TTL must cover the full cooldown duration so Caffeine does not evict entries early.
   private final Cache<String, Long> slotCooldowns =
-      Caffeine.newBuilder().expireAfterWrite(COOLDOWN_CACHE_SECONDS, TimeUnit.SECONDS).build();
+      Caffeine.newBuilder().expireAfterWrite(MAX_SLOT_COOLDOWN_SECONDS, TimeUnit.SECONDS).build();
 
   /**
    * Checks if the player is on cooldown for the given slot. Also records the cooldown if not
@@ -47,22 +52,22 @@ public final class CooldownManager {
 
   private boolean isOnSlotCooldown(
       @NonNull UUID uuid, @NonNull SlotDefinition slotDefinition, long now) {
-    long slotCooldown = slotDefinition.cooldownTicks() * 50; // Convert ticks to ms
+    long slotCooldown = slotDefinition.cooldownTicks() * 50L;
     if (slotCooldown <= 0) {
       return false;
     }
 
     String slotKey = uuid + ":" + slotDefinition.slot();
-    var lastSlotClick = slotCooldowns.getIfPresent(slotKey);
-    return lastSlotClick != null && (now - lastSlotClick) < slotCooldown;
+    var expiry = slotCooldowns.getIfPresent(slotKey);
+    return expiry != null && now < expiry;
   }
 
   private void registerSlotCooldown(
       @NonNull UUID uuid, @NonNull SlotDefinition slotDefinition, long now) {
-    long slotCooldown = slotDefinition.cooldownTicks() * 50;
+    long slotCooldown = slotDefinition.cooldownTicks() * 50L;
     if (slotCooldown > 0) {
       String slotKey = uuid + ":" + slotDefinition.slot();
-      slotCooldowns.put(slotKey, now);
+      slotCooldowns.put(slotKey, now + slotCooldown);
     }
   }
 }

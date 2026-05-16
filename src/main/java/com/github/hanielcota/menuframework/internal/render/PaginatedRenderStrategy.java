@@ -50,7 +50,6 @@ public final class PaginatedRenderStrategy implements RenderStrategy {
     var end = Math.min(itemsPerPage, dynamicItems.size() - start);
 
     for (int itemIndex = 0; itemIndex < end; itemIndex++) {
-      if (itemIndex >= contentSlots.size()) break;
       var slotDef = dynamicItems.get(start + itemIndex);
       if (slotDef == null) continue;
       if (slotDef.handler() == null) continue;

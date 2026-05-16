@@ -7,7 +7,7 @@ public final class ToggleState {
 
   private final ItemTemplate enabledTemplate;
   private final ItemTemplate disabledTemplate;
-  private boolean enabled;
+  private volatile boolean enabled;
 
   public ToggleState(
       @NonNull ItemTemplate enabledTemplate,

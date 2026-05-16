@@ -42,7 +42,8 @@ public record PaginationConfig(
   }
 
   public static final class Builder {
-    private boolean enabled = false;
+    // null = not explicitly set; auto-enable when contentSlots is non-empty
+    private Boolean enabled = null;
     private List<Integer> contentSlots = List.of();
     private List<Integer> navigationSlots = List.of();
     private String previousTemplateId;
@@ -79,12 +80,14 @@ public record PaginationConfig(
     }
 
     public PaginationConfig build() {
+      // Explicit enabled(false) wins; if not set, auto-enable when contentSlots is non-empty
+      boolean finalEnabled = (enabled != null) ? enabled : !contentSlots.isEmpty();
       return new PaginationConfig(
           contentSlots,
           navigationSlots,
           Optional.ofNullable(previousTemplateId),
           Optional.ofNullable(nextTemplateId),
-          enabled || !contentSlots.isEmpty());
+          finalEnabled);
     }
   }
 }
