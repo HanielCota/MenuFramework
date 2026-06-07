@@ -69,10 +69,10 @@ repositories {
 }
 
 dependencies {
-    // Use a release tag, or "main-SNAPSHOT" to track the latest commit.
-    compileOnly("com.github.HanielCota.MenuFramework:menu-paper:main-SNAPSHOT")
+    // Pin a release tag, or use "main-SNAPSHOT" to track the latest commit.
+    compileOnly("com.github.HanielCota.MenuFramework:menu-paper:v0.1.0")
     // Add menu-folia as well when targeting Folia:
-    // compileOnly("com.github.HanielCota.MenuFramework:menu-folia:main-SNAPSHOT")
+    // compileOnly("com.github.HanielCota.MenuFramework:menu-folia:v0.1.0")
 }
 ```
 
@@ -385,7 +385,7 @@ Requires a **JDK 25** toolchain (auto-provisioned via the Foojay resolver on CI/
 The example plugin shadow jar is produced at:
 
 ```text
-example-plugin/build/libs/example-plugin-0.1.0-SNAPSHOT.jar
+example-plugin/build/libs/example-plugin-0.1.0.jar
 ```
 
 CI runs the full suite and shaded build on **Ubuntu** and **Windows** with Java 25.

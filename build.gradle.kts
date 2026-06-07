@@ -14,7 +14,7 @@ val publishedModules = setOf("menu-core", "menu-paper", "menu-folia")
 
 allprojects {
     group = "dev.haniel.menu"
-    version = "0.1.0-SNAPSHOT"
+    version = "0.1.0"
 }
 
 subprojects {

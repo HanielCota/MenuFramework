@@ -4,9 +4,14 @@ All notable changes to MenuFramework are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-06-07
 
 ### Added
+
+- **Core.** Annotation-driven menus (`@Menu`, `@Button`, `@Paginated`, `@Reactive`) compiled at boot;
+  static, paginated and reactive menus with mask-based layouts; diff-based rendering that updates only
+  changed slots; a Folia-aware scheduler abstraction (Paper main thread / Folia region thread); YAML
+  hot-reload with caching and ClassGraph `@Menu` discovery.
 
 - **Placeholders (PlaceholderAPI).** Paginated menus resolve `%placeholders%` per viewer in page
   content and the title, as a soft dependency (no-op when PlaceholderAPI is absent). Added a
@@ -58,12 +63,4 @@ All notable changes to MenuFramework are documented here. The format follows
 - **Reload diagnostics.** Reload failures are logged with their stack trace and always carry a
   non-null message; `reload(id)` distinguishes an unknown menu from a failed one.
 
-## [0.1.0] - initial
-
-### Added
-
-- Annotation-driven menus (`@Menu`, `@Button`, `@Paginated`, `@Reactive`) compiled at boot.
-- Static, paginated and reactive menus with mask-based layouts.
-- Diff-based rendering that updates only changed slots in an open inventory.
-- Folia-aware scheduler abstraction (Paper main thread / Folia region thread).
-- YAML hot-reload with caching, and ClassGraph `@Menu` discovery.
+[0.1.0]: https://github.com/HanielCota/MenuFramework/releases/tag/v0.1.0
