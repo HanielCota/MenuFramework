@@ -20,7 +20,7 @@ dependencies {
     // reference Bukkit types; Mockito mocks the final services and Bukkit interfaces server-free.
     "testCompileOnly"("io.papermc.paper:paper-api:26.1.2.build.69-stable")
     "testRuntimeOnly"("io.papermc.paper:paper-api:26.1.2.build.69-stable")
-    "testImplementation"("org.mockito:mockito-core:5.20.0")
+    "testImplementation"("org.mockito:mockito-core:5.23.0")
 }
 
 tasks.withType<ShadowJar>().configureEach {
