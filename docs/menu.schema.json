@@ -71,7 +71,7 @@
           "type": "boolean",
           "default": false
         },
-        "modelData": {
+        "model-data": {
           "type": "integer",
           "description": "Custom model data id. 0 or negative means none.",
           "default": 0
@@ -110,11 +110,11 @@
           "minItems": 1,
           "maxItems": 6
         },
-        "previousButton": {
+        "previous-button": {
           "$ref": "#/$defs/button",
           "description": "Look of the previous-page control. Its slot comes from the mask '<'."
         },
-        "nextButton": {
+        "next-button": {
           "$ref": "#/$defs/button",
           "description": "Look of the next-page control. Its slot comes from the mask '>'."
         }

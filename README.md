@@ -162,8 +162,8 @@ pagination:
     - "#XXXXXXX#"
     - "#XXXXXXX#"
     - "#<#####>#"
-  previousButton: { material: ARROW, name: "<yellow>Previous</yellow>" }
-  nextButton: { material: ARROW, name: "<yellow>Next</yellow>" }
+  previous-button: { material: ARROW, name: "<yellow>Previous</yellow>" }
+  next-button: { material: ARROW, name: "<yellow>Next</yellow>" }
 ```
 
 </details>
@@ -280,7 +280,7 @@ buttons:
     amount: 1
     glow: true
     unbreakable: true
-    modelData: 1001
+    model-data: 1001
     flags: [HIDE_ATTRIBUTES, HIDE_UNBREAKABLE]
 ```
 

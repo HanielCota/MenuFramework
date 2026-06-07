@@ -158,7 +158,7 @@ count.set(count.get() + 1); // write; schedules a coalesced, diff-based re-rende
 | `amount` | integer | `1` | Out-of-range (`<1` or `>64`) is clamped to `1`. |
 | `glow` | boolean | `false` | Enchantment glint. |
 | `unbreakable` | boolean | `false` | |
-| `modelData` | integer | `0` | `0` or negative means none. |
+| `model-data` | integer | `0` | `0` or negative means none. |
 | `flags` | list of `ItemFlag` | `[]` | See `ItemFlag` values above. |
 
 ### Pagination (under `pagination`)
@@ -166,8 +166,11 @@ count.set(count.get() + 1); // write; schedules a coalesced, diff-based re-rende
 | Key | Type | Notes |
 |-----|------|-------|
 | `mask` | list of strings | One string per row. Each string is 9 characters. The row count must equal `rows`. |
-| `previousButton` | button object | Look of the previous-page control (slot comes from the mask `<`). |
-| `nextButton` | button object | Look of the next-page control (slot comes from the mask `>`). |
+| `previous-button` | button object | Look of the previous-page control (slot comes from the mask `<`). |
+| `next-button` | button object | Look of the next-page control (slot comes from the mask `>`). |
+
+Note on key naming: YAML keys are kebab-case. Multi-word names map from the Java field, so
+`previousButton` becomes `previous-button` and `modelData` becomes `model-data`.
 
 Mask characters:
 
@@ -314,10 +317,10 @@ pagination:
     - "#XXXXXXX#"
     - "#XXXXXXX#"
     - "#<#####>#"
-  previousButton:
+  previous-button:
     material: ARROW
     name: "<yellow>Previous</yellow>"
-  nextButton:
+  next-button:
     material: ARROW
     name: "<yellow>Next</yellow>"
 ```

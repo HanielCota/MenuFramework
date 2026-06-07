@@ -32,3 +32,24 @@ jobs:
       # Linux servers run on and the Windows dev environment. `./gradlew` works on both via bash.
       - name: Validate
         run: ./gradlew clean test build
+
+  docs:
+    name: Validate docs YAML
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install validators
+        run: pip install jsonschema pyyaml
+
+      # Validates the YAML examples in AGENTS.md/README.md and the shipped menus against
+      # docs/menu.schema.json, so the docs and the schema can never drift apart.
+      - name: Validate menu YAML against the schema
+        run: python scripts/validate_docs_yaml.py
