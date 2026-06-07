@@ -3,8 +3,10 @@ package dev.haniel.menu.paper.render;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.haniel.menu.item.Icon;
+import dev.haniel.menu.item.ItemTraits;
 import dev.haniel.menu.template.IconFactory;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import net.kyori.adventure.text.Component;
@@ -43,7 +45,7 @@ public final class ItemFactory implements IconFactory<ItemStack> {
 
   @Override
   public ItemStack create(Icon icon) {
-    ItemStack item = new ItemStack(material(icon));
+    ItemStack item = new ItemStack(material(icon), icon.traits().amount());
     item.editMeta(meta -> decorate(meta, icon));
     return item;
   }
@@ -51,6 +53,29 @@ public final class ItemFactory implements IconFactory<ItemStack> {
   private void decorate(ItemMeta meta, Icon icon) {
     meta.displayName(component(icon.name()));
     meta.lore(lore(icon));
+    applyTraits(meta, icon.traits());
+  }
+
+  private void applyTraits(ItemMeta meta, ItemTraits traits) {
+    if (traits.glowing()) {
+      meta.setEnchantmentGlintOverride(true);
+    }
+    if (traits.unbreakable()) {
+      meta.setUnbreakable(true);
+    }
+    traits.customModelData().ifPresent(value -> applyModelData(meta, value));
+    applyFlags(meta, traits.flags());
+  }
+
+  // Legacy integer model data is broadly compatible across resource packs; the component-based
+  // replacement is version-specific and the server supplies the implementation at runtime.
+  @SuppressWarnings("deprecation")
+  private void applyModelData(ItemMeta meta, int value) {
+    meta.setCustomModelData(value);
+  }
+
+  private void applyFlags(ItemMeta meta, Set<dev.haniel.menu.item.ItemFlag> flags) {
+    flags.stream().map(PaperItemFlags::toBukkit).forEach(meta::addItemFlags);
   }
 
   private List<Component> lore(Icon icon) {
@@ -58,7 +83,12 @@ public final class ItemFactory implements IconFactory<ItemStack> {
   }
 
   private Component component(String text) {
-    return components.get(text, miniMessage::deserialize);
+    try {
+      return components.get(text, miniMessage::deserialize);
+    } catch (RuntimeException malformedMiniMessage) {
+      throw new IllegalArgumentException(
+          "Invalid MiniMessage text: '" + text + "'", malformedMiniMessage);
+    }
   }
 
   private Material material(Icon icon) {

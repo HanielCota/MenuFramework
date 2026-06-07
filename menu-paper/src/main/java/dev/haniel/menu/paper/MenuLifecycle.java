@@ -4,6 +4,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
@@ -14,7 +15,7 @@ final class MenuLifecycle {
   private final Listener listener;
   private final Executor syncExecutor;
   private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
-  private boolean shutdown;
+  private volatile boolean shutdown;
 
   MenuLifecycle(Plugin plugin, Listener listener, Executor syncExecutor) {
     this.plugin = plugin;
@@ -30,14 +31,24 @@ final class MenuLifecycle {
     return syncExecutor;
   }
 
-  void shutdown() {
+  synchronized void shutdown() {
     if (shutdown) {
       return;
     }
+    closeOpenMenus();
     HandlerList.unregisterAll(listener);
     cancelPluginTasks();
     ioExecutor.shutdownNow();
     shutdown = true;
+  }
+
+  private void closeOpenMenus() {
+    for (Player player : Bukkit.getOnlinePlayers()) {
+      if (player.getOpenInventory().getTopInventory().getHolder()
+          instanceof dev.haniel.menu.paper.holder.ClickableHolder) {
+        player.closeInventory();
+      }
+    }
   }
 
   private void cancelPluginTasks() {

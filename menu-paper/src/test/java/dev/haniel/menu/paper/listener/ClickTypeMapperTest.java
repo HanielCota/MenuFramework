@@ -21,10 +21,26 @@ class ClickTypeMapperTest {
   }
 
   @Test
+  void mapsKeyboardAndDropInteractions() {
+    assertEquals(ClickType.DROP, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.DROP));
+    assertEquals(
+        ClickType.DROP, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.CONTROL_DROP));
+    assertEquals(
+        ClickType.DOUBLE_CLICK,
+        ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.DOUBLE_CLICK));
+    assertEquals(
+        ClickType.NUMBER_KEY, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.NUMBER_KEY));
+    assertEquals(
+        ClickType.SWAP_OFFHAND,
+        ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.SWAP_OFFHAND));
+  }
+
+  @Test
   void mapsUnknownClickTypesToOther() {
     assertEquals(
-        ClickType.OTHER, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.DOUBLE_CLICK));
+        ClickType.OTHER, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.CREATIVE));
     assertEquals(
-        ClickType.OTHER, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.NUMBER_KEY));
+        ClickType.OTHER,
+        ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.WINDOW_BORDER_LEFT));
   }
 }

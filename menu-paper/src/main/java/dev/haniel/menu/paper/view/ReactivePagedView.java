@@ -1,15 +1,19 @@
 package dev.haniel.menu.paper.view;
 
 import dev.haniel.menu.click.ClickContext;
+import dev.haniel.menu.compiler.binding.BoundTick;
 import dev.haniel.menu.domain.PageNumber;
 import dev.haniel.menu.paper.holder.ClickableHolder;
 import dev.haniel.menu.paper.reactive.Flusher;
 import dev.haniel.menu.paper.reactive.ReactiveBinding;
+import dev.haniel.menu.paper.reactive.ReactiveLifecycle;
 import dev.haniel.menu.paper.reactive.ReactiveView;
+import dev.haniel.menu.paper.reactive.Ticking;
 import dev.haniel.menu.paper.render.PageRenderer;
 import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.state.StateBinding;
 import dev.haniel.menu.state.StateListener;
+import java.util.List;
 import java.util.logging.Logger;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
@@ -26,25 +30,35 @@ public final class ReactivePagedView implements ClickableHolder, ReactiveView, S
 
   private final PageRenderer renderer;
   private final PageCursor cursor;
-  private final ReactiveBinding reactive;
+  private final ReactiveLifecycle lifecycle;
+  private boolean closed;
 
   /**
    * Builds a view. Binding is explicit so a failed initial render/open cannot leak this view.
    *
    * @param renderer the per-view renderer; never null
    * @param states the states discovered on the instance; never null
-   * @param scheduler the owning player's scheduler, for coalesced re-renders; never null
+   * @param ticks the periodic ticks bound to the instance; never null
+   * @param onClose the action to run when the view closes; never null
+   * @param scheduler the owning player's scheduler, for re-renders and ticks; never null
    */
   public ReactivePagedView(
-      PageRenderer renderer, StateBinding states, PlayerScheduler scheduler, Logger logger) {
+      PageRenderer renderer,
+      StateBinding states,
+      List<BoundTick> ticks,
+      Runnable onClose,
+      PlayerScheduler scheduler,
+      Logger logger) {
     this.renderer = renderer;
     this.cursor = new PageCursor(renderer.newInventory(this));
-    this.reactive = new ReactiveBinding(states, new Flusher(scheduler, this::flush, logger));
+    ReactiveBinding reactive =
+        new ReactiveBinding(states, new Flusher(scheduler, this::flush, logger));
+    this.lifecycle = new ReactiveLifecycle(reactive, new Ticking(scheduler, ticks), onClose);
   }
 
-  /** Binds this opened view to its reactive states. */
+  /** Binds this opened view to its reactive states and starts its ticks. */
   public void bind() {
-    reactive.bind(this);
+    lifecycle.bind(this);
   }
 
   @Override
@@ -63,13 +77,18 @@ public final class ReactivePagedView implements ClickableHolder, ReactiveView, S
 
   @Override
   public void onChange() {
+    if (closed) {
+      return;
+    }
     renderer.invalidate();
-    reactive.schedule();
+    lifecycle.schedule();
   }
 
   @Override
   public void close() {
-    reactive.close();
+    closed = true;
+    lifecycle.close();
+    cursor.clear();
   }
 
   @Override
@@ -98,6 +117,9 @@ public final class ReactivePagedView implements ClickableHolder, ReactiveView, S
   }
 
   private void flush() {
+    if (closed) {
+      return;
+    }
     show(cursor.page());
   }
 }

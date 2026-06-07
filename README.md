@@ -12,6 +12,22 @@ Menu behavior lives in Java classes. Menu appearance lives in YAML files under
 - `menu-folia`: Folia scheduler implementation.
 - `example-plugin`: runnable example plugin using the public API.
 
+## Installation
+
+The library modules are published through [JitPack](https://jitpack.io). Add the repository and the
+modules you need (`menu-paper` brings in `menu-core` transitively):
+
+```kotlin
+repositories {
+    maven("https://jitpack.io")
+}
+
+dependencies {
+    compileOnly("com.github.<user>.MenuFramework:menu-paper:<tag>")
+    // Add menu-folia as well when targeting Folia.
+}
+```
+
 ## Static Menu
 
 ```java
@@ -62,6 +78,139 @@ The pagination mask uses:
 - `<`: previous page
 - `>`: next page
 - space: empty slot
+
+## Auto-Updating Menus (Countdowns & Animations)
+
+A `@Tick` method runs on a fixed schedule while the menu is open, on the view's owning thread, so it
+may update a `@Reactive State<?>` — which drives the usual coalesced, diff-based re-render. Use it for
+a countdown in the lore or a frame-based animation. The tick starts on open and is cancelled on
+close (no leaked task). `@Tick` works on paginated (reactive) menus.
+
+```java
+@Menu(id = "event")
+public final class EventMenu {
+
+  @Reactive private final State<Integer> secondsLeft = State.of(300);
+
+  @Tick(period = 20) // every 20 ticks = 1 second
+  public void countdown() {
+    secondsLeft.set(Math.max(0, secondsLeft.get() - 1));
+  }
+
+  @Paginated
+  public List<MenuItem> items() {
+    return List.of(
+        MenuItem.of(
+            Icons.of(Material.CLOCK).named("<yellow>Starts in " + secondsLeft.get() + "s</yellow>")));
+  }
+}
+```
+
+## Placeholders (PlaceholderAPI)
+
+Paginated menus resolve `%placeholders%` per viewer in the **page content** and the **title**, as a
+PlaceholderAPI soft dependency: with PlaceholderAPI installed the tokens are filled for each player;
+without it the text is left as-is. Resolution runs before MiniMessage parsing and only for the open
+view, so each player sees their own values without cross-player cache bleed.
+
+```yaml
+title: "<gold>%player_name%'s Bag</gold>"
+```
+
+```java
+@Paginated
+public List<MenuItem> items() {
+  return List.of(
+      MenuItem.of(Icons.of(Material.GOLD_INGOT).named("<yellow>Balance: %vault_eco_balance%</yellow>")));
+}
+```
+
+Placeholders that change over time (a balance, a timer) refresh on the next re-render — pair them
+with `@Tick` for a live value. Static menus and a paginated menu's static overlay/navigation buttons
+are shared across viewers and are not per-player resolved.
+
+## Lifecycle Hooks
+
+`@OnOpen` and `@OnClose` methods on a paginated menu run when the view opens and closes, on the
+view's owning thread. Each takes no arguments or a single `Player` (the viewer). Reactive state and
+ticks are torn down for you before `@OnClose` runs.
+
+```java
+@Menu(id = "shop")
+public final class ShopMenu {
+
+  @OnOpen
+  public void onOpen(Player player) {
+    player.playSound(player, Sound.BLOCK_CHEST_OPEN, 1f, 1f);
+  }
+
+  @OnClose
+  public void onClose(Player player) {
+    player.playSound(player, Sound.BLOCK_CHEST_CLOSE, 1f, 1f);
+  }
+
+  @Paginated
+  public List<MenuItem> items() {
+    return List.of();
+  }
+}
+```
+
+## Rich Items
+
+Buttons and code-built icons carry an appearance beyond material, name and lore: stack `amount`, an
+enchantment `glow`, `unbreakable`, custom `modelData` and tooltip `flags`.
+
+In YAML:
+
+```yaml
+buttons:
+  legendary:
+    slot: 13
+    material: NETHERITE_SWORD
+    name: "<gold>Legendary Blade</gold>"
+    amount: 1
+    glow: true
+    unbreakable: true
+    modelData: 1001
+    flags: [HIDE_ATTRIBUTES, HIDE_UNBREAKABLE]
+```
+
+In code (fluent and immutable; see `Icons`/`Icon`):
+
+```java
+Icon icon = Icons.of(Material.DIAMOND)
+    .named("<aqua>Gem</aqua>")
+    .amount(16)
+    .glowing()
+    .hiding(ItemFlag.HIDE_ATTRIBUTES);
+```
+
+## Permissions
+
+Restrict who can open a menu or click a button. A click by a player lacking the permission is
+silently ignored; `open` does nothing for a player lacking the menu permission.
+
+```java
+@Menu(id = "vault", permission = "myplugin.vault.open")
+public final class VaultMenu {
+
+  @Button(id = "withdraw", permission = "myplugin.vault.withdraw")
+  public void withdraw(MenuClick click) {
+    click.message("<green>Withdrawn.</green>");
+  }
+}
+```
+
+A button can also be rate-limited per player with `cooldownMillis`; a click made while cooling down
+is silently dropped (permission is checked first, so a denied click never starts the cooldown):
+
+```java
+@Button(id = "daily", cooldownMillis = 3000)
+public void claimDaily(MenuClick click) {
+  click.message("<green>Claimed.</green>");
+}
+```
 
 ## Bootstrapping
 
@@ -131,3 +280,7 @@ The example plugin shadow jar is built at:
 ```text
 example-plugin/build/libs/example-plugin-0.1.0-SNAPSHOT.jar
 ```
+
+## License
+
+Released under the [MIT License](LICENSE).

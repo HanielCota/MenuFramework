@@ -17,8 +17,15 @@ final class MethodSignatureValidator {
     }
   }
 
+  void requireTick(Method method) {
+    if (method.getParameterCount() != 0 || method.getReturnType() != void.class) {
+      throw new InvalidMenuException(
+          "@Tick method " + method.getName() + " must take no args and return void");
+    }
+  }
+
   private boolean returnsMenuItemList(Method method) {
-    if (method.getReturnType() != List.class) {
+    if (!List.class.isAssignableFrom(method.getReturnType())) {
       return false;
     }
     return elementType(method.getGenericReturnType()) == MenuItem.class;

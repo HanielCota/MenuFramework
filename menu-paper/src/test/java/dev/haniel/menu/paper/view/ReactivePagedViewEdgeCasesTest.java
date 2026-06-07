@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import dev.haniel.menu.click.ClickContext;
+import dev.haniel.menu.compiler.binding.BoundTick;
 import dev.haniel.menu.compiler.binding.ContentProvider;
 import dev.haniel.menu.domain.MaskLayout;
 import dev.haniel.menu.domain.MenuId;
@@ -167,17 +168,82 @@ class ReactivePagedViewEdgeCasesTest {
         -1, source.lastClickedItem(), "a click past the inventory must route to no action");
   }
 
+  @Test
+  void closeRunsTheCloseHook() {
+    ManualScheduler scheduler = new ManualScheduler();
+    boolean[] closed = {false};
+    ReactivePagedView view =
+        new ReactivePagedView(
+            renderer(new RecordingSource(1)),
+            new StateBinding(List.of()),
+            List.of(),
+            () -> closed[0] = true,
+            scheduler,
+            logger());
+    view.show(PageNumber.first());
+    view.bind();
+
+    view.close();
+
+    assertTrue(closed[0], "close must run the close hook");
+  }
+
+  @Test
+  void tickStartsOnBindAndCancelsOnClose() {
+    ManualScheduler scheduler = new ManualScheduler();
+    int[] runs = {0};
+    BoundTick tick = new BoundTick(20, () -> runs[0]++);
+    ReactivePagedView view = view(scheduler, new RecordingSource(1), List.of(), List.of(tick));
+    view.show(PageNumber.first());
+
+    view.bind();
+    assertEquals(1, scheduler.repeatingCount(), "bind must start the periodic tick");
+
+    scheduler.fireTicks();
+    assertEquals(1, runs[0], "the tick must run on its schedule");
+
+    view.close();
+    assertEquals(0, scheduler.repeatingCount(), "close must cancel the tick (anti-leak)");
+  }
+
+  @Test
+  void tickThatChangesStateDrivesAReRender() {
+    ManualScheduler scheduler = new ManualScheduler();
+    State<Integer> remaining = State.of(3);
+    BoundTick countdown = new BoundTick(20, () -> remaining.set(remaining.get() - 1));
+    RecordingSource source = new RecordingSource(1);
+    ReactivePagedView view = view(scheduler, source, List.of(remaining), List.of(countdown));
+    view.show(PageNumber.first());
+    view.bind();
+    int rendersBefore = source.provideCount();
+
+    scheduler.fireTicks(); // tick -> state.set -> schedules one coalesced flush
+    assertEquals(1, scheduler.pending(), "a tick that changes state schedules a re-render");
+
+    scheduler.tick(); // run the coalesced flush
+    assertTrue(source.provideCount() > rendersBefore, "the flush re-renders the page");
+  }
+
   private static ClickContext click() {
     return mock(ClickContext.class);
   }
 
   private ReactivePagedView view(ManualScheduler scheduler, RecordingSource source) {
-    return view(scheduler, source, List.of());
+    return view(scheduler, source, List.of(), List.of());
   }
 
   private ReactivePagedView view(
       ManualScheduler scheduler, RecordingSource source, List<State<?>> states) {
-    return new ReactivePagedView(renderer(source), new StateBinding(states), scheduler, logger());
+    return view(scheduler, source, states, List.of());
+  }
+
+  private ReactivePagedView view(
+      ManualScheduler scheduler,
+      RecordingSource source,
+      List<State<?>> states,
+      List<BoundTick> ticks) {
+    return new ReactivePagedView(
+        renderer(source), new StateBinding(states), ticks, () -> {}, scheduler, logger());
   }
 
   private PageRenderer renderer(RecordingSource source) {
@@ -265,6 +331,7 @@ class ReactivePagedViewEdgeCasesTest {
    */
   private static final class ManualScheduler implements PlayerScheduler {
     private final List<Runnable> queued = new ArrayList<>();
+    private final List<Runnable> repeating = new ArrayList<>();
 
     @Override
     public ScheduledTask schedule(Runnable task) {
@@ -282,14 +349,28 @@ class ReactivePagedViewEdgeCasesTest {
       };
     }
 
+    @Override
+    public ScheduledTask scheduleRepeating(Runnable task, long period) {
+      repeating.add(task);
+      return () -> repeating.remove(task);
+    }
+
     int pending() {
       return queued.size();
+    }
+
+    int repeatingCount() {
+      return repeating.size();
     }
 
     void tick() {
       List<Runnable> due = List.copyOf(queued);
       queued.clear();
       due.forEach(Runnable::run);
+    }
+
+    void fireTicks() {
+      List.copyOf(repeating).forEach(Runnable::run);
     }
   }
 }

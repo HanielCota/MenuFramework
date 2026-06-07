@@ -23,4 +23,17 @@ public interface ClickContext {
    * @return the click type; never null
    */
   ClickType clickType();
+
+  /**
+   * Tells whether the clicking player holds the given permission.
+   *
+   * <p>The default denies, since the domain has no permission backend; platform implementations
+   * override it with the real check. Used to gate permission-guarded button actions.
+   *
+   * @param permission the permission node to test; never null
+   * @return {@code true} if the player holds the permission
+   */
+  default boolean hasPermission(String permission) {
+    return false;
+  }
 }

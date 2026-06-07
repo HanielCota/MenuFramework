@@ -37,4 +37,15 @@ class MenuIdTest {
   void keepsDigitsHyphensAndUnderscores() {
     assertEquals("no-nav_2", new MenuId("no-nav_2").value());
   }
+
+  @Test
+  void rejectsAnExcessivelyLongId() {
+    assertThrows(IllegalArgumentException.class, () -> new MenuId("a".repeat(65)));
+  }
+
+  @Test
+  void keepsAnIdAtTheLengthLimit() {
+    String maxLength = "a".repeat(64);
+    assertEquals(maxLength, new MenuId(maxLength).value());
+  }
 }

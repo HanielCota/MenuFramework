@@ -11,10 +11,13 @@ import dev.haniel.menu.paper.view.MenuFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -31,6 +34,7 @@ public final class MenuRegistry {
   private final MenuFactory factory;
   private final MenuCatalog catalog;
   private final Function<Class<?>, Object> instances;
+  private final Logger logger;
 
   public MenuRegistry(MenuCompiler<ItemStack> compiler, MenuFactory factory, MenuCatalog catalog) {
     this(compiler, factory, catalog, new MenuInstantiator());
@@ -41,10 +45,20 @@ public final class MenuRegistry {
       MenuFactory factory,
       MenuCatalog catalog,
       Function<Class<?>, Object> instances) {
+    this(compiler, factory, catalog, instances, Logger.getLogger(MenuRegistry.class.getName()));
+  }
+
+  public MenuRegistry(
+      MenuCompiler<ItemStack> compiler,
+      MenuFactory factory,
+      MenuCatalog catalog,
+      Function<Class<?>, Object> instances,
+      Logger logger) {
     this.compiler = Objects.requireNonNull(compiler, "compiler");
     this.factory = Objects.requireNonNull(factory, "factory");
     this.catalog = Objects.requireNonNull(catalog, "catalog");
     this.instances = Objects.requireNonNull(instances, "instances");
+    this.logger = Objects.requireNonNull(logger, "logger");
   }
 
   /**
@@ -103,7 +117,10 @@ public final class MenuRegistry {
    * @param id the menu id to open; never null
    */
   public void open(Player player, MenuId id) {
-    catalog.find(id).ifPresent(menu -> menu.current().open(player));
+    catalog
+        .find(id)
+        .filter(menu -> menu.mayOpen(player))
+        .ifPresent(menu -> menu.current().open(player));
   }
 
   /**
@@ -113,17 +130,27 @@ public final class MenuRegistry {
    * @param sourceType the annotated menu class; never null
    */
   public void open(Player player, Class<?> sourceType) {
-    catalog.find(sourceType).ifPresent(menu -> menu.current().open(player));
+    catalog
+        .find(sourceType)
+        .filter(menu -> menu.mayOpen(player))
+        .ifPresent(menu -> menu.current().open(player));
   }
 
   /**
    * Recompiles the menu from its YAML and swaps in the new openable.
    *
    * @param id the menu id to reload; never null
-   * @return {@code true} if the menu was registered and reloaded
+   * @return {@code true} if the menu was registered and reloaded; {@code false} if it is not
+   *     registered or its reload failed (the cause is logged). Use {@link #reloadReport(MenuId)} to
+   *     tell the two apart programmatically.
    */
   public boolean reload(MenuId id) {
-    return catalog.find(id).map(this::reloadOne).map(ReloadReport::successful).orElse(false);
+    Optional<RegisteredMenu> found = catalog.find(id);
+    if (found.isEmpty()) {
+      logger.warning("Cannot reload unknown menu '" + id.value() + "'");
+      return false;
+    }
+    return reloadOne(found.get()).successful();
   }
 
   /**
@@ -143,6 +170,11 @@ public final class MenuRegistry {
    */
   public int size() {
     return catalog.size();
+  }
+
+  /** Removes every registered menu, freeing references for garbage collection. */
+  public void clear() {
+    catalog.clear();
   }
 
   /**
@@ -193,7 +225,8 @@ public final class MenuRegistry {
       recompile(menu);
       reloaded.add(menu.id());
     } catch (RuntimeException exception) {
-      failures.add(new ReloadFailure(menu.id(), exception.getMessage()));
+      logger.log(Level.WARNING, "Failed to reload menu '" + menu.id().value() + "'", exception);
+      failures.add(ReloadFailure.from(menu.id(), exception));
     }
   }
 
@@ -209,7 +242,8 @@ public final class MenuRegistry {
     try {
       prepared.add(new PreparedReload(menu, compiler.load(menu.id())));
     } catch (RuntimeException exception) {
-      failures.add(new ReloadFailure(menu.id(), exception.getMessage()));
+      logger.log(Level.WARNING, "Failed to load menu '" + menu.id().value() + "'", exception);
+      failures.add(ReloadFailure.from(menu.id(), exception));
     }
   }
 
@@ -227,7 +261,9 @@ public final class MenuRegistry {
       menu.swap(factory.create(compile(menu, reload.config())));
       reloaded.add(menu.id());
     } catch (RuntimeException exception) {
-      failures.add(new ReloadFailure(reload.menu().id(), exception.getMessage()));
+      MenuId id = reload.menu().id();
+      logger.log(Level.WARNING, "Failed to apply reloaded menu '" + id.value() + "'", exception);
+      failures.add(ReloadFailure.from(id, exception));
     }
   }
 

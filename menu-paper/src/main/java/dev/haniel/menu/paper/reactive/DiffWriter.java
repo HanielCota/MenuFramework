@@ -49,6 +49,9 @@ public final class DiffWriter {
     IntStream.range(0, limit)
         .filter(slot -> changed(slot, next))
         .forEach(slot -> apply(slot, next));
+    IntStream.range(limit, inventory.getSize())
+        .filter(slot -> previous[slot] != null)
+        .forEach(slot -> inventory.setItem(slot, null));
     previous = snapshot(next);
   }
 
@@ -64,5 +67,10 @@ public final class DiffWriter {
 
   private void apply(int slot, ItemStack[] next) {
     inventory.setItem(slot, next[slot]);
+  }
+
+  /** Drops the inventory reference so a closed view can be garbage-collected. */
+  public void clear() {
+    previous = new ItemStack[0];
   }
 }

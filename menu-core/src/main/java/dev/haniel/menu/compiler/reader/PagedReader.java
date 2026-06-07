@@ -5,11 +5,14 @@ import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.Paginated;
 import dev.haniel.menu.annotation.Reactive;
+import dev.haniel.menu.annotation.Tick;
 import dev.haniel.menu.compiler.InvalidMenuException;
+import dev.haniel.menu.compiler.binding.ButtonGuards;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.StateField;
 import dev.haniel.menu.compiler.binding.UnboundAction;
 import dev.haniel.menu.compiler.binding.UnboundProvider;
+import dev.haniel.menu.compiler.binding.UnboundTick;
 import dev.haniel.menu.compiler.model.PagedStructure;
 import dev.haniel.menu.domain.ButtonId;
 import dev.haniel.menu.domain.MenuId;
@@ -19,6 +22,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -89,21 +93,35 @@ public final class PagedReader {
   }
 
   private boolean hasPaginatedProvider(Class<?> type) {
-    return Arrays.stream(type.getDeclaredMethods())
+    return allMethods(type).stream()
         .anyMatch(method -> method.isAnnotationPresent(Paginated.class));
   }
 
   private PagedMetadata metadata(Class<?> type) {
     return metadata.computeIfAbsent(
-        type, key -> new PagedMetadata(readId(key), provider(key), buttons(key), states(key)));
+        type,
+        key ->
+            new PagedMetadata(readId(key), provider(key), buttons(key), states(key), ticks(key)));
   }
 
   private MenuId readId(Class<?> type) {
-    Menu menu = type.getAnnotation(Menu.class);
+    Menu menu = findMenu(type);
     if (menu == null) {
       throw new InvalidMenuException(type.getName() + " is not annotated with @Menu");
     }
     return new MenuId(menu.id());
+  }
+
+  private Menu findMenu(Class<?> type) {
+    Class<?> current = type;
+    while (current != null && current != Object.class) {
+      Menu menu = current.getAnnotation(Menu.class);
+      if (menu != null) {
+        return menu;
+      }
+      current = current.getSuperclass();
+    }
+    return null;
   }
 
   private Instantiator instantiator(Class<?> type) {
@@ -123,7 +141,7 @@ public final class PagedReader {
 
   private UnboundProvider provider(Class<?> type) {
     List<Method> providers =
-        Arrays.stream(type.getDeclaredMethods())
+        allMethods(type).stream()
             .filter(candidate -> candidate.isAnnotationPresent(Paginated.class))
             .toList();
     if (providers.isEmpty()) {
@@ -139,7 +157,7 @@ public final class PagedReader {
 
   private Map<ButtonId, UnboundAction> buttons(Class<?> type) {
     Map<ButtonId, UnboundAction> buttons = new HashMap<>();
-    Arrays.stream(type.getDeclaredMethods())
+    allMethods(type).stream()
         .filter(method -> method.isAnnotationPresent(Button.class))
         .forEach(method -> addButton(buttons, method));
     return Map.copyOf(buttons);
@@ -147,18 +165,56 @@ public final class PagedReader {
 
   private void addButton(Map<ButtonId, UnboundAction> buttons, Method method) {
     ButtonArguments arguments = clickArguments.bindingFor(method);
-    ButtonId id = new ButtonId(method.getAnnotation(Button.class).id());
+    Button button = method.getAnnotation(Button.class);
+    ButtonId id = new ButtonId(button.id());
     if (buttons.containsKey(id)) {
       throw new InvalidMenuException("Duplicate @Button id '" + id.value() + "'");
     }
-    buttons.put(id, new UnboundAction(unreflect(method), arguments));
+    ButtonGuards guards = new ButtonGuards(button.permission(), button.cooldownMillis());
+    buttons.put(id, new UnboundAction(unreflect(method), arguments, guards));
   }
 
   private List<StateField> states(Class<?> type) {
-    return Arrays.stream(type.getDeclaredFields())
+    return allFields(type).stream()
         .filter(field -> field.isAnnotationPresent(Reactive.class))
         .map(this::stateField)
         .toList();
+  }
+
+  private List<UnboundTick> ticks(Class<?> type) {
+    return allMethods(type).stream()
+        .filter(method -> method.isAnnotationPresent(Tick.class))
+        .map(this::tick)
+        .toList();
+  }
+
+  private UnboundTick tick(Method method) {
+    validator.requireTick(method);
+    int period = method.getAnnotation(Tick.class).period();
+    if (period < 1) {
+      throw new InvalidMenuException("@Tick period on " + method.getName() + " must be >= 1");
+    }
+    return new UnboundTick(unreflect(method), period);
+  }
+
+  private static List<Method> allMethods(Class<?> type) {
+    List<Method> methods = new ArrayList<>();
+    Class<?> current = type;
+    while (current != null && current != Object.class) {
+      methods.addAll(Arrays.asList(current.getDeclaredMethods()));
+      current = current.getSuperclass();
+    }
+    return methods;
+  }
+
+  private static List<Field> allFields(Class<?> type) {
+    List<Field> fields = new ArrayList<>();
+    Class<?> current = type;
+    while (current != null && current != Object.class) {
+      fields.addAll(Arrays.asList(current.getDeclaredFields()));
+      current = current.getSuperclass();
+    }
+    return fields;
   }
 
   @SuppressWarnings("java:S3011") // Reactive state fields may be private implementation details.
@@ -196,10 +252,11 @@ public final class PagedReader {
       MenuId id,
       UnboundProvider provider,
       Map<ButtonId, UnboundAction> buttons,
-      List<StateField> states) {
+      List<StateField> states,
+      List<UnboundTick> ticks) {
 
     PagedStructure structure(Instantiator instantiator) {
-      return new PagedStructure(id, instantiator, provider, buttons, states);
+      return new PagedStructure(id, instantiator, provider, buttons, states, ticks);
     }
   }
 }

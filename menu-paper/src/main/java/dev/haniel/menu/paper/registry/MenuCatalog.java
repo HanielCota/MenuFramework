@@ -11,12 +11,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * A first-class collection of registered menus keyed by id.
  *
- * <p>Backed by a {@link ConcurrentHashMap} so {@link #reloadAllReportAsync} can iterate the catalog
- * on an async thread while registration happens on another, without a data race.
+ * <p>Backed by a {@link ConcurrentHashMap} so {@link MenuRegistry}'s async reload can iterate the
+ * catalog on an async thread while registration happens on another, without a data race.
  */
 public final class MenuCatalog {
 
   private final Map<MenuId, RegisteredMenu> menus = new ConcurrentHashMap<>();
+  private final Map<Class<?>, RegisteredMenu> byType = new ConcurrentHashMap<>();
 
   /**
    * Stores the menu under the given id, rejecting a duplicate id atomically.
@@ -29,6 +30,7 @@ public final class MenuCatalog {
     if (menus.putIfAbsent(id, menu) != null) {
       throw new InvalidMenuException("Duplicate menu id '" + id.value() + "'");
     }
+    byType.put(menu.sourceType(), menu);
   }
 
   /**
@@ -48,7 +50,7 @@ public final class MenuCatalog {
    * @return the registered menu, or empty if none is registered
    */
   public Optional<RegisteredMenu> find(Class<?> sourceType) {
-    return menus.values().stream().filter(menu -> menu.hasSourceType(sourceType)).findFirst();
+    return Optional.ofNullable(byType.get(sourceType));
   }
 
   /**
@@ -67,5 +69,11 @@ public final class MenuCatalog {
    */
   public int size() {
     return menus.size();
+  }
+
+  /** Removes every registered menu, freeing references for garbage collection. */
+  public void clear() {
+    menus.clear();
+    byType.clear();
   }
 }

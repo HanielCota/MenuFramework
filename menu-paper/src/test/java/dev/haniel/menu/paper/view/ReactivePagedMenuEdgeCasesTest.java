@@ -207,7 +207,17 @@ class ReactivePagedMenuEdgeCasesTest {
     @Override
     public PlayerScheduler forPlayer(dev.haniel.menu.domain.PlayerId player) {
       resolved.add(player.value());
-      return task -> noOpTask();
+      return new PlayerScheduler() {
+        @Override
+        public ScheduledTask schedule(Runnable task) {
+          return noOpTask();
+        }
+
+        @Override
+        public ScheduledTask scheduleRepeating(Runnable task, long period) {
+          return noOpTask();
+        }
+      };
     }
 
     @Override

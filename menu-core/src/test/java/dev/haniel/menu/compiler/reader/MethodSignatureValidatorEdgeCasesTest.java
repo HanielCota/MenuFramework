@@ -47,11 +47,9 @@ class MethodSignatureValidatorEdgeCasesTest {
   }
 
   @Test
-  void rejectsConcreteArrayListReturnType() {
-    // ArrayList<MenuItem> is not exactly List.class, so the raw-type guard rejects it.
-    assertThrows(
-        InvalidMenuException.class,
-        () -> validator.requirePaginatedProvider(method("arrayListReturn")));
+  void acceptsConcreteArrayListReturnType() {
+    // ArrayList<MenuItem> is a valid List<MenuItem> implementation.
+    assertDoesNotThrow(() -> validator.requirePaginatedProvider(method("arrayListReturn")));
   }
 
   @Test

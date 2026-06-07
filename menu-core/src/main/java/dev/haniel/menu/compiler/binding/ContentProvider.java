@@ -11,6 +11,10 @@ import java.util.Objects;
  *
  * <p>The handle is resolved once at boot; {@link #provide()} invokes it per render, so no
  * reflection happens on click. The provider yields data and actions, never cached presentation.
+ *
+ * <p><strong>Cache:</strong> this class does not cache the returned items. If the
+ * {@code @Paginated} method performs expensive work (database queries, filtering, sorting), cache
+ * the result in your menu class and invalidate it when the underlying data changes.
  */
 public final class ContentProvider {
 

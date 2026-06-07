@@ -1,17 +1,21 @@
 package dev.haniel.menu.paper.view;
 
 import dev.haniel.menu.action.MenuAction;
+import dev.haniel.menu.compiler.binding.BoundTick;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.domain.PageNumber;
 import dev.haniel.menu.domain.PlayerId;
+import dev.haniel.menu.paper.hook.HookDefinitions;
+import dev.haniel.menu.paper.hook.MenuHooks;
+import dev.haniel.menu.paper.placeholder.ResolvedIconFactory;
 import dev.haniel.menu.paper.render.PageRenderer;
 import dev.haniel.menu.paper.render.cache.DataVersion;
 import dev.haniel.menu.paper.render.cache.PageCache;
 import dev.haniel.menu.paper.render.model.Overlay;
 import dev.haniel.menu.paper.render.model.PageScene;
-import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.state.State;
 import dev.haniel.menu.state.StateBinding;
+import dev.haniel.menu.template.IconFactory;
 import dev.haniel.menu.template.PagedAppearance;
 import dev.haniel.menu.template.PagedContent;
 import java.util.List;
@@ -45,42 +49,59 @@ public final class ReactivePagedMenu implements PaperMenu {
   @Override
   public void open(Player player) {
     Object instance = plan.wiring().instantiator().create();
+    PlayerId viewer = new PlayerId(player.getUniqueId());
+    MenuHooks hooks = HookDefinitions.of(instance.getClass()).bind(instance);
     PageRenderer renderer =
         new PageRenderer(
-            scene(instance),
+            scene(instance, viewer),
             new PageCache(runtime.logger()),
             new DataVersion(),
             runtime.inventories());
     ReactivePagedView view =
-        new ReactivePagedView(renderer, states(instance), scheduler(player), runtime.logger());
+        new ReactivePagedView(
+            renderer,
+            states(instance),
+            ticks(instance),
+            closeHook(hooks, player.getUniqueId()),
+            runtime.scheduler().forPlayer(viewer),
+            runtime.logger());
     try {
       view.show(PageNumber.first());
       player.openInventory(view.getInventory());
       view.bind();
+      hooks.fireOpen(player);
     } catch (RuntimeException exception) {
       view.close();
       throw exception;
     }
   }
 
-  private PlayerScheduler scheduler(Player player) {
-    return runtime.scheduler().forPlayer(new PlayerId(player.getUniqueId()));
+  private Runnable closeHook(MenuHooks hooks, java.util.UUID viewer) {
+    return () -> {
+      Player online = org.bukkit.Bukkit.getPlayer(viewer);
+      if (online != null) {
+        hooks.fireClose(online);
+      }
+    };
   }
 
-  private PageScene scene(Object instance) {
+  private PageScene scene(Object instance, PlayerId viewer) {
     PagedAppearance<ItemStack> appearance = plan.appearance();
+    String title = runtime.placeholders().resolve(viewer, appearance.title());
     return new PageScene(
         appearance.id(),
-        runtime.miniMessage().deserialize(appearance.title()),
+        runtime.miniMessage().deserialize(title),
         appearance.size(),
         appearance.layout(),
         appearance.decor(),
-        content(instance),
+        content(instance, viewer),
         overlay(instance));
   }
 
-  private PagedContent<ItemStack> content(Object instance) {
-    return new PagedContent<>(plan.wiring().provider().bind(instance), runtime.icons());
+  private PagedContent<ItemStack> content(Object instance, PlayerId viewer) {
+    IconFactory<ItemStack> icons =
+        new ResolvedIconFactory(runtime.icons(), runtime.placeholders(), viewer);
+    return new PagedContent<>(plan.wiring().provider().bind(instance), icons);
   }
 
   private Overlay overlay(Object instance) {
@@ -96,5 +117,9 @@ public final class ReactivePagedMenu implements PaperMenu {
     List<State<?>> read =
         plan.wiring().states().stream().<State<?>>map(field -> field.read(instance)).toList();
     return new StateBinding(read);
+  }
+
+  private List<BoundTick> ticks(Object instance) {
+    return plan.wiring().ticks().stream().map(tick -> tick.bind(instance)).toList();
   }
 }

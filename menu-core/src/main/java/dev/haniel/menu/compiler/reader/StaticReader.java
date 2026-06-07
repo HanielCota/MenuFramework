@@ -1,10 +1,12 @@
 package dev.haniel.menu.compiler.reader;
 
 import dev.haniel.menu.action.ButtonArguments;
+import dev.haniel.menu.action.MenuAction;
 import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.binding.ButtonActions;
+import dev.haniel.menu.compiler.binding.ButtonGuards;
 import dev.haniel.menu.compiler.model.ButtonBehavior;
 import dev.haniel.menu.compiler.model.MenuBlueprint;
 import dev.haniel.menu.domain.ButtonId;
@@ -12,10 +14,13 @@ import dev.haniel.menu.domain.MenuId;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Reads a static menu's behaviour from an annotated class into a {@link MenuBlueprint}.
@@ -28,6 +33,7 @@ import java.util.Set;
 public final class StaticReader {
 
   private final ClickArguments clickArguments;
+  private final Map<Class<?>, List<Method>> buttonMethods = new ConcurrentHashMap<>();
 
   /** Creates a reader supporting only the built-in {@code ClickContext} parameter. */
   public StaticReader() {
@@ -56,28 +62,60 @@ public final class StaticReader {
   }
 
   private MenuId readId(Class<?> type) {
-    Menu menu = type.getAnnotation(Menu.class);
+    Menu menu = findMenu(type);
     if (menu == null) {
       throw new InvalidMenuException(type.getName() + " is not annotated with @Menu");
     }
     return new MenuId(menu.id());
   }
 
+  private Menu findMenu(Class<?> type) {
+    Class<?> current = type;
+    while (current != null && current != Object.class) {
+      Menu menu = current.getAnnotation(Menu.class);
+      if (menu != null) {
+        return menu;
+      }
+      current = current.getSuperclass();
+    }
+    return null;
+  }
+
   private List<ButtonBehavior> behaviors(Object instance, Class<?> type) {
     Set<ButtonId> ids = new HashSet<>();
-    return Arrays.stream(type.getDeclaredMethods())
+    return buttonMethods(type).stream().map(method -> behavior(instance, method, ids)).toList();
+  }
+
+  private List<Method> buttonMethods(Class<?> type) {
+    return buttonMethods.computeIfAbsent(type, this::discoverButtons);
+  }
+
+  private List<Method> discoverButtons(Class<?> type) {
+    return allMethods(type).stream()
         .filter(method -> method.isAnnotationPresent(Button.class))
-        .map(method -> behavior(instance, method, ids))
         .toList();
+  }
+
+  private static List<Method> allMethods(Class<?> type) {
+    List<Method> methods = new ArrayList<>();
+    Class<?> current = type;
+    while (current != null && current != Object.class) {
+      methods.addAll(Arrays.asList(current.getDeclaredMethods()));
+      current = current.getSuperclass();
+    }
+    return methods;
   }
 
   private ButtonBehavior behavior(Object instance, Method method, Set<ButtonId> ids) {
     ButtonArguments arguments = clickArguments.bindingFor(method);
-    ButtonId id = new ButtonId(method.getAnnotation(Button.class).id());
+    Button button = method.getAnnotation(Button.class);
+    ButtonId id = new ButtonId(button.id());
     if (!ids.add(id)) {
       throw new InvalidMenuException("Duplicate @Button id '" + id.value() + "'");
     }
-    return new ButtonBehavior(id, ButtonActions.bind(bind(instance, method), arguments));
+    MenuAction action = ButtonActions.bind(bind(instance, method), arguments);
+    ButtonGuards guards = new ButtonGuards(button.permission(), button.cooldownMillis());
+    return new ButtonBehavior(id, guards.apply(action));
   }
 
   @SuppressWarnings("java:S3011") // Button methods may be private annotated handlers.

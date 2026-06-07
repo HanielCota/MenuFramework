@@ -21,4 +21,14 @@ public @interface Menu {
    * @return the menu id; never blank
    */
   String id();
+
+  /**
+   * Returns the permission required to open this menu.
+   *
+   * <p>Empty means anyone may open it. When set, {@code open} silently does nothing for a player
+   * lacking the permission, so callers wanting feedback should check the permission themselves.
+   *
+   * @return the permission node, or empty for no restriction
+   */
+  String permission() default "";
 }

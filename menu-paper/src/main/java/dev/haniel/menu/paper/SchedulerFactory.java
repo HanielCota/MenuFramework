@@ -7,13 +7,15 @@ import org.bukkit.plugin.Plugin;
 
 final class SchedulerFactory {
 
+  private static final boolean FOLIA = detectFolia();
+
   private SchedulerFactory() {}
 
   static MenuScheduler detect(Plugin plugin) {
-    return isFolia() ? new FoliaMenuScheduler(plugin) : new PaperMenuScheduler(plugin);
+    return FOLIA ? new FoliaMenuScheduler(plugin) : new PaperMenuScheduler(plugin);
   }
 
-  private static boolean isFolia() {
+  private static boolean detectFolia() {
     try {
       Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
       return true;

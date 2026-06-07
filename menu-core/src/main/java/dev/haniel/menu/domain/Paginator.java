@@ -29,10 +29,17 @@ public final class Paginator {
    * @return the page count
    */
   public int totalPages(int perPage) {
+    requirePositive(perPage);
     if (items.isEmpty()) {
       return 1;
     }
     return (items.size() + perPage - 1) / perPage;
+  }
+
+  private static void requirePositive(int perPage) {
+    if (perPage < 1) {
+      throw new IllegalArgumentException("perPage must be >= 1 but was " + perPage);
+    }
   }
 
   /**
@@ -43,6 +50,7 @@ public final class Paginator {
    * @return the slice, or an empty list if the page is past the end
    */
   public List<MenuItem> page(PageNumber page, int perPage) {
+    requirePositive(perPage);
     long from = (long) page.value() * perPage;
     if (from >= items.size()) {
       return List.of();
@@ -59,6 +67,7 @@ public final class Paginator {
    * @return {@code true} if a next page exists
    */
   public boolean hasNext(PageNumber page, int perPage) {
+    requirePositive(perPage);
     return ((long) page.value() + 1) * perPage < items.size();
   }
 

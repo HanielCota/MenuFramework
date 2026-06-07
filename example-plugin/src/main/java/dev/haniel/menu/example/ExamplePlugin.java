@@ -69,6 +69,7 @@ public final class ExamplePlugin extends JavaPlugin {
   private void bindCommand(MenuCommandService service) {
     PluginCommand command = getCommand("menuexample");
     if (command == null) {
+      getLogger().warning("Command 'menuexample' is not registered in plugin.yml");
       return;
     }
     command.setExecutor(new MenuExampleCommand(service));

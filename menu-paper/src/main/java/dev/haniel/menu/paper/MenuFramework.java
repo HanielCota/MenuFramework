@@ -139,8 +139,9 @@ public final class MenuFramework {
     player.closeInventory();
   }
 
-  /** Unregisters the listener and cancels plugin-owned Bukkit tasks. */
+  /** Unregisters the listener, cancels tasks, closes open menus and clears the registry. */
   public void shutdown() {
     lifecycle.shutdown();
+    registry.clear();
   }
 }

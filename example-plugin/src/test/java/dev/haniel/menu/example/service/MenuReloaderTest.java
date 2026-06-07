@@ -53,6 +53,7 @@ class MenuReloaderTest {
   void reportsSuccessfulReload() {
     Player player = mock(Player.class);
     when(player.hasPermission("menuexample.reload")).thenReturn(true);
+    when(player.isOnline()).thenReturn(true);
     ReloadReport report =
         new ReloadReport(List.of(new MenuId("main"), new MenuId("catalog")), List.of());
     when(framework.reloadAllReportAsync()).thenReturn(CompletableFuture.completedFuture(report));
@@ -67,6 +68,7 @@ class MenuReloaderTest {
   void reportsFailedReloadWithDetails() {
     Player player = mock(Player.class);
     when(player.hasPermission("menuexample.reload")).thenReturn(true);
+    when(player.isOnline()).thenReturn(true);
     ReloadFailure failure = new ReloadFailure(new MenuId("catalog"), "broken yaml");
     ReloadReport report = new ReloadReport(List.of(), List.of(failure));
     when(framework.reloadAllReportAsync()).thenReturn(CompletableFuture.completedFuture(report));

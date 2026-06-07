@@ -69,7 +69,8 @@ public final class PagedMerger<V> {
         structure.instantiator(),
         structure.provider(),
         overlayActions(structure, config),
-        structure.states());
+        structure.states(),
+        structure.ticks());
   }
 
   private PagedDecor<V> decor(MaskLayout layout, PaginationConfig pagination) {
@@ -103,8 +104,16 @@ public final class PagedMerger<V> {
   private Map<Integer, UnboundAction> overlayActions(PagedStructure structure, MenuConfig config) {
     ensureButtonsConfigured(structure, config);
     Map<Integer, UnboundAction> actions = new HashMap<>();
-    structure.buttons().forEach((id, action) -> actions.put(slotOf(id, config), action));
+    structure.buttons().forEach((id, action) -> addAction(actions, id, config, action));
     return actions;
+  }
+
+  private void addAction(
+      Map<Integer, UnboundAction> actions, ButtonId id, MenuConfig config, UnboundAction action) {
+    int slot = slotOf(id, config);
+    if (actions.putIfAbsent(slot, action) != null) {
+      throw new InvalidMenuException("Slot " + slot + " is used by more than one @Button");
+    }
   }
 
   private void ensureButtonsConfigured(PagedStructure structure, MenuConfig config) {

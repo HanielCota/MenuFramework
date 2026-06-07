@@ -137,6 +137,11 @@ class ReactiveCycleTest {
       return () -> queued.remove(task);
     }
 
+    @Override
+    public ScheduledTask scheduleRepeating(Runnable task, long period) {
+      return () -> {};
+    }
+
     int pending() {
       return queued.size();
     }
@@ -163,6 +168,11 @@ class ReactiveCycleTest {
           return false;
         }
       };
+    }
+
+    @Override
+    public ScheduledTask scheduleRepeating(Runnable task, long period) {
+      return schedule(task);
     }
 
     int attempts() {

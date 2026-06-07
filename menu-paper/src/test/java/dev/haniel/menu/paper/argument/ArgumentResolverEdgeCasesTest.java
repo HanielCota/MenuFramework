@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.click.ClickType;
@@ -13,10 +14,12 @@ import dev.haniel.menu.paper.api.MenuClick;
 import dev.haniel.menu.paper.listener.PaperClickContext;
 import java.util.UUID;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 /**
  * Adversarial probes of the Paper argument resolvers.
@@ -36,11 +39,16 @@ class ArgumentResolverEdgeCasesTest {
   @Test
   void playerResolverReturnsTheClickingEntityNotTheId() {
     Player player = mock(Player.class);
-    PaperClickContext context = paperContext(player);
+    UUID uuid = UUID.randomUUID();
+    org.mockito.Mockito.when(player.getUniqueId()).thenReturn(uuid);
+    try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+      bukkit.when(() -> Bukkit.getPlayer(uuid)).thenReturn(player);
+      PaperClickContext context = new PaperClickContext(new PlayerId(uuid), ClickType.LEFT);
 
-    Object resolved = playerResolver.resolve(context);
+      Object resolved = playerResolver.resolve(context);
 
-    assertSame(player, resolved);
+      assertSame(player, resolved);
+    }
   }
 
   @Test
@@ -85,11 +93,17 @@ class ArgumentResolverEdgeCasesTest {
   @Test
   void clickResolverProducesMenuClickOverTheClickingPlayer() {
     Player player = mock(Player.class);
+    UUID uuid = UUID.randomUUID();
+    org.mockito.Mockito.when(player.getUniqueId()).thenReturn(uuid);
+    try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+      bukkit.when(() -> Bukkit.getPlayer(uuid)).thenReturn(player);
 
-    Object resolved = clickResolver.resolve(paperContext(player));
+      Object resolved =
+          clickResolver.resolve(new PaperClickContext(new PlayerId(uuid), ClickType.LEFT));
 
-    assertTrue(resolved instanceof MenuClick);
-    assertSame(player, ((MenuClick) resolved).player());
+      assertTrue(resolved instanceof MenuClick);
+      assertSame(player, ((MenuClick) resolved).player());
+    }
   }
 
   @Test
@@ -100,7 +114,9 @@ class ArgumentResolverEdgeCasesTest {
   }
 
   private static PaperClickContext paperContext(Player player) {
-    return new PaperClickContext(new PlayerId(UUID.randomUUID()), ClickType.LEFT, player);
+    UUID uuid = UUID.randomUUID();
+    org.mockito.Mockito.when(player.getUniqueId()).thenReturn(uuid);
+    return new PaperClickContext(new PlayerId(uuid), ClickType.LEFT);
   }
 
   private static ClickContext foreignContext() {

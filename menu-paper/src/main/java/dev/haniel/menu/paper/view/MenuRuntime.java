@@ -1,6 +1,7 @@
 package dev.haniel.menu.paper.view;
 
 import dev.haniel.menu.paper.render.InventoryFactory;
+import dev.haniel.menu.placeholder.PlaceholderResolver;
 import dev.haniel.menu.scheduler.MenuScheduler;
 import dev.haniel.menu.template.IconFactory;
 import java.util.logging.Logger;
@@ -15,10 +16,31 @@ import org.bukkit.inventory.ItemStack;
  * @param miniMessage the title/text deserializer
  * @param scheduler the platform scheduling strategy (Paper or Folia)
  * @param inventories the platform inventory factory
+ * @param placeholders the per-viewer placeholder resolver
  */
 public record MenuRuntime(
     Logger logger,
     IconFactory<ItemStack> icons,
     MiniMessage miniMessage,
     MenuScheduler scheduler,
-    InventoryFactory inventories) {}
+    InventoryFactory inventories,
+    PlaceholderResolver placeholders) {
+
+  /**
+   * Creates a runtime with no placeholder resolution.
+   *
+   * @param logger the logger for page-cache tracing
+   * @param icons the factory rendering icons into items
+   * @param miniMessage the title/text deserializer
+   * @param scheduler the platform scheduling strategy
+   * @param inventories the platform inventory factory
+   */
+  public MenuRuntime(
+      Logger logger,
+      IconFactory<ItemStack> icons,
+      MiniMessage miniMessage,
+      MenuScheduler scheduler,
+      InventoryFactory inventories) {
+    this(logger, icons, miniMessage, scheduler, inventories, PlaceholderResolver.none());
+  }
+}

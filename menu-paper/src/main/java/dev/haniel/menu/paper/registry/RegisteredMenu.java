@@ -1,9 +1,11 @@
 package dev.haniel.menu.paper.registry;
 
+import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.view.PaperMenu;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import org.bukkit.entity.Player;
 
 /**
  * A registered menu: the annotated source kept for reloads and the current openable menu.
@@ -18,6 +20,7 @@ public final class RegisteredMenu {
   private final Class<?> sourceType;
   private final Supplier<Object> sourceFactory;
   private final AtomicReference<PaperMenu> current;
+  private final String permission;
 
   /**
    * Creates a registered menu.
@@ -32,6 +35,7 @@ public final class RegisteredMenu {
     this.sourceType = source.getClass();
     this.sourceFactory = () -> source;
     this.current = new AtomicReference<>(initial);
+    this.permission = readPermission(this.sourceType);
   }
 
   /**
@@ -49,6 +53,7 @@ public final class RegisteredMenu {
     this.sourceType = sourceType;
     this.sourceFactory = sourceFactory;
     this.current = new AtomicReference<>(initial);
+    this.permission = readPermission(sourceType);
   }
 
   /**
@@ -113,5 +118,27 @@ public final class RegisteredMenu {
    */
   public void swap(PaperMenu next) {
     current.set(next);
+  }
+
+  /**
+   * Tells whether the player may open this menu under its {@code @Menu(permission)} restriction.
+   *
+   * @param player the prospective viewer; never null
+   * @return {@code true} when the menu is unrestricted or the player holds the permission
+   */
+  public boolean mayOpen(Player player) {
+    return permission.isBlank() || player.hasPermission(permission);
+  }
+
+  private static String readPermission(Class<?> type) {
+    Class<?> current = type;
+    while (current != null && current != Object.class) {
+      Menu menu = current.getAnnotation(Menu.class);
+      if (menu != null) {
+        return menu.permission();
+      }
+      current = current.getSuperclass();
+    }
+    return "";
   }
 }

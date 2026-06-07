@@ -113,7 +113,7 @@ public final class MenuFrameworkBuilder {
 
   private MenuFramework framework(
       MenuRegistry registry, MenuScanner scanner, MenuScheduler scheduler) {
-    MenuListener listener = new MenuListener();
+    MenuListener listener = new MenuListener(plugin.getLogger());
     plugin.getServer().getPluginManager().registerEvents(listener, plugin);
     return new MenuFramework(
         registry, scanner, new MenuLifecycle(plugin, listener, scheduler.global()));

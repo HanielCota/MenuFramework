@@ -114,6 +114,11 @@ class FlusherNotificationEdgeCasesTest {
       return () -> queued.remove(task);
     }
 
+    @Override
+    public ScheduledTask scheduleRepeating(Runnable task, long period) {
+      return () -> {};
+    }
+
     int pending() {
       return queued.size();
     }
@@ -143,6 +148,11 @@ class FlusherNotificationEdgeCasesTest {
           return false;
         }
       };
+    }
+
+    @Override
+    public ScheduledTask scheduleRepeating(Runnable task, long period) {
+      return schedule(task);
     }
 
     int attempts() {

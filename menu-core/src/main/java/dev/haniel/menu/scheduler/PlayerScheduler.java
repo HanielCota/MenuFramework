@@ -16,4 +16,15 @@ public interface PlayerScheduler {
    * @return a handle to cancel it before it runs
    */
   ScheduledTask schedule(Runnable task);
+
+  /**
+   * Schedules the task to run repeatedly on the player's context, every {@code period} ticks, with
+   * the first run after the same delay. Used to drive {@code @Tick} methods (countdowns,
+   * animations); the returned handle must be cancelled when the view closes.
+   *
+   * @param task the work to run each period; never null
+   * @param period the period in ticks; must be {@code >= 1}
+   * @return a handle to cancel the repeating task
+   */
+  ScheduledTask scheduleRepeating(Runnable task, long period);
 }

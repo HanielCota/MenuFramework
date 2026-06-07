@@ -39,10 +39,35 @@ public final class FoliaPlayerScheduler implements PlayerScheduler {
     return run(online, task);
   }
 
+  @Override
+  public ScheduledTask scheduleRepeating(Runnable task, long period) {
+    Player online = Bukkit.getPlayer(player.value());
+    if (online == null) {
+      return skipped();
+    }
+    return runRepeating(online, task, period);
+  }
+
   private ScheduledTask run(Player online, Runnable task) {
-    io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled =
-        online.getScheduler().run(plugin, ignored -> task.run(), () -> {});
-    return scheduled == null ? skipped() : new FoliaScheduledTask(scheduled);
+    try {
+      io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled =
+          online.getScheduler().run(plugin, ignored -> task.run(), () -> {});
+      return scheduled == null ? skipped() : new FoliaScheduledTask(scheduled);
+    } catch (IllegalStateException playerRegionUnavailable) {
+      return skipped();
+    }
+  }
+
+  private ScheduledTask runRepeating(Player online, Runnable task, long period) {
+    try {
+      io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduled =
+          online
+              .getScheduler()
+              .runAtFixedRate(plugin, ignored -> task.run(), () -> {}, period, period);
+      return scheduled == null ? skipped() : new FoliaScheduledTask(scheduled);
+    } catch (IllegalStateException playerRegionUnavailable) {
+      return skipped();
+    }
   }
 
   private ScheduledTask skipped() {

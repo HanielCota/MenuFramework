@@ -34,7 +34,12 @@ public final class MenuReloader {
     }
     framework
         .reloadAllReportAsync()
-        .thenAccept(report -> report(player, report))
+        .thenAccept(
+            report -> {
+              if (player.isOnline()) {
+                report(player, report);
+              }
+            })
         .exceptionally(error -> logFailure(error));
   }
 

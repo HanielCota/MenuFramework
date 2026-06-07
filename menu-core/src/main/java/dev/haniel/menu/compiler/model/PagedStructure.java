@@ -4,6 +4,7 @@ import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.StateField;
 import dev.haniel.menu.compiler.binding.UnboundAction;
 import dev.haniel.menu.compiler.binding.UnboundProvider;
+import dev.haniel.menu.compiler.binding.UnboundTick;
 import dev.haniel.menu.domain.ButtonId;
 import dev.haniel.menu.domain.MenuId;
 import java.util.List;
@@ -19,16 +20,37 @@ import java.util.Map;
  * @param provider the unbound {@code @Paginated} content handle
  * @param buttons the unbound {@code @Button} actions by logical id
  * @param states the {@code @Reactive} field getters
+ * @param ticks the unbound {@code @Tick} handles
  */
 public record PagedStructure(
     MenuId id,
     Instantiator instantiator,
     UnboundProvider provider,
     Map<ButtonId, UnboundAction> buttons,
-    List<StateField> states) {
+    List<StateField> states,
+    List<UnboundTick> ticks) {
 
   public PagedStructure {
     buttons = Map.copyOf(buttons);
     states = List.copyOf(states);
+    ticks = List.copyOf(ticks);
+  }
+
+  /**
+   * Creates a structure with no periodic ticks.
+   *
+   * @param id the menu id
+   * @param instantiator builds a per-player instance
+   * @param provider the unbound paginated content handle
+   * @param buttons the unbound button actions by id
+   * @param states the reactive field getters
+   */
+  public PagedStructure(
+      MenuId id,
+      Instantiator instantiator,
+      UnboundProvider provider,
+      Map<ButtonId, UnboundAction> buttons,
+      List<StateField> states) {
+    this(id, instantiator, provider, buttons, states, List.of());
   }
 }

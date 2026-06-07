@@ -1,4 +1,6 @@
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 
 plugins {
     base
@@ -6,6 +8,9 @@ plugins {
 }
 
 val targetJavaVersion = 25
+
+// Library modules consumed by other plugins (published; example-plugin is a demo, not published).
+val publishedModules = setOf("menu-core", "menu-paper", "menu-folia")
 
 allprojects {
     group = "dev.haniel.menu"
@@ -46,6 +51,29 @@ subprojects {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(targetJavaVersion))
             vendor.set(JvmVendorSpec.AZUL)
+        }
+        if (name in publishedModules) {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+
+    if (name in publishedModules) {
+        apply(plugin = "maven-publish")
+        // The published Javadoc jar should build quietly; doclint flags compact-constructor records
+        // that intentionally carry their docs on the record header, not the canonical constructor.
+        tasks.withType<Javadoc>().configureEach {
+            (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
+        }
+        // JitPack builds straight from the Git tag and consumes the local Maven publication; the
+        // GAV is dev.haniel.menu:<module>:<version>, exposed to consumers as
+        // com.github.<user>.MenuFramework:<module>:<tag>.
+        extensions.configure<PublishingExtension>("publishing") {
+            publications {
+                create("maven", MavenPublication::class.java) {
+                    from(components["java"])
+                }
+            }
         }
     }
 

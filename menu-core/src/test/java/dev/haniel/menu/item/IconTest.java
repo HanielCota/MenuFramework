@@ -50,4 +50,35 @@ class IconTest {
 
     assertEquals(1, icon.lore().size());
   }
+
+  @Test
+  void defaultsToPlainTraits() {
+    assertEquals(ItemTraits.none(), Icon.of("STONE").traits());
+  }
+
+  @Test
+  void traitMethodsAccumulateAndPreserveText() {
+    Icon icon =
+        Icon.of("DIAMOND").named("<gold>Gem").amount(8).glowing().modelData(3).unbreakable();
+
+    assertEquals("<gold>Gem", icon.name());
+    assertEquals(8, icon.traits().amount());
+    assertTrue(icon.traits().glowing());
+    assertTrue(icon.traits().unbreakable());
+    assertEquals(3, icon.traits().customModelData().orElseThrow());
+  }
+
+  @Test
+  void hidingSetsTooltipFlags() {
+    Icon icon = Icon.of("DIAMOND_HELMET").hiding(ItemFlag.HIDE_ATTRIBUTES);
+
+    assertTrue(icon.traits().flags().contains(ItemFlag.HIDE_ATTRIBUTES));
+  }
+
+  @Test
+  void namedPreservesTraits() {
+    Icon glowing = Icon.of("STONE").glowing();
+
+    assertTrue(glowing.named("<red>Hi").traits().glowing());
+  }
 }

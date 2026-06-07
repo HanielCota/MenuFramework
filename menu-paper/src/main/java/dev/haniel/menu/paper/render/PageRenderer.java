@@ -165,6 +165,13 @@ public final class PageRenderer {
     return new PageKey(scene.id(), page.value(), version.current(), contentHash(items));
   }
 
+  /**
+   * Builds a hash of the page's item icons for cache keying.
+   *
+   * <p>Note: this hash only considers {@link Icon}; two {@link MenuItem}s with the same icon but
+   * different actions will collide. This is acceptable because the cache stores visuals only —
+   * actions are resolved separately on every render.
+   */
   private int contentHash(List<MenuItem> items) {
     return items.stream().map(MenuItem::icon).mapToInt(Icon::hashCode).reduce(1, this::combineHash);
   }

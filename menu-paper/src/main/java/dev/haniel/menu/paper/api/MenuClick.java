@@ -53,7 +53,11 @@ public final class MenuClick {
    * @return the clicking player; never null
    */
   public Player player() {
-    return context.playerEntity();
+    Player online = context.playerEntity();
+    if (online == null) {
+      throw new IllegalStateException("Player is no longer online");
+    }
+    return online;
   }
 
   /**

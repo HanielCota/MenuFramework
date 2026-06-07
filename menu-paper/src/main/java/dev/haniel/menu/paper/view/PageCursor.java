@@ -93,4 +93,10 @@ public final class PageCursor {
     this.hasNext = rendered.hasNext();
     writer.write(rendered.slots());
   }
+
+  /** Drops the inventory reference so a closed view can be garbage-collected. */
+  public void clear() {
+    writer.clear();
+    this.actions = new MenuAction[0];
+  }
 }

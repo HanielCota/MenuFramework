@@ -2,6 +2,7 @@ package dev.haniel.menu.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.haniel.menu.item.Icon;
@@ -23,6 +24,14 @@ class PaginatorEdgeCasesTest {
   void emptyPaginatorHasOnePage() {
     Paginator empty = new Paginator(List.of());
     assertEquals(1, empty.totalPages(9));
+  }
+
+  @Test
+  void rejectsNonPositivePageCapacityInsteadOfDividingByZero() {
+    Paginator paginator = new Paginator(items(10));
+    assertThrows(IllegalArgumentException.class, () -> paginator.totalPages(0));
+    assertThrows(IllegalArgumentException.class, () -> paginator.page(PageNumber.first(), 0));
+    assertThrows(IllegalArgumentException.class, () -> paginator.hasNext(PageNumber.first(), 0));
   }
 
   @Test

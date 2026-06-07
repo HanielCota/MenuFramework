@@ -44,7 +44,12 @@ public final class MenuLoader {
    * @throws InvalidMenuException if the file is missing, empty or malformed
    */
   public MenuConfig load(MenuId id) {
-    return read(id, resolveWithin(id));
+    try {
+      return read(id, resolveWithin(id));
+    } catch (java.nio.file.InvalidPathException exception) {
+      throw new InvalidMenuException(
+          "Menu '" + id.value() + "' does not resolve to a valid file path", exception);
+    }
   }
 
   private Path resolveWithin(MenuId id) {
@@ -70,6 +75,17 @@ public final class MenuLoader {
     } catch (IOException exception) {
       throw new InvalidMenuException(
           "Failed to load menu '" + id.value() + "' from " + file, exception);
+    } catch (InvalidMenuException alreadyDescriptive) {
+      throw alreadyDescriptive;
+    } catch (RuntimeException malformed) {
+      throw new InvalidMenuException(
+          "Menu '"
+              + id.value()
+              + "' has invalid configuration in "
+              + file
+              + ": "
+              + malformed.getMessage(),
+          malformed);
     }
   }
 

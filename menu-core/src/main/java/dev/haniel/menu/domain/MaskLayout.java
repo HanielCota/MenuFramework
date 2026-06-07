@@ -3,7 +3,9 @@ package dev.haniel.menu.domain;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 /**
@@ -24,6 +26,12 @@ public record MaskLayout(
     int[] contentSlots, int[] borderSlots, int previousSlot, int nextSlot, int size) {
 
   private static final int WIDTH = 9;
+  private static final Map<MaskKey, MaskLayout> CACHE = new ConcurrentHashMap<>();
+
+  /** Clears the mask resolution cache. Useful during development reloads. */
+  public static void clearCache() {
+    CACHE.clear();
+  }
 
   /** Stores defensive copies of the slot arrays so the value object stays immutable. */
   public MaskLayout {
@@ -91,6 +99,10 @@ public record MaskLayout(
    * @throws InvalidMenuException if the mask is the wrong shape or has no content slot
    */
   public static MaskLayout resolve(List<String> mask, int rows) {
+    return CACHE.computeIfAbsent(new MaskKey(mask, rows), key -> doResolve(key.mask(), key.rows()));
+  }
+
+  private static MaskLayout doResolve(List<String> mask, int rows) {
     validateShape(mask, rows);
     int size = rows * WIDTH;
     int[] content = slotsMatching(mask, size, 'X');
@@ -144,5 +156,28 @@ public record MaskLayout(
 
   private static char charAt(List<String> mask, int slot) {
     return mask.get(slot / WIDTH).charAt(slot % WIDTH);
+  }
+
+  private record MaskKey(List<String> mask, int rows) {
+
+    MaskKey {
+      mask = List.copyOf(mask);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof MaskKey key)) {
+        return false;
+      }
+      return rows == key.rows && mask.equals(key.mask);
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * mask.hashCode() + rows;
+    }
   }
 }

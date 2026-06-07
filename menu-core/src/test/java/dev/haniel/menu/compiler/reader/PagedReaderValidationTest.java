@@ -7,6 +7,7 @@ import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.Paginated;
 import dev.haniel.menu.annotation.Reactive;
+import dev.haniel.menu.annotation.Tick;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.item.MenuItem;
 import java.util.List;
@@ -73,6 +74,20 @@ class PagedReaderValidationTest {
     InvalidMenuException error =
         assertThrows(InvalidMenuException.class, () -> reader.read(NoNoArgConstructorMenu.class));
     assertTrue(error.getMessage().contains("no-arg constructor"));
+  }
+
+  @Test
+  void rejectsTickMethodWithArguments() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(TickWithArgsMenu.class));
+    assertTrue(error.getMessage().contains("@Tick"));
+  }
+
+  @Test
+  void rejectsTickWithNonPositivePeriod() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(ZeroPeriodTickMenu.class));
+    assertTrue(error.getMessage().contains("period"));
   }
 
   static final class NoMenuPaged {
@@ -167,5 +182,29 @@ class PagedReaderValidationTest {
     List<MenuItem> items() {
       return List.of();
     }
+  }
+
+  @Menu(id = "tick-args")
+  static final class TickWithArgsMenu {
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+
+    @Tick
+    void tick(int unused) {}
+  }
+
+  @Menu(id = "tick-zero")
+  static final class ZeroPeriodTickMenu {
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+
+    @Tick(period = 0)
+    void tick() {}
   }
 }

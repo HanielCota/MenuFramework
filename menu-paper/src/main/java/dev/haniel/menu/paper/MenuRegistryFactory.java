@@ -11,6 +11,7 @@ import dev.haniel.menu.merge.PagedMerger;
 import dev.haniel.menu.merge.StaticMerger;
 import dev.haniel.menu.paper.argument.MenuClickArgumentResolver;
 import dev.haniel.menu.paper.argument.PlayerArgumentResolver;
+import dev.haniel.menu.paper.placeholder.PapiPlaceholders;
 import dev.haniel.menu.paper.registry.MenuCatalog;
 import dev.haniel.menu.paper.registry.MenuRegistry;
 import dev.haniel.menu.paper.render.BukkitInventoryFactory;
@@ -42,14 +43,20 @@ final class MenuRegistryFactory {
         compiler(menusPath, icons, miniMessage),
         menuFactory(icons, miniMessage, scheduler),
         new MenuCatalog(),
-        instances);
+        instances,
+        plugin.getLogger());
   }
 
   private MenuFactory menuFactory(
       ItemFactory icons, MiniMessage miniMessage, MenuScheduler scheduler) {
     return new MenuFactory(
         new MenuRuntime(
-            plugin.getLogger(), icons, miniMessage, scheduler, new BukkitInventoryFactory()));
+            plugin.getLogger(),
+            icons,
+            miniMessage,
+            scheduler,
+            new BukkitInventoryFactory(),
+            new PapiPlaceholders(miniMessage)));
   }
 
   private MenuCompiler<ItemStack> compiler(

@@ -1,0 +1,7 @@
+# JitPack builds the library modules from a Git tag and serves them as
+# com.github.<user>.MenuFramework:<module>:<tag>. The Gradle launcher runs on JDK 21; the Java 25
+# toolchain is auto-provisioned by the foojay resolver during the build.
+jdk:
+  - openjdk21
+install:
+  - ./gradlew :menu-core:publishToMavenLocal :menu-paper:publishToMavenLocal :menu-folia:publishToMavenLocal

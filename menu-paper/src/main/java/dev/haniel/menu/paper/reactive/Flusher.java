@@ -21,7 +21,7 @@ public final class Flusher {
   private final PlayerScheduler scheduler;
   private final Runnable flush;
   private final Logger logger;
-  private ScheduledTask task;
+  private volatile ScheduledTask task;
 
   /**
    * Creates a flusher that runs the given action on the player's context.

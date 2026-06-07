@@ -20,6 +20,10 @@ public final class ClickTypeMapper {
       case SHIFT_LEFT -> ClickType.SHIFT_LEFT;
       case SHIFT_RIGHT -> ClickType.SHIFT_RIGHT;
       case MIDDLE -> ClickType.MIDDLE;
+      case DROP, CONTROL_DROP -> ClickType.DROP;
+      case DOUBLE_CLICK -> ClickType.DOUBLE_CLICK;
+      case NUMBER_KEY -> ClickType.NUMBER_KEY;
+      case SWAP_OFFHAND -> ClickType.SWAP_OFFHAND;
       default -> ClickType.OTHER;
     };
   }

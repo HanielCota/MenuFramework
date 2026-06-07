@@ -11,5 +11,9 @@ public enum ClickType {
   SHIFT_LEFT,
   SHIFT_RIGHT,
   MIDDLE,
+  DROP,
+  DOUBLE_CLICK,
+  NUMBER_KEY,
+  SWAP_OFFHAND,
   OTHER
 }

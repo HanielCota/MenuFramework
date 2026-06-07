@@ -1,11 +1,13 @@
 package dev.haniel.menu.compiler.reader;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.Paginated;
+import dev.haniel.menu.annotation.Tick;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.model.PagedStructure;
 import dev.haniel.menu.item.MenuItem;
@@ -29,6 +31,14 @@ class PagedReaderTest {
     assertSame(firstRead.provider(), secondRead.provider());
     assertSame(firstRead.buttons(), secondRead.buttons());
     assertSame(firstRead.states(), secondRead.states());
+  }
+
+  @Test
+  void readsTickMethodsWithTheirPeriod() {
+    PagedStructure structure = new PagedReader().read(TickingMenu.class);
+
+    assertEquals(1, structure.ticks().size());
+    assertEquals(40, structure.ticks().getFirst().bind(new TickingMenu()).period());
   }
 
   private Instantiator instantiator(String name)
@@ -57,5 +67,17 @@ class PagedReaderTest {
 
     @Button(id = "close")
     void close() {}
+  }
+
+  @Menu(id = "ticking")
+  static final class TickingMenu {
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+
+    @Tick(period = 40)
+    void refresh() {}
   }
 }

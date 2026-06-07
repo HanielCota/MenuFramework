@@ -26,4 +26,9 @@ public final class PaperPlayerScheduler implements PlayerScheduler {
   public ScheduledTask schedule(Runnable task) {
     return new PaperScheduledTask(Bukkit.getScheduler().runTask(plugin, task));
   }
+
+  @Override
+  public ScheduledTask scheduleRepeating(Runnable task, long period) {
+    return new PaperScheduledTask(Bukkit.getScheduler().runTaskTimer(plugin, task, period, period));
+  }
 }

@@ -6,6 +6,8 @@ import dev.haniel.menu.compiler.InvalidMenuException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Validates a {@code @Button} method signature and chooses how to supply its argument.
@@ -20,6 +22,7 @@ public final class ClickArguments {
   private static final Object[] NO_ARGUMENTS = new Object[0];
 
   private final List<ClickArgumentResolver> resolvers;
+  private final Map<Method, ButtonArguments> cache = new ConcurrentHashMap<>();
 
   /**
    * Creates a registry over the given platform resolvers, plus the built-in context resolver.
@@ -42,6 +45,10 @@ public final class ClickArguments {
    *     parameter type no resolver supports
    */
   public ButtonArguments bindingFor(Method method) {
+    return cache.computeIfAbsent(method, this::computeBinding);
+  }
+
+  private ButtonArguments computeBinding(Method method) {
     requireVoid(method);
     requireAtMostOneParameter(method);
     if (method.getParameterCount() == 0) {

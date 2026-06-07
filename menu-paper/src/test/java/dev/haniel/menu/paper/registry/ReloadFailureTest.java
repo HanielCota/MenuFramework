@@ -32,4 +32,19 @@ class ReloadFailureTest {
 
     assertNotEquals(first, second);
   }
+
+  @Test
+  void fromKeepsTheCauseMessage() {
+    ReloadFailure failure =
+        ReloadFailure.from(new MenuId("shop"), new IllegalStateException("bad slot"));
+
+    assertEquals("bad slot", failure.message());
+  }
+
+  @Test
+  void fromFallsBackToTheExceptionTypeWhenMessageIsNull() {
+    ReloadFailure failure = ReloadFailure.from(new MenuId("shop"), new NullPointerException());
+
+    assertEquals("NullPointerException", failure.message());
+  }
 }

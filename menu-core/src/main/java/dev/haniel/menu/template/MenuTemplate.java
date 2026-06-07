@@ -71,7 +71,14 @@ public final class MenuTemplate<V> {
 
   private static MenuAction[] index(SlotBinding[] bindings, int size) {
     MenuAction[] indexed = new MenuAction[size];
-    Arrays.stream(bindings).forEach(binding -> indexed[binding.slot()] = binding.action());
+    Arrays.stream(bindings)
+        .forEach(
+            binding -> {
+              if (indexed[binding.slot()] != null) {
+                throw new IllegalStateException("Duplicate binding for slot " + binding.slot());
+              }
+              indexed[binding.slot()] = binding.action();
+            });
     return indexed;
   }
 }
