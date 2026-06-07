@@ -23,13 +23,13 @@ Behaviour lives in Java. Appearance lives in YAML. Compiled at boot, hot-reloada
 Building inventory GUIs by hand means juggling raw slot indices, cancelling click events, diffing
 item stacks, and re-wiring everything on Folia. MenuFramework removes that boilerplate:
 
-- 🎯 **Declarative** — annotate a class, drop a YAML file. No `InventoryClickEvent` plumbing.
-- ⚡ **Reactive** — change a `State<?>`, the open menu re-renders by diff (only changed slots).
-- 🧵 **Folia-ready** — the same code runs on Paper's main thread or a player's region thread.
-- 🔁 **Hot-reload** — edit YAML and reload appearance at runtime, sync or async.
-- 🛡️ **Safe by default** — clicks are cancelled, items can't be stolen, and player-controlled
+- 🎯 **Declarative:** annotate a class, drop a YAML file. No `InventoryClickEvent` plumbing.
+- ⚡ **Reactive:** change a `State<?>` and the open menu re-renders by diff (only changed slots).
+- 🧵 **Folia-ready:** the same code runs on Paper's main thread or a player's region thread.
+- 🔁 **Hot-reload:** edit YAML and reload appearance at runtime, sync or async.
+- 🛡️ **Safe by default:** clicks are cancelled, items can't be stolen, and player-controlled
   placeholders can't inject MiniMessage tags.
-- 🧱 **Clean architecture** — a platform-free core, a thin Paper adapter, a Folia scheduler.
+- 🧱 **Clean architecture:** a platform-free core, a thin Paper adapter, a Folia scheduler.
 
 ```java
 @Menu(id = "main")
@@ -170,7 +170,7 @@ pagination:
 <br>
 
 A `@Tick` method runs on a fixed schedule while the menu is open, on the view's owning thread, so it
-may update a `@Reactive State<?>` — which drives the usual coalesced, diff-based re-render. The tick
+may update a `@Reactive State<?>`, which drives the usual coalesced, diff-based re-render. The tick
 starts on open and is cancelled on close (no leaked task).
 
 ```java
@@ -217,7 +217,7 @@ public List<MenuItem> items() {
 }
 ```
 
-Values that change over time refresh on the next re-render — pair them with `@Tick` for a live value.
+Values that change over time refresh on the next re-render. Pair them with `@Tick` for a live value.
 
 > 🛡️ **Security:** placeholder values are MiniMessage-escaped before parsing, so a player whose name
 > or nickname contains tags like `<click>` or `<hover>` cannot inject live components into another
@@ -357,7 +357,7 @@ framework.reloadAllReportAsync()
     .thenAccept(r -> sender.sendMessage(Component.text(r.successCount() + " reloaded")));
 ```
 
-Only YAML IO and parsing run asynchronously — menu compilation and `ItemStack` creation run on the
+Only YAML IO and parsing run asynchronously. Menu compilation and `ItemStack` creation run on the
 plugin scheduler, since Bukkit inventory APIs are not thread-safe. Reloads are cached by file
 metadata plus a CRC32 content checksum, so unchanged files are not parsed again.
 
