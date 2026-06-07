@@ -93,6 +93,10 @@ framework.open(player, new MenuId("main"));
 
 YAML files live in `plugins/<PluginName>/menus/<id>.yml`.
 
+> 🤖 **Using an AI assistant?** Point it at [`AGENTS.md`](AGENTS.md), a complete and verified API
+> reference written for code-generating tools, and [`docs/menu.schema.json`](docs/menu.schema.json)
+> for YAML validation and editor autocomplete. [`llms.txt`](llms.txt) indexes both.
+
 ---
 
 ## 🧩 Features

@@ -1,0 +1,33 @@
+# MenuFramework
+
+> Annotation-driven inventory menu framework for Paper and Folia Minecraft plugins. Menu behaviour
+> lives in annotated Java classes (`@Menu`, `@Button`, `@Paginated`, `@Reactive`, `@Tick`,
+> `@OnOpen`, `@OnClose`); menu appearance lives in YAML files. The framework compiles both at boot,
+> renders by diff, supports per-player reactive state, and hot-reloads YAML at runtime.
+
+When generating a plugin that uses MenuFramework, read AGENTS.md first. It is the complete and
+verified API reference: every annotation and its parameters, every YAML key and default, method
+signature rules, validation constraints, threading rules, full templates, and common mistakes. Do
+not invent API that is not listed there.
+
+## Primary references
+
+- [AGENTS.md](AGENTS.md): complete API and usage reference for code generation. Start here.
+- [docs/menu.schema.json](docs/menu.schema.json): JSON Schema for menu YAML files (validation and autocomplete).
+- [README.md](README.md): human-facing overview, features, and quick start.
+- [CHANGELOG.md](CHANGELOG.md): version history.
+
+## Source of truth
+
+- [example-plugin](example-plugin/src/main/java/dev/haniel/menu/example): a complete, runnable plugin using the public API.
+- [menu-core annotations](menu-core/src/main/java/dev/haniel/menu/annotation): the annotation definitions.
+- [menu-paper public API](menu-paper/src/main/java/dev/haniel/menu/paper/api): `MenuClick` and `Icons`.
+
+## Install (JitPack, Gradle Kotlin DSL)
+
+```kotlin
+repositories { maven("https://jitpack.io") }
+dependencies {
+    compileOnly("com.github.HanielCota.MenuFramework:menu-paper:v0.1.0")
+}
+```

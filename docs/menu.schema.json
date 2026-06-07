@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HanielCota/MenuFramework/blob/main/docs/menu.schema.json",
+  "title": "MenuFramework menu",
+  "description": "Appearance of a MenuFramework menu, loaded from plugins/<PluginName>/menus/<id>.yml. Behaviour is defined in the matching @Menu Java class.",
+  "type": "object",
+  "required": ["rows"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Inventory title as a MiniMessage string.",
+      "default": ""
+    },
+    "rows": {
+      "type": "integer",
+      "description": "Number of inventory rows.",
+      "minimum": 1,
+      "maximum": 6
+    },
+    "buttons": {
+      "type": "object",
+      "description": "Buttons keyed by logical id. Each key must match a @Button(id) in the class.",
+      "additionalProperties": { "$ref": "#/$defs/button" }
+    },
+    "pagination": {
+      "$ref": "#/$defs/pagination",
+      "description": "Present only for paginated menus (a class with a @Paginated method)."
+    }
+  },
+  "$defs": {
+    "button": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "slot": {
+          "type": "integer",
+          "description": "Slot index, 0..rows*9-1. Ignored for navigation buttons (their slot comes from the mask).",
+          "minimum": 0,
+          "maximum": 53
+        },
+        "material": {
+          "type": "string",
+          "description": "A valid Bukkit Material name. Defaults to STONE when blank.",
+          "default": "STONE"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name as a MiniMessage string.",
+          "default": ""
+        },
+        "lore": {
+          "type": "array",
+          "description": "Lore lines as MiniMessage strings.",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "amount": {
+          "type": "integer",
+          "description": "Stack size. Values outside 1..64 are clamped to 1.",
+          "minimum": 1,
+          "maximum": 64,
+          "default": 1
+        },
+        "glow": {
+          "type": "boolean",
+          "description": "Show the enchantment glint.",
+          "default": false
+        },
+        "unbreakable": {
+          "type": "boolean",
+          "default": false
+        },
+        "modelData": {
+          "type": "integer",
+          "description": "Custom model data id. 0 or negative means none.",
+          "default": 0
+        },
+        "flags": {
+          "type": "array",
+          "description": "Tooltip parts to hide.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "HIDE_ENCHANTS",
+              "HIDE_ATTRIBUTES",
+              "HIDE_UNBREAKABLE",
+              "HIDE_DESTROYS",
+              "HIDE_PLACED_ON",
+              "HIDE_DYE",
+              "HIDE_ARMOR_TRIM"
+            ]
+          },
+          "default": []
+        }
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mask"],
+      "properties": {
+        "mask": {
+          "type": "array",
+          "description": "One string per row; each string is exactly 9 characters. Row count must equal rows. X=content, #=border, <=previous, >=next, space=empty. At least one X is required.",
+          "items": {
+            "type": "string",
+            "pattern": "^[X#<> ]{9}$"
+          },
+          "minItems": 1,
+          "maxItems": 6
+        },
+        "previousButton": {
+          "$ref": "#/$defs/button",
+          "description": "Look of the previous-page control. Its slot comes from the mask '<'."
+        },
+        "nextButton": {
+          "$ref": "#/$defs/button",
+          "description": "Look of the next-page control. Its slot comes from the mask '>'."
+        }
+      }
+    }
+  }
+}
