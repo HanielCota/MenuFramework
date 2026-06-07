@@ -11,8 +11,7 @@ public final class MenuCommandService {
   private final MenuReloader reloader;
   private final MenuMessages messages;
 
-  public MenuCommandService(
-      MenuNavigator navigator, MenuReloader reloader, MenuMessages messages) {
+  public MenuCommandService(MenuNavigator navigator, MenuReloader reloader, MenuMessages messages) {
     this.navigator = navigator;
     this.reloader = reloader;
     this.messages = messages;
@@ -31,7 +30,8 @@ public final class MenuCommandService {
       case "main" -> navigator.openMain(player);
       case "catalog" -> navigator.openCatalog(player);
       case "reload" -> reloader.reloadAll(player);
-      default -> messages.send(player, "<yellow>Usage: /menuexample [main|catalog|reload]</yellow>");
+      default ->
+          messages.send(player, "<yellow>Usage: /menuexample [main|catalog|reload]</yellow>");
     }
   }
 

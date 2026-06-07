@@ -7,9 +7,9 @@ import java.util.Optional;
 /**
  * The immutable, shared blueprint of a menu.
  *
- * <p>Holds the pre-built visuals and a slot-indexed action array, so a click resolves its
- * action in O(1) by raw slot, with bounds guarded. Visuals are built once during the merge and
- * reused by every open view; per-player state lives elsewhere.
+ * <p>Holds the pre-built visuals and a slot-indexed action array, so a click resolves its action in
+ * O(1) by raw slot, with bounds guarded. Visuals are built once during the merge and reused by
+ * every open view; per-player state lives elsewhere.
  *
  * @param <V> the platform visual type (an {@code ItemStack} on Paper)
  */

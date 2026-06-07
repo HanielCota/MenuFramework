@@ -41,7 +41,8 @@ class ClickArgumentsEdgeCasesTest {
     ClickArguments registry = new ClickArguments(List.of(rogue));
     ClickContext context = context();
 
-    Object[] resolved = registry.bindingFor(method("withContext", ClickContext.class)).forContext(context);
+    Object[] resolved =
+        registry.bindingFor(method("withContext", ClickContext.class)).forContext(context);
 
     assertSame(context, resolved[0], "the built-in ClickContext resolver must take precedence");
   }
@@ -60,9 +61,11 @@ class ClickArgumentsEdgeCasesTest {
   @Test
   void firstMatchingResolverWinsAmongSeveralPlatformResolvers() {
     ClickArguments registry =
-        new ClickArguments(List.of(new TaggedStringResolver("first"), new TaggedStringResolver("second")));
+        new ClickArguments(
+            List.of(new TaggedStringResolver("first"), new TaggedStringResolver("second")));
 
-    Object[] resolved = registry.bindingFor(method("withString", String.class)).forContext(context());
+    Object[] resolved =
+        registry.bindingFor(method("withString", String.class)).forContext(context());
 
     assertEquals("first", resolved[0], "findFirst must keep registration order");
   }

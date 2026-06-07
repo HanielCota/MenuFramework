@@ -15,11 +15,11 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 /**
  * The single listener that drives every menu.
  *
- * <p>It cancels the click, validates that the inventory belongs to a {@link ClickableHolder},
- * and delegates by raw slot. It reads {@code getRawSlot()} (not {@code getSlot()}) so bottom-
- * inventory clicks fall outside the menu bounds and resolve to no action. On close it tears down
- * reactive views so no closed view stays referenced. Dragging is cancelled as well; otherwise a
- * player could drag items into the menu without an {@link InventoryClickEvent}.
+ * <p>It cancels the click, validates that the inventory belongs to a {@link ClickableHolder}, and
+ * delegates by raw slot. It reads {@code getRawSlot()} (not {@code getSlot()}) so bottom- inventory
+ * clicks fall outside the menu bounds and resolve to no action. On close it tears down reactive
+ * views so no closed view stays referenced. Dragging is cancelled as well; otherwise a player could
+ * drag items into the menu without an {@link InventoryClickEvent}.
  */
 public final class MenuListener implements Listener {
 

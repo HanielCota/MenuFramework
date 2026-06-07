@@ -41,10 +41,10 @@ import org.junit.jupiter.api.Test;
  * PageRenderer}, driven without a Bukkit server: the inventory is a Mockito mock so the diff writer
  * can write into it while rendering touches no live items.
  *
- * <p>Probes that paging routes through the cursor's live page, that a content click fires the action
- * of the CURRENTLY displayed page (never a stale slice), that boundary navigation is a no-op, that a
- * state change re-renders the same page through the scheduler, and that close unbinds (and is safe
- * before bind, as the open() recovery path relies on).
+ * <p>Probes that paging routes through the cursor's live page, that a content click fires the
+ * action of the CURRENTLY displayed page (never a stale slice), that boundary navigation is a
+ * no-op, that a state change re-renders the same page through the scheduler, and that close unbinds
+ * (and is safe before bind, as the open() recovery path relies on).
  *
  * <p>The page is never read directly — the view does not expose its cursor — so it is asserted
  * through observable behaviour: the per-item action records which content index it fired for.
@@ -86,7 +86,10 @@ class ReactivePagedViewEdgeCasesTest {
     view.click(NEXT_SLOT, click()); // next at the boundary must be a no-op, not a navigation route
 
     view.click(CONTENT_SLOT, click());
-    assertEquals(1, source.lastClickedItem(), "the last page's action must stay bound after a boundary next");
+    assertEquals(
+        1,
+        source.lastClickedItem(),
+        "the last page's action must stay bound after a boundary next");
   }
 
   @Test
@@ -98,7 +101,8 @@ class ReactivePagedViewEdgeCasesTest {
     view.click(PREVIOUS_SLOT, click()); // no previous page exists yet
 
     view.click(CONTENT_SLOT, click());
-    assertEquals(0, source.lastClickedItem(), "previous on the first page must not move the cursor");
+    assertEquals(
+        0, source.lastClickedItem(), "previous on the first page must not move the cursor");
   }
 
   @Test
@@ -111,14 +115,17 @@ class ReactivePagedViewEdgeCasesTest {
     int providerCallsBefore = source.provideCount();
 
     view.onChange();
-    assertEquals(1, scheduler.pending(), "a state change must schedule exactly one coalesced flush");
+    assertEquals(
+        1, scheduler.pending(), "a state change must schedule exactly one coalesced flush");
 
     scheduler.tick();
     assertTrue(
-        source.provideCount() > providerCallsBefore, "the flush must re-run the provider for fresh actions");
+        source.provideCount() > providerCallsBefore,
+        "the flush must re-run the provider for fresh actions");
 
     view.click(CONTENT_SLOT, click());
-    assertEquals(1, source.lastClickedItem(), "the flush must re-render the same page, not reset to first");
+    assertEquals(
+        1, source.lastClickedItem(), "the flush must re-render the same page, not reset to first");
   }
 
   @Test
@@ -156,7 +163,8 @@ class ReactivePagedViewEdgeCasesTest {
 
     view.click(999, click());
 
-    assertEquals(-1, source.lastClickedItem(), "a click past the inventory must route to no action");
+    assertEquals(
+        -1, source.lastClickedItem(), "a click past the inventory must route to no action");
   }
 
   private static ClickContext click() {
@@ -237,7 +245,8 @@ class ReactivePagedViewEdgeCasesTest {
       for (int index = 0; index < count; index++) {
         int captured = index;
         built.add(
-            MenuItem.of(Icon.of(Material.STONE.name())).onClick(context -> lastClickedItem = captured));
+            MenuItem.of(Icon.of(Material.STONE.name()))
+                .onClick(context -> lastClickedItem = captured));
       }
       return built;
     }
@@ -251,7 +260,9 @@ class ReactivePagedViewEdgeCasesTest {
     }
   }
 
-  /** A {@link PlayerScheduler} whose tick is driven by the test, mirroring the reactive cycle test. */
+  /**
+   * A {@link PlayerScheduler} whose tick is driven by the test, mirroring the reactive cycle test.
+   */
   private static final class ManualScheduler implements PlayerScheduler {
     private final List<Runnable> queued = new ArrayList<>();
 

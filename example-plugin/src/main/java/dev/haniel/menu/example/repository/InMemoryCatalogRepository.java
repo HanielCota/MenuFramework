@@ -33,7 +33,8 @@ public final class InMemoryCatalogRepository implements CatalogRepository {
 
   private static List<CatalogProduct> tools() {
     return IntStream.rangeClosed(1, 18)
-        .mapToObj(index -> product("Tool " + index, "DIAMOND_PICKAXE", CatalogCategory.TOOLS, index))
+        .mapToObj(
+            index -> product("Tool " + index, "DIAMOND_PICKAXE", CatalogCategory.TOOLS, index))
         .toList();
   }
 

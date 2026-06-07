@@ -25,8 +25,7 @@ class PagedStructureTest {
   @Test
   void exposesItsComponents() {
     PagedStructure structure =
-        new PagedStructure(
-            new MenuId("shop"), instantiator(), provider(), Map.of(), List.of());
+        new PagedStructure(new MenuId("shop"), instantiator(), provider(), Map.of(), List.of());
 
     assertEquals("shop", structure.id().value());
     assertTrue(structure.buttons().isEmpty());

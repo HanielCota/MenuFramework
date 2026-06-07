@@ -7,8 +7,8 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 /**
  * The appearance of a single button, read from YAML. Carries no behaviour.
  *
- * <p>{@code name} and each {@code lore} line are MiniMessage strings, deserialized by the
- * Paper layer. The defaults keep a malformed entry usable rather than failing the load.
+ * <p>{@code name} and each {@code lore} line are MiniMessage strings, deserialized by the Paper
+ * layer. The defaults keep a malformed entry usable rather than failing the load.
  *
  * @param slot the slot index; must be zero or positive (range checked against rows on merge)
  * @param material the material name; defaults to {@code STONE} when blank

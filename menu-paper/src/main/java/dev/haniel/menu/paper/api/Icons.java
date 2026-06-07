@@ -8,7 +8,8 @@ import org.bukkit.Material;
  *
  * <p>Prefer this over {@link Icon#of(String)} when writing menu code: a {@link Material} is checked
  * by the compiler, so a typo cannot slip through to a runtime render failure. The returned {@link
- * Icon} is the same immutable value object, so {@code named} and {@code describedBy} chain as usual.
+ * Icon} is the same immutable value object, so {@code named} and {@code describedBy} chain as
+ * usual.
  */
 public final class Icons {
 

@@ -51,12 +51,10 @@ class MenuScannerEdgeCasesTest {
    */
   @Test
   void abstractMenuClassFailsWithAggregatedClassNamedError() {
-    MenuScanner scanner =
-        new MenuScanner(discoveryOf(AbstractMenu.class), new MenuInstantiator());
+    MenuScanner scanner = new MenuScanner(discoveryOf(AbstractMenu.class), new MenuInstantiator());
 
     MenuDiscoveryException failure =
-        assertThrows(
-            MenuDiscoveryException.class, () -> scanner.scan(ANY_PACKAGE, menu -> {}));
+        assertThrows(MenuDiscoveryException.class, () -> scanner.scan(ANY_PACKAGE, menu -> {}));
 
     assertTrue(failure.getMessage().contains("AbstractMenu"));
   }

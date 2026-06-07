@@ -19,8 +19,7 @@ class MenuScannerTest {
 
   @Test
   void registersGoodMenusAndAggregatesFailuresByClassName() {
-    MenuScanner scanner =
-        new MenuScanner(new ClassGraphMenuDiscovery(), new MenuInstantiator());
+    MenuScanner scanner = new MenuScanner(new ClassGraphMenuDiscovery(), new MenuInstantiator());
     List<Object> registered = new ArrayList<>();
 
     MenuDiscoveryException failure =

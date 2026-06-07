@@ -17,9 +17,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * One player's open view of a reactive paginated menu.
  *
- * <p>After a successful open it binds the instance's states to itself. A state change bumps the cache version and
- * schedules a single coalesced flush; the flush re-renders the current page by diff. Navigation
- * re-renders immediately into the same inventory. Closing unbinds everything (anti-leak).
+ * <p>After a successful open it binds the instance's states to itself. A state change bumps the
+ * cache version and schedules a single coalesced flush; the flush re-renders the current page by
+ * diff. Navigation re-renders immediately into the same inventory. Closing unbinds everything
+ * (anti-leak).
  */
 public final class ReactivePagedView implements ClickableHolder, ReactiveView, StateListener {
 

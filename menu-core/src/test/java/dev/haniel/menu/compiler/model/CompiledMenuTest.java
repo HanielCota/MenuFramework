@@ -48,8 +48,7 @@ class CompiledMenuTest {
   }
 
   private static CompiledStaticMenu<String> staticMenu() {
-    MenuTemplate<String> template =
-        new MenuTemplate<>(new String[9], new SlotBinding[0]);
+    MenuTemplate<String> template = new MenuTemplate<>(new String[9], new SlotBinding[0]);
     return new CompiledStaticMenu<>(new MenuId("shop"), "<green>Shop</green>", template);
   }
 
@@ -63,8 +62,7 @@ class CompiledMenuTest {
             new PagedDecor<>(null, null, "BARRIER"),
             Map.of());
     PagedWiring wiring =
-        new PagedWiring(
-            new Instantiator(() -> new Object()), provider(), Map.of(), List.of());
+        new PagedWiring(new Instantiator(() -> new Object()), provider(), Map.of(), List.of());
     return new CompiledPagedMenu<>(appearance, wiring);
   }
 

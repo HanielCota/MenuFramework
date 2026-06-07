@@ -7,8 +7,8 @@ import dev.haniel.menu.template.PagedWiring;
 /**
  * A compiled paginated menu: shared appearance plus instance-free wiring.
  *
- * <p>One per registered menu, shared across players. The platform layer binds the wiring to a
- * fresh per-player instance on each open.
+ * <p>One per registered menu, shared across players. The platform layer binds the wiring to a fresh
+ * per-player instance on each open.
  *
  * @param appearance the shared, pre-rendered appearance
  * @param wiring the unbound provider, buttons and states

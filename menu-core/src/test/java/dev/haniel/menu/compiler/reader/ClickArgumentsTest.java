@@ -65,7 +65,8 @@ class ClickArgumentsTest {
   void rejectsUnsupportedParameterType() {
     InvalidMenuException error =
         assertThrows(
-            InvalidMenuException.class, () -> builtins.bindingFor(method("withString", String.class)));
+            InvalidMenuException.class,
+            () -> builtins.bindingFor(method("withString", String.class)));
     assertTrue(error.getMessage().contains("not injectable"));
   }
 

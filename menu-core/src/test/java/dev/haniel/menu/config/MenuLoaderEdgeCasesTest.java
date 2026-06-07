@@ -70,8 +70,7 @@ class MenuLoaderEdgeCasesTest {
   @Test
   void rejectsCommentOnlyFile(@TempDir Path dir) throws IOException {
     Files.writeString(dir.resolve("comment.yml"), "# just a comment, no real config\n");
-    assertThrows(
-        InvalidMenuException.class, () -> new MenuLoader(dir).load(new MenuId("comment")));
+    assertThrows(InvalidMenuException.class, () -> new MenuLoader(dir).load(new MenuId("comment")));
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -82,8 +81,7 @@ class MenuLoaderEdgeCasesTest {
   void rejectsMissingRows(@TempDir Path dir) {
     // No rows: the record cannot be built with a legal value, so the load must fail cleanly.
     assertThrows(
-        InvalidMenuException.class,
-        () -> load(dir, "norows", "title: \"Hi\"\nbuttons: {}\n"));
+        InvalidMenuException.class, () -> load(dir, "norows", "title: \"Hi\"\nbuttons: {}\n"));
   }
 
   @Test

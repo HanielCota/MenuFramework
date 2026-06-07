@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
  * Adversarial edge cases for {@link PagedMerger}: overlay/static-slot collisions, out-of-range
  * overlay slots and silent overwrites between competing overlay buttons.
  *
- * <p>The reference mask is {@code ["<XX   XX>", "#XXXXXX #"]} over two rows, giving: slot 0 = prev
+ * <p>The reference mask is {@code ["<XX XX>", "#XXXXXX #"]} over two rows, giving: slot 0 = prev
  * nav, slot 8 = next nav, slots 1-2 and 6-7 and 10-15 = content, slot 9 and 17 = border, slots 3-5
  * and 16 = empty (space). Empty slots are the only legal home for an overlay button.
  */

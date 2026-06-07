@@ -22,14 +22,14 @@ import org.junit.jupiter.api.Test;
 class ButtonActionsExceptionEdgeCasesTest {
 
   @Test
-  void preservesTheOriginalCauseInstanceWithoutDoubleWrapping() throws ReflectiveOperationException {
+  void preservesTheOriginalCauseInstanceWithoutDoubleWrapping()
+      throws ReflectiveOperationException {
     MenuAction action = ButtonActions.bind(bound("throwChecked"), ctx -> new Object[0]);
 
     MenuActionException error =
         assertThrows(MenuActionException.class, () -> action.onClick(context()));
 
-    assertSame(
-        Thrower.CHECKED, error.getCause(), "the exact thrown instance must be the cause");
+    assertSame(Thrower.CHECKED, error.getCause(), "the exact thrown instance must be the cause");
     assertNull(error.getCause().getCause(), "no extra wrapping layer should be inserted");
   }
 

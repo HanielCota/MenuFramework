@@ -6,8 +6,8 @@ import java.util.Objects;
 /**
  * An immutable content entry: an appearance paired with a click action.
  *
- * <p>Built in code to feed paginated menus, where both the look and the behaviour of each entry
- * are dynamic. Created through {@link #of(Icon)} with a no-op action; {@link #onClick(MenuAction)}
+ * <p>Built in code to feed paginated menus, where both the look and the behaviour of each entry are
+ * dynamic. Created through {@link #of(Icon)} with a no-op action; {@link #onClick(MenuAction)}
  * returns a new item rather than mutating this one.
  */
 public final class MenuItem {

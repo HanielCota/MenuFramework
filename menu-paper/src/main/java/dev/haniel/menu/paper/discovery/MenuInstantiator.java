@@ -30,5 +30,4 @@ public final class MenuInstantiator implements MenuInstanceFactory {
           type.getName() + " needs an accessible no-arg constructor", exception);
     }
   }
-
 }

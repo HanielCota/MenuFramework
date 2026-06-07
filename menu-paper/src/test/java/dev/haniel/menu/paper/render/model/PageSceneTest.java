@@ -30,7 +30,8 @@ class PageSceneTest {
     Component title = Component.text("Shop");
     MaskLayout layout = MaskLayout.resolve(List.of("X        "), 1);
     PageScene scene =
-        new PageScene(new MenuId("shop"), title, 9, layout, null, null, new Overlay(Map.of(), Map.of()));
+        new PageScene(
+            new MenuId("shop"), title, 9, layout, null, null, new Overlay(Map.of(), Map.of()));
 
     assertEquals(new MenuId("shop"), scene.id());
     assertEquals(title, scene.title());

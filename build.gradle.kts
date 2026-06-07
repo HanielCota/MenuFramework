@@ -18,10 +18,8 @@ subprojects {
     apply(plugin = "com.diffplug.spotless")
 
     extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension>("spotless") {
-        // Tasks available (spotlessApply / spotlessCheck) per the project guide, but NOT hooked into
-        // `check`/`build`: the tree is CRLF and there is no VCS here, so a mass LF reformat would be
-        // irreversible. Run `./gradlew spotlessApply` deliberately (ideally as its own VCS commit).
-        isEnforceCheck = false
+        // The formatter is the source of truth: spotlessCheck runs as part of `check`/`build`.
+        // Run `./gradlew spotlessApply` before committing to normalise formatting.
         java {
             googleJavaFormat("1.28.0")
             removeUnusedImports()

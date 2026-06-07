@@ -59,7 +59,8 @@ class PageRendererAssemblyTest {
     assertEquals(Material.GRAY_STAINED_GLASS_PANE, page.slots()[0].getType(), "border slot 0");
     assertEquals(Material.GRAY_STAINED_GLASS_PANE, page.slots()[2].getType(), "border slot 2");
     assertEquals(Material.GRAY_STAINED_GLASS_PANE, page.slots()[7].getType(), "border slot 7");
-    assertEquals(Material.IRON_INGOT, page.slots()[1].getType(), "content not overwritten by border");
+    assertEquals(
+        Material.IRON_INGOT, page.slots()[1].getType(), "content not overwritten by border");
   }
 
   @Test
@@ -87,8 +88,10 @@ class PageRendererAssemblyTest {
     RenderedPage page =
         renderer(List.of(Material.IRON_INGOT, Material.GOLD_INGOT)).render(PageNumber.first());
 
-    assertEquals(Material.IRON_INGOT, page.slots()[1].getType(), "first item in first content slot");
-    assertEquals(Material.GOLD_INGOT, page.slots()[3].getType(), "second item in second content slot");
+    assertEquals(
+        Material.IRON_INGOT, page.slots()[1].getType(), "first item in first content slot");
+    assertEquals(
+        Material.GOLD_INGOT, page.slots()[3].getType(), "second item in second content slot");
     assertNull(page.slots()[5], "third content slot stays empty on a partial page");
     assertNull(page.slots()[8], "fourth content slot stays empty on a partial page");
   }
@@ -134,7 +137,9 @@ class PageRendererAssemblyTest {
   }
 
   private static List<MenuItem> toItems(List<Material> contentMaterials) {
-    return contentMaterials.stream().map(material -> MenuItem.of(Icon.of(material.name()))).toList();
+    return contentMaterials.stream()
+        .map(material -> MenuItem.of(Icon.of(material.name())))
+        .toList();
   }
 
   private PageRenderer rendererFromItems(List<MenuItem> items) {
@@ -152,7 +157,8 @@ class PageRendererAssemblyTest {
                 stack(Material.ARROW),
                 stack(Material.SPECTRAL_ARROW),
                 stack(Material.GRAY_STAINED_GLASS_PANE)),
-            new PagedContent<>(provider(items), icon -> stack(Material.matchMaterial(icon.material()))),
+            new PagedContent<>(
+                provider(items), icon -> stack(Material.matchMaterial(icon.material()))),
             overlay);
     return new PageRenderer(
         scene,

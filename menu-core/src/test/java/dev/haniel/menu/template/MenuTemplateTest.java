@@ -27,7 +27,8 @@ class MenuTemplateTest {
 
   @Test
   void returnsEmptyForUnsetVisual() {
-    MenuTemplate<String> template = new MenuTemplate<>(new Object[] {null, "set"}, new SlotBinding[0]);
+    MenuTemplate<String> template =
+        new MenuTemplate<>(new Object[] {null, "set"}, new SlotBinding[0]);
 
     assertTrue(template.iconAt(0).isEmpty());
   }

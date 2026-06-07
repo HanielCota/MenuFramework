@@ -10,8 +10,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * Edge-case probes for the immutable config records the loader produces: default coalescing,
- * range checks, immutability and the pagination "empty" heuristic.
+ * Edge-case probes for the immutable config records the loader produces: default coalescing, range
+ * checks, immutability and the pagination "empty" heuristic.
  */
 class ConfigRecordEdgeCasesTest {
 
@@ -60,7 +60,8 @@ class ConfigRecordEdgeCasesTest {
   void menuConfigTreatsMasklessPaginationAsStatic() {
     PaginationConfig maskless =
         new PaginationConfig(
-            List.of(), new ButtonConfig(0, "ARROW", "", List.of()),
+            List.of(),
+            new ButtonConfig(0, "ARROW", "", List.of()),
             new ButtonConfig(0, "ARROW", "", List.of()));
     assertTrue(new MenuConfig("t", 6, Map.of(), maskless).paginationConfig().isEmpty());
   }
@@ -69,7 +70,8 @@ class ConfigRecordEdgeCasesTest {
   void menuConfigExposesPaginationWhenMaskPresent() {
     PaginationConfig paged =
         new PaginationConfig(
-            List.of("XXXXXXXXX"), new ButtonConfig(0, "ARROW", "", List.of()),
+            List.of("XXXXXXXXX"),
+            new ButtonConfig(0, "ARROW", "", List.of()),
             new ButtonConfig(0, "ARROW", "", List.of()));
     assertTrue(new MenuConfig("t", 1, Map.of(), paged).paginationConfig().isPresent());
   }
@@ -132,8 +134,7 @@ class ConfigRecordEdgeCasesTest {
 
   @Test
   void paginationConfigMaskIsImmutable() {
-    PaginationConfig pagination =
-        new PaginationConfig(List.of("XXXXXXXXX"), null, null);
+    PaginationConfig pagination = new PaginationConfig(List.of("XXXXXXXXX"), null, null);
     assertThrows(UnsupportedOperationException.class, () -> pagination.mask().add("more"));
   }
 

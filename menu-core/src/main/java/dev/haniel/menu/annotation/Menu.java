@@ -8,8 +8,8 @@ import java.lang.annotation.Target;
 /**
  * Marks a class as a menu template, identified by a logical id.
  *
- * <p>The id is the only metadata carried here: appearance (title, size, slots) is resolved
- * later from configuration. Annotated classes are read once at boot by the compiler.
+ * <p>The id is the only metadata carried here: appearance (title, size, slots) is resolved later
+ * from configuration. Annotated classes are read once at boot by the compiler.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

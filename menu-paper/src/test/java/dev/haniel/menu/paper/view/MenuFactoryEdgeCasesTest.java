@@ -34,8 +34,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Visitor-dispatch probes for {@link MenuFactory}: a {@link CompiledStaticMenu} must build a {@link
  * StaticPaperMenu} (deserializing its title once through the runtime), and a {@link
- * CompiledPagedMenu} must build a {@link ReactivePagedMenu} without touching any runtime services at
- * build time (binding is deferred to open).
+ * CompiledPagedMenu} must build a {@link ReactivePagedMenu} without touching any runtime services
+ * at build time (binding is deferred to open).
  */
 class MenuFactoryEdgeCasesTest {
 
@@ -49,7 +49,8 @@ class MenuFactoryEdgeCasesTest {
 
     PaperMenu menu = new MenuFactory(runtime).create(compiled);
 
-    assertInstanceOf(StaticPaperMenu.class, menu, "a static compiled menu must build a static view");
+    assertInstanceOf(
+        StaticPaperMenu.class, menu, "a static compiled menu must build a static view");
     verify(miniMessage).deserialize("<b>Shop</b>");
   }
 
@@ -59,7 +60,8 @@ class MenuFactoryEdgeCasesTest {
 
     PaperMenu menu = new MenuFactory(runtimeWith(mock(MiniMessage.class))).create(compiled);
 
-    assertInstanceOf(ReactivePagedMenu.class, menu, "a paged compiled menu must build a reactive view");
+    assertInstanceOf(
+        ReactivePagedMenu.class, menu, "a paged compiled menu must build a reactive view");
   }
 
   @Test
@@ -70,7 +72,8 @@ class MenuFactoryEdgeCasesTest {
     MenuScheduler scheduler = mock(MenuScheduler.class);
     InventoryFactory inventories = mock(InventoryFactory.class);
     MenuRuntime runtime =
-        new MenuRuntime(Logger.getLogger("factory-test"), icons(), miniMessage, scheduler, inventories);
+        new MenuRuntime(
+            Logger.getLogger("factory-test"), icons(), miniMessage, scheduler, inventories);
 
     new MenuFactory(runtime).create(pagedMenu());
 

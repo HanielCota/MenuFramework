@@ -14,8 +14,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 /**
- * Builds an {@link ItemStack} from an {@link Icon}, deserializing MiniMessage into the display
- * name and lore.
+ * Builds an {@link ItemStack} from an {@link Icon}, deserializing MiniMessage into the display name
+ * and lore.
  *
  * <p>Called once per static item or navigation control at merge time, and once per content item
  * when a page is rendered (and then cached), so a repeated page open allocates no items.

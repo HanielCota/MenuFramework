@@ -5,10 +5,10 @@ import java.util.Objects;
 /**
  * An explicit, observable holder of a value.
  *
- * <p>The reactive primitive: {@code State.of(initial)} declares it, {@code set(next)} changes it.
- * A change notifies the bound listener (the view), which schedules a re-render. There is no proxy
- * or runtime reflection — the write is detectable because it goes through {@link #set(Object)}.
- * Before a listener is bound, {@code set} just stores the value.
+ * <p>The reactive primitive: {@code State.of(initial)} declares it, {@code set(next)} changes it. A
+ * change notifies the bound listener (the view), which schedules a re-render. There is no proxy or
+ * runtime reflection — the write is detectable because it goes through {@link #set(Object)}. Before
+ * a listener is bound, {@code set} just stores the value.
  *
  * <p><strong>Threading:</strong> not thread-safe by design. A state belongs to one open view and
  * must be read and written on that view's owning thread — the server main thread on Paper, the

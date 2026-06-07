@@ -2,8 +2,8 @@ package dev.haniel.menu.paper.render.cache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import java.util.Arrays;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import org.bukkit.inventory.ItemStack;

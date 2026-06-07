@@ -50,8 +50,7 @@ class OverlayTest {
     Overlay overlay = new Overlay(Map.of(0, mock(ItemStack.class)), Map.of());
 
     assertThrows(
-        UnsupportedOperationException.class,
-        () -> overlay.visuals().put(1, mock(ItemStack.class)));
+        UnsupportedOperationException.class, () -> overlay.visuals().put(1, mock(ItemStack.class)));
   }
 
   @Test

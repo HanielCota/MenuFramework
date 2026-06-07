@@ -35,7 +35,8 @@ class PackageNamesTest {
   @Test
   void rejectsEmptyArray() {
     IllegalArgumentException error =
-        assertThrows(IllegalArgumentException.class, () -> PackageNames.requireValid(new String[0]));
+        assertThrows(
+            IllegalArgumentException.class, () -> PackageNames.requireValid(new String[0]));
 
     assertEquals("At least one base package is required", error.getMessage());
   }

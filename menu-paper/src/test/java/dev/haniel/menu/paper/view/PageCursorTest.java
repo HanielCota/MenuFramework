@@ -52,7 +52,8 @@ class PageCursorTest {
     ItemStack item = mock(ItemStack.class);
 
     cursor.apply(
-        new RenderedPage(PageNumber.first(), new ItemStack[] {item, null}, new MenuAction[2], false, false));
+        new RenderedPage(
+            PageNumber.first(), new ItemStack[] {item, null}, new MenuAction[2], false, false));
 
     verify(inventory).setItem(0, item);
   }

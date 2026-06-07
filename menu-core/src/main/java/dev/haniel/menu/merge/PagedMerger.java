@@ -126,7 +126,11 @@ public final class PagedMerger<V> {
               }
               if (slot == layout.previousSlot() || slot == layout.nextSlot()) {
                 throw new InvalidMenuException(
-                    "Button '" + id + "' cannot use navigation slot " + slot + " in pagination mask");
+                    "Button '"
+                        + id
+                        + "' cannot use navigation slot "
+                        + slot
+                        + " in pagination mask");
               }
             });
   }
@@ -171,7 +175,8 @@ public final class PagedMerger<V> {
     try {
       return Slot.of(button.slot(), config.rows()).value();
     } catch (IllegalArgumentException exception) {
-      throw new InvalidMenuException("Button slot " + button.slot() + " is outside the menu bounds");
+      throw new InvalidMenuException(
+          "Button slot " + button.slot() + " is outside the menu bounds");
     }
   }
 }

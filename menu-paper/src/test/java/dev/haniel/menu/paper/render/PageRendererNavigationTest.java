@@ -75,7 +75,8 @@ class PageRendererNavigationTest {
     RenderedPage page = renderer(3).render(new PageNumber(50));
 
     assertEquals(1, page.page().value());
-    assertNotNull(page.slots()[1], "the single item of the last page sits in the first content slot");
+    assertNotNull(
+        page.slots()[1], "the single item of the last page sits in the first content slot");
     assertNull(page.slots()[2], "the unused content slot on the last page stays empty");
   }
 
@@ -102,9 +103,7 @@ class PageRendererNavigationTest {
     Fixed source = new Fixed(count);
     try {
       return new ContentProvider(
-          MethodHandles.lookup()
-              .unreflect(Fixed.class.getDeclaredMethod("items"))
-              .bindTo(source));
+          MethodHandles.lookup().unreflect(Fixed.class.getDeclaredMethod("items")).bindTo(source));
     } catch (ReflectiveOperationException error) {
       throw new IllegalStateException(error);
     }

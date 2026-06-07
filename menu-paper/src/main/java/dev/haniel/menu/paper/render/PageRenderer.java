@@ -9,8 +9,8 @@ import dev.haniel.menu.item.MenuItem;
 import dev.haniel.menu.paper.render.cache.DataVersion;
 import dev.haniel.menu.paper.render.cache.PageCache;
 import dev.haniel.menu.paper.render.cache.PageKey;
-import dev.haniel.menu.paper.render.model.RenderedPage;
 import dev.haniel.menu.paper.render.model.PageScene;
+import dev.haniel.menu.paper.render.model.RenderedPage;
 import dev.haniel.menu.template.PagedDecor;
 import java.util.Arrays;
 import java.util.List;
@@ -23,9 +23,10 @@ import org.bukkit.inventory.ItemStack;
  * Renders a page of a paginated menu: provider call, slice, cached visuals, slot assembly.
  *
  * <p>The provider is invoked every render for fresh actions and content (a content change is
- * reflected even without an explicit invalidation); only the content visuals go through the per-view
- * {@link PageCache}. {@link #invalidate()} bumps the data version so a state change makes the
- * current page's cached visuals miss and rebuild. The requested page is clamped to the valid range.
+ * reflected even without an explicit invalidation); only the content visuals go through the
+ * per-view {@link PageCache}. {@link #invalidate()} bumps the data version so a state change makes
+ * the current page's cached visuals miss and rebuild. The requested page is clamped to the valid
+ * range.
  *
  * <p>Not thread-safe: one renderer serves one open view and runs on that view's owning thread.
  */
@@ -99,7 +100,11 @@ public final class PageRenderer {
     placeNavigation(slots, page, paginator);
     placeOverlay(slots, actions);
     return new RenderedPage(
-        page, slots, actions, paginator.hasPrevious(page), paginator.hasNext(page, scene.perPage()));
+        page,
+        slots,
+        actions,
+        paginator.hasPrevious(page),
+        paginator.hasNext(page, scene.perPage()));
   }
 
   private void fillBorder(ItemStack[] slots) {
@@ -111,10 +116,12 @@ public final class PageRenderer {
       ItemStack[] slots, MenuAction[] actions, List<MenuItem> items, ItemStack[] visuals) {
     int[] contentSlots = layout().contentSlots();
     IntStream.range(0, items.size())
-        .forEach(index -> place(slots, actions, contentSlots[index], visuals[index], items.get(index)));
+        .forEach(
+            index -> place(slots, actions, contentSlots[index], visuals[index], items.get(index)));
   }
 
-  private void place(ItemStack[] slots, MenuAction[] actions, int slot, ItemStack visual, MenuItem item) {
+  private void place(
+      ItemStack[] slots, MenuAction[] actions, int slot, ItemStack visual, MenuItem item) {
     slots[slot] = visual;
     actions[slot] = item.action();
   }

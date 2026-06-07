@@ -5,9 +5,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A monotonically increasing version of a menu's source data.
  *
- * <p>Part of the page cache key: bumping it makes every cached page for the menu miss on the
- * next render, so the visuals are rebuilt from the changed data. Click actions never come from
- * the cache, so they are always current regardless of the version.
+ * <p>Part of the page cache key: bumping it makes every cached page for the menu miss on the next
+ * render, so the visuals are rebuilt from the changed data. Click actions never come from the
+ * cache, so they are always current regardless of the version.
  */
 public final class DataVersion {
 

@@ -43,8 +43,7 @@ class PagedWiringTest {
     UnboundProvider provider = provider();
     UnboundAction action = action();
     StateField field = stateField();
-    PagedWiring wiring =
-        new PagedWiring(instantiator, provider, Map.of(3, action), List.of(field));
+    PagedWiring wiring = new PagedWiring(instantiator, provider, Map.of(3, action), List.of(field));
 
     assertSame(instantiator, wiring.instantiator());
     assertSame(provider, wiring.provider());

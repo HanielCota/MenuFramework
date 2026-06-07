@@ -5,8 +5,8 @@ import dev.haniel.menu.click.ClickContext;
 /**
  * The behaviour run when a slot is clicked.
  *
- * <p>Equivalent to a {@code Consumer<ClickContext>}, named for the domain so it reads at the
- * call site and can be referenced by the template and compiler.
+ * <p>Equivalent to a {@code Consumer<ClickContext>}, named for the domain so it reads at the call
+ * site and can be referenced by the template and compiler.
  */
 @FunctionalInterface
 public interface MenuAction {

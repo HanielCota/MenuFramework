@@ -28,8 +28,7 @@ class PagedContentTest {
 
   @Test
   void renderRunsTheFactoryOnTheItemIcon() {
-    PagedContent<String> content =
-        new PagedContent<>(providerYielding(List.of()), Icon::material);
+    PagedContent<String> content = new PagedContent<>(providerYielding(List.of()), Icon::material);
     MenuItem item = MenuItem.of(Icon.of("DIAMOND"));
 
     assertEquals("DIAMOND", content.render(item));

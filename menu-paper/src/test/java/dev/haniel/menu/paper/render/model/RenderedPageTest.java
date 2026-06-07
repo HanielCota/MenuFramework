@@ -26,7 +26,8 @@ class RenderedPageTest {
 
   @Test
   void carriesNavigationFlags() {
-    RenderedPage page = new RenderedPage(PageNumber.first(), new ItemStack[0], new MenuAction[0], true, true);
+    RenderedPage page =
+        new RenderedPage(PageNumber.first(), new ItemStack[0], new MenuAction[0], true, true);
 
     assertTrue(page.hasPrevious());
     assertTrue(page.hasNext());

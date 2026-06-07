@@ -9,7 +9,6 @@ import dev.haniel.menu.annotation.Paginated;
 import dev.haniel.menu.annotation.Reactive;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.item.MenuItem;
-import dev.haniel.menu.state.State;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

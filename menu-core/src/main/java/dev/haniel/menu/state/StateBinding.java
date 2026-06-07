@@ -5,8 +5,8 @@ import java.util.List;
 /**
  * A first-class collection of the states bound to one view.
  *
- * <p>Binding registers the view as the listener of every state; unbinding clears them all. The
- * view unbinds on close so a closed view leaves no references behind for the garbage collector.
+ * <p>Binding registers the view as the listener of every state; unbinding clears them all. The view
+ * unbinds on close so a closed view leaves no references behind for the garbage collector.
  */
 public final class StateBinding {
 

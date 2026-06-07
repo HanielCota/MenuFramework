@@ -47,9 +47,7 @@ class UnboundProviderTest {
     }
 
     List<MenuItem> items() {
-      return IntStream.range(0, count)
-          .mapToObj(index -> MenuItem.of(Icon.of("STONE")))
-          .toList();
+      return IntStream.range(0, count).mapToObj(index -> MenuItem.of(Icon.of("STONE"))).toList();
     }
   }
 }

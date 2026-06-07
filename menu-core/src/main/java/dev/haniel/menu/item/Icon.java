@@ -6,8 +6,8 @@ import java.util.List;
  * The appearance of a slot, independent of any platform item type.
  *
  * <p>Built either from YAML (a {@code ButtonConfig}) or in code for dynamic paginated content.
- * {@code name} and each {@code lore} line are MiniMessage strings, deserialized by the Paper
- * layer. The {@code with}-style methods return new instances; the value object stays immutable.
+ * {@code name} and each {@code lore} line are MiniMessage strings, deserialized by the Paper layer.
+ * The {@code with}-style methods return new instances; the value object stays immutable.
  *
  * <p><strong>Security:</strong> {@code name}/{@code lore} are parsed as trusted MiniMessage. When
  * interpolating player-controlled text into them, escape it first — otherwise a crafted value could

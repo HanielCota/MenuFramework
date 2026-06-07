@@ -18,8 +18,7 @@ class MenuErrorsTest {
     MenuErrors errors = new MenuErrors();
     errors.add(String.class, new IllegalStateException("broken"));
 
-    MenuDiscoveryException thrown =
-        assertThrows(MenuDiscoveryException.class, errors::failIfAny);
+    MenuDiscoveryException thrown = assertThrows(MenuDiscoveryException.class, errors::failIfAny);
 
     assertTrue(thrown.getMessage().contains(String.class.getName()));
     assertTrue(thrown.getMessage().contains("broken"));
@@ -31,8 +30,7 @@ class MenuErrorsTest {
     errors.add(Integer.class, new IllegalStateException("first"));
     errors.add(Long.class, new IllegalStateException("second"));
 
-    MenuDiscoveryException thrown =
-        assertThrows(MenuDiscoveryException.class, errors::failIfAny);
+    MenuDiscoveryException thrown = assertThrows(MenuDiscoveryException.class, errors::failIfAny);
 
     assertTrue(thrown.getMessage().contains("first"));
     assertTrue(thrown.getMessage().contains("second"));
@@ -45,8 +43,7 @@ class MenuErrorsTest {
     errors.add(Integer.class, new IllegalStateException("first"));
     errors.add(Long.class, new IllegalStateException("second"));
 
-    MenuDiscoveryException thrown =
-        assertThrows(MenuDiscoveryException.class, errors::failIfAny);
+    MenuDiscoveryException thrown = assertThrows(MenuDiscoveryException.class, errors::failIfAny);
 
     assertTrue(thrown.getMessage().contains(Integer.class.getName()));
     assertTrue(thrown.getMessage().contains(Long.class.getName()));

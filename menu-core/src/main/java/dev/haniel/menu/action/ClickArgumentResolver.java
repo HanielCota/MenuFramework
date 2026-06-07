@@ -5,10 +5,10 @@ import dev.haniel.menu.click.ClickContext;
 /**
  * Supplies the value for a single {@code @Button} method parameter from a click.
  *
- * <p>Register one resolver per injectable parameter type to widen the set of accepted {@code
- * @Button} signatures without editing the reader: teaching the framework a new parameter type is a
- * new resolver, never a new branch (Open/Closed). {@link ClickContext} is always available; the
- * platform layer contributes the rest (such as the Bukkit player).
+ * <p>Register one resolver per injectable parameter type to widen the set of accepted
+ * {@code @Button} signatures without editing the reader: teaching the framework a new parameter
+ * type is a new resolver, never a new branch (Open/Closed). {@link ClickContext} is always
+ * available; the platform layer contributes the rest (such as the Bukkit player).
  */
 public interface ClickArgumentResolver {
 

@@ -63,8 +63,7 @@ public final class MenuScanner {
     }
   }
 
-  private void registerType(
-      DiscoveredMenu menu, Consumer<Class<?>> registrar, MenuErrors errors) {
+  private void registerType(DiscoveredMenu menu, Consumer<Class<?>> registrar, MenuErrors errors) {
     try {
       registrar.accept(menu.type());
     } catch (RuntimeException failure) {

@@ -10,9 +10,9 @@ import java.util.stream.IntStream;
  * The resolved layout of a pagination mask.
  *
  * <p>A value object built once at boot from the mask strings: {@code X} marks paginated content,
- * {@code #} a static border, {@code <}/{@code >} the navigation controls and a space an empty
- * slot. Resolving validates the grid (width 9, height equal to rows, at least one content slot
- * and at most one of each control) and fails the boot with a clear message otherwise.
+ * {@code #} a static border, {@code <}/{@code >} the navigation controls and a space an empty slot.
+ * Resolving validates the grid (width 9, height equal to rows, at least one content slot and at
+ * most one of each control) and fails the boot with a clear message otherwise.
  *
  * @param contentSlots the slots that hold paginated content, in reading order
  * @param borderSlots the slots that hold the static border
@@ -96,8 +96,11 @@ public record MaskLayout(
     int[] content = slotsMatching(mask, size, 'X');
     ensureHasContent(content);
     return new MaskLayout(
-        content, slotsMatching(mask, size, '#'),
-        singleSlot(mask, size, '<'), singleSlot(mask, size, '>'), size);
+        content,
+        slotsMatching(mask, size, '#'),
+        singleSlot(mask, size, '<'),
+        singleSlot(mask, size, '>'),
+        size);
   }
 
   private static void validateShape(List<String> mask, int rows) {
@@ -109,7 +112,8 @@ public record MaskLayout(
 
   private static void validateWidth(String line) {
     if (line.length() != WIDTH) {
-      throw new InvalidMenuException("mask line must be 9 wide but was " + line.length() + ": " + line);
+      throw new InvalidMenuException(
+          "mask line must be 9 wide but was " + line.length() + ": " + line);
     }
     line.chars().mapToObj(value -> (char) value).forEach(MaskLayout::validateRole);
   }

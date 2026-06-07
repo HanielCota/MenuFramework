@@ -46,7 +46,9 @@ public final class DiffWriter {
    */
   public void write(ItemStack[] next) {
     int limit = Math.min(next.length, inventory.getSize());
-    IntStream.range(0, limit).filter(slot -> changed(slot, next)).forEach(slot -> apply(slot, next));
+    IntStream.range(0, limit)
+        .filter(slot -> changed(slot, next))
+        .forEach(slot -> apply(slot, next));
     previous = snapshot(next);
   }
 

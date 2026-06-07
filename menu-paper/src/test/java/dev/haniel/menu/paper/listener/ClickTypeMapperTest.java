@@ -12,8 +12,7 @@ class ClickTypeMapperTest {
     assertEquals(ClickType.LEFT, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.LEFT));
     assertEquals(ClickType.RIGHT, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.RIGHT));
     assertEquals(
-        ClickType.SHIFT_LEFT,
-        ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.SHIFT_LEFT));
+        ClickType.SHIFT_LEFT, ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.SHIFT_LEFT));
     assertEquals(
         ClickType.SHIFT_RIGHT,
         ClickTypeMapper.map(org.bukkit.event.inventory.ClickType.SHIFT_RIGHT));

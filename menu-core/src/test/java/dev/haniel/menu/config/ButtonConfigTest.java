@@ -25,7 +25,8 @@ class ButtonConfigTest {
 
   @Test
   void rejectsNegativeSlot() {
-    assertThrows(IllegalArgumentException.class, () -> new ButtonConfig(-1, "DIRT", "n", List.of()));
+    assertThrows(
+        IllegalArgumentException.class, () -> new ButtonConfig(-1, "DIRT", "n", List.of()));
   }
 
   @Test

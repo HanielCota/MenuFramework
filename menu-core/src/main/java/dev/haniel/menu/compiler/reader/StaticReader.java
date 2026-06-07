@@ -86,7 +86,8 @@ public final class StaticReader {
       method.setAccessible(true);
       return MethodHandles.lookup().unreflect(method).bindTo(instance);
     } catch (IllegalAccessException exception) {
-      throw new InvalidMenuException("Cannot access annotated method " + method.getName(), exception);
+      throw new InvalidMenuException(
+          "Cannot access annotated method " + method.getName(), exception);
     }
   }
 }

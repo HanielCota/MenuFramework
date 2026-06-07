@@ -1,11 +1,10 @@
 package dev.haniel.menu.example.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.MenuFramework;
@@ -54,7 +53,8 @@ class MenuReloaderTest {
   void reportsSuccessfulReload() {
     Player player = mock(Player.class);
     when(player.hasPermission("menuexample.reload")).thenReturn(true);
-    ReloadReport report = new ReloadReport(List.of(new MenuId("main"), new MenuId("catalog")), List.of());
+    ReloadReport report =
+        new ReloadReport(List.of(new MenuId("main"), new MenuId("catalog")), List.of());
     when(framework.reloadAllReportAsync()).thenReturn(CompletableFuture.completedFuture(report));
     reloader.attach(framework);
 

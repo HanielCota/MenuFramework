@@ -45,7 +45,8 @@ class MethodSignatureValidatorTest {
   @Test
   void rejectsRawListReturnType() {
     assertThrows(
-        InvalidMenuException.class, () -> validator.requirePaginatedProvider(method("returnsRawList")));
+        InvalidMenuException.class,
+        () -> validator.requirePaginatedProvider(method("returnsRawList")));
   }
 
   private static Method method(String name, Class<?>... parameters) {

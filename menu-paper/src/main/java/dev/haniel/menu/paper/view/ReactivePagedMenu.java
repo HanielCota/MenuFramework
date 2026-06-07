@@ -47,7 +47,10 @@ public final class ReactivePagedMenu implements PaperMenu {
     Object instance = plan.wiring().instantiator().create();
     PageRenderer renderer =
         new PageRenderer(
-            scene(instance), new PageCache(runtime.logger()), new DataVersion(), runtime.inventories());
+            scene(instance),
+            new PageCache(runtime.logger()),
+            new DataVersion(),
+            runtime.inventories());
     ReactivePagedView view =
         new ReactivePagedView(renderer, states(instance), scheduler(player), runtime.logger());
     try {

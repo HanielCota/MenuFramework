@@ -136,7 +136,8 @@ class PageRendererEdgeCasesTest {
             9,
             MaskLayout.resolve(MASK, 1),
             new PagedDecor<>(stack(Material.ARROW), stack(Material.SPECTRAL_ARROW), null),
-            new PagedContent<>(provider(items), icon -> stack(Material.matchMaterial(icon.material()))),
+            new PagedContent<>(
+                provider(items), icon -> stack(Material.matchMaterial(icon.material()))),
             new Overlay(Map.of(), Map.of()));
     return new PageRenderer(
         scene,

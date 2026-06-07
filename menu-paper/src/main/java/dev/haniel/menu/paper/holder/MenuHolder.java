@@ -13,9 +13,9 @@ import org.jetbrains.annotations.NotNull;
  * The {@link org.bukkit.inventory.InventoryHolder} that identifies a menu view and routes its
  * clicks.
  *
- * <p>A click is matched to its menu through this holder, so no {@code Map<UUID, Menu>} is
- * needed. The inventory is filled from the template's pre-built items; opening allocates no
- * items of its own.
+ * <p>A click is matched to its menu through this holder, so no {@code Map<UUID, Menu>} is needed.
+ * The inventory is filled from the template's pre-built items; opening allocates no items of its
+ * own.
  */
 public final class MenuHolder implements ClickableHolder {
 

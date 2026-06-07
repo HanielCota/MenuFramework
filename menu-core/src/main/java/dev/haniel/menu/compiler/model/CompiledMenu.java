@@ -5,8 +5,8 @@ import dev.haniel.menu.domain.MenuId;
 /**
  * The result of merging behaviour and appearance, either static or paginated.
  *
- * <p>Sealed so the platform layer can dispatch over the two variants exhaustively. The title is
- * the raw MiniMessage string; the platform deserializes it when a view is opened.
+ * <p>Sealed so the platform layer can dispatch over the two variants exhaustively. The title is the
+ * raw MiniMessage string; the platform deserializes it when a view is opened.
  *
  * @param <V> the platform visual type (an {@code ItemStack} on Paper)
  */

@@ -22,8 +22,8 @@ import org.mockito.ArgumentCaptor;
 /**
  * Adversarial probes of the click/drag/close boundary in {@link MenuListener}.
  *
- * <p>Focus: which interactions get cancelled (item-theft protection), what raw slot is forwarded
- * to the holder, and whether non-player or non-menu interactions are correctly ignored.
+ * <p>Focus: which interactions get cancelled (item-theft protection), what raw slot is forwarded to
+ * the holder, and whether non-player or non-menu interactions are correctly ignored.
  */
 class MenuListenerEdgeCasesTest {
 
@@ -52,8 +52,8 @@ class MenuListenerEdgeCasesTest {
 
   /**
    * A shift-click anywhere in the view while a menu is open MUST be cancelled. The event's top
-   * inventory is the menu, so a shift-click that would otherwise sweep items into the menu has to be
-   * blocked even though the routed slot resolves to no action.
+   * inventory is the menu, so a shift-click that would otherwise sweep items into the menu has to
+   * be blocked even though the routed slot resolves to no action.
    */
   @Test
   void cancelsShiftClickWhileMenuOpen() {
@@ -147,7 +147,9 @@ class MenuListenerEdgeCasesTest {
 
   // ---- Drag edge cases ----
 
-  /** A drag whose top inventory is a non-menu must not be cancelled (do not block vanilla drags). */
+  /**
+   * A drag whose top inventory is a non-menu must not be cancelled (do not block vanilla drags).
+   */
   @Test
   void ignoresDragWhenHolderIsNonClickableHolder() {
     InventoryDragEvent event = mock(InventoryDragEvent.class);

@@ -38,11 +38,11 @@ class StaticMergerEdgeCasesTest {
   void rejectsTwoButtonsConfiguredOnTheSameSlot() {
     ButtonConfig first = new ButtonConfig(4, "EMERALD", "<green>First</green>", List.of());
     ButtonConfig second = new ButtonConfig(4, "DIAMOND", "<aqua>Second</aqua>", List.of());
-    MenuConfig collision =
-        new MenuConfig("t", 1, Map.of("first", first, "second", second), null);
+    MenuConfig collision = new MenuConfig("t", 1, Map.of("first", first, "second", second), null);
 
     assertThrows(
-        InvalidMenuException.class, () -> merger.merge(reader.read(new TwoButtonMenu()), collision));
+        InvalidMenuException.class,
+        () -> merger.merge(reader.read(new TwoButtonMenu()), collision));
   }
 
   /**
@@ -56,7 +56,8 @@ class StaticMergerEdgeCasesTest {
     MenuConfig outOfRange = new MenuConfig("t", 1, Map.of("buy", buy), null);
 
     assertThrows(
-        InvalidMenuException.class, () -> merger.merge(reader.read(new OneButtonMenu()), outOfRange));
+        InvalidMenuException.class,
+        () -> merger.merge(reader.read(new OneButtonMenu()), outOfRange));
   }
 
   /**

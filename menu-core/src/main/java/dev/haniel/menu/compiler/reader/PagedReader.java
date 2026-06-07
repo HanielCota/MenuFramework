@@ -178,8 +178,7 @@ public final class PagedReader {
 
   private void validateStateField(Field field) {
     if (!State.class.isAssignableFrom(field.getType())) {
-      throw new InvalidMenuException(
-          "@Reactive field " + field.getName() + " must be State<?>");
+      throw new InvalidMenuException("@Reactive field " + field.getName() + " must be State<?>");
     }
   }
 

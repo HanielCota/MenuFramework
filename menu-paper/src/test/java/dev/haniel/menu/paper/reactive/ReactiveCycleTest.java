@@ -25,11 +25,11 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Integration test of the reactive re-render cycle, wired from the same parts production uses but
- * without a Bukkit server: a real {@link PagedReader} reads {@code @Reactive}/{@code @Button} off an
- * annotated class, the states are bound through {@link ReactiveBinding}/{@link Flusher} to a
+ * without a Bukkit server: a real {@link PagedReader} reads {@code @Reactive}/{@code @Button} off
+ * an annotated class, the states are bound through {@link ReactiveBinding}/{@link Flusher} to a
  * controllable scheduler, and clicking a button drives the coalesced re-render. The ItemStack and
- * inventory rendering is the only server-bound part and is deliberately left out (see the class-test
- * notes).
+ * inventory rendering is the only server-bound part and is deliberately left out (see the
+ * class-test notes).
  */
 class ReactiveCycleTest {
 

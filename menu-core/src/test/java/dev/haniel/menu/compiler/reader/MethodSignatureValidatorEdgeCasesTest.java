@@ -43,8 +43,7 @@ class MethodSignatureValidatorEdgeCasesTest {
   @Test
   void rejectsNestedListOfMenuItemLists() {
     assertThrows(
-        InvalidMenuException.class,
-        () -> validator.requirePaginatedProvider(method("nestedList")));
+        InvalidMenuException.class, () -> validator.requirePaginatedProvider(method("nestedList")));
   }
 
   @Test
@@ -65,7 +64,8 @@ class MethodSignatureValidatorEdgeCasesTest {
   @Test
   void rejectsVoidReturn() {
     assertThrows(
-        InvalidMenuException.class, () -> validator.requirePaginatedProvider(method("returnsVoid")));
+        InvalidMenuException.class,
+        () -> validator.requirePaginatedProvider(method("returnsVoid")));
   }
 
   @Test

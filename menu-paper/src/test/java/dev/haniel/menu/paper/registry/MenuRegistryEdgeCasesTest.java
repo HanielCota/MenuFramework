@@ -159,9 +159,7 @@ class MenuRegistryEdgeCasesTest {
     MenuFactory factory = mock();
     MenuRegistry registry = new MenuRegistry(compiler, factory, new MenuCatalog());
     Object menu = new Object();
-    when(compiler.compile(menu))
-        .thenReturn(compiledWithId(id))
-        .thenThrow(new RuntimeException());
+    when(compiler.compile(menu)).thenReturn(compiledWithId(id)).thenThrow(new RuntimeException());
     when(factory.create(any())).thenReturn(mock(PaperMenu.class));
     registry.register(menu);
 

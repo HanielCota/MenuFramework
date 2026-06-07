@@ -77,7 +77,10 @@ public final class StaticMerger<V> {
     ButtonConfig button = config.buttons().get(id.value());
     if (button == null) {
       throw new InvalidMenuException(
-          "Button '" + id.value() + "' is annotated but missing in YAML; add buttons." + id.value());
+          "Button '"
+              + id.value()
+              + "' is annotated but missing in YAML; add buttons."
+              + id.value());
     }
     return button;
   }
@@ -86,7 +89,8 @@ public final class StaticMerger<V> {
     try {
       return Slot.of(button.slot(), config.rows()).value();
     } catch (IllegalArgumentException exception) {
-      throw new InvalidMenuException("Button slot " + button.slot() + " is outside the menu bounds");
+      throw new InvalidMenuException(
+          "Button slot " + button.slot() + " is outside the menu bounds");
     }
   }
 }

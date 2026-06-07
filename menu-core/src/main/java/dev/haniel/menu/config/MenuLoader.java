@@ -1,8 +1,8 @@
 package dev.haniel.menu.config;
 
 import dev.haniel.menu.compiler.InvalidMenuException;
-import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.MaskLayout;
+import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.Slot;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -93,7 +93,9 @@ public final class MenuLoader {
   private void requireButtonsMap(MenuId id, ConfigurationNode buttons) {
     if (!buttons.empty() && !buttons.isMap()) {
       throw new InvalidMenuException(
-          "Menu '" + id.value() + "' has a malformed 'buttons' section; it must be a map of id to"
+          "Menu '"
+              + id.value()
+              + "' has a malformed 'buttons' section; it must be a map of id to"
               + " button");
     }
   }
@@ -132,7 +134,11 @@ public final class MenuLoader {
       Slot.of(slot, rows);
     } catch (IllegalArgumentException exception) {
       throw new InvalidMenuException(
-          "Menu '" + id.value() + "' button '" + buttonId + "' has invalid slot: "
+          "Menu '"
+              + id.value()
+              + "' button '"
+              + buttonId
+              + "' has invalid slot: "
               + exception.getMessage(),
           exception);
     }

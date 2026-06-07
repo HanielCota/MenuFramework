@@ -3,8 +3,8 @@ package dev.haniel.menu.paper.registry;
 import dev.haniel.menu.compiler.MenuCompiler;
 import dev.haniel.menu.compiler.model.CompiledMenu;
 import dev.haniel.menu.config.MenuConfig;
-import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.discovery.MenuDiscovery;
+import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.discovery.MenuInstantiator;
 import dev.haniel.menu.paper.discovery.MenuScanner;
 import dev.haniel.menu.paper.view.MenuFactory;
@@ -32,8 +32,7 @@ public final class MenuRegistry {
   private final MenuCatalog catalog;
   private final Function<Class<?>, Object> instances;
 
-  public MenuRegistry(
-      MenuCompiler<ItemStack> compiler, MenuFactory factory, MenuCatalog catalog) {
+  public MenuRegistry(MenuCompiler<ItemStack> compiler, MenuFactory factory, MenuCatalog catalog) {
     this(compiler, factory, catalog, new MenuInstantiator());
   }
 

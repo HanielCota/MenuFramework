@@ -8,8 +8,8 @@ import java.util.function.Supplier;
 /**
  * Creates fresh menu instances from a boot-resolved no-arg constructor handle.
  *
- * <p>Paginated menus get one instance per open so each player owns independent {@code State}.
- * The constructor is reflected once at boot; {@link #create()} only invokes the handle.
+ * <p>Paginated menus get one instance per open so each player owns independent {@code State}. The
+ * constructor is reflected once at boot; {@link #create()} only invokes the handle.
  */
 public final class Instantiator {
 

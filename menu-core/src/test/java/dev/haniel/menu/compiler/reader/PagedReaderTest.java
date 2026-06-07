@@ -31,10 +31,12 @@ class PagedReaderTest {
     assertSame(firstRead.states(), secondRead.states());
   }
 
-  private Instantiator instantiator(String name) throws NoSuchMethodException, IllegalAccessException {
+  private Instantiator instantiator(String name)
+      throws NoSuchMethodException, IllegalAccessException {
     return new Instantiator(
         MethodHandles.lookup()
-            .findConstructor(CustomInstantiatedMenu.class, MethodType.methodType(void.class, String.class))
+            .findConstructor(
+                CustomInstantiatedMenu.class, MethodType.methodType(void.class, String.class))
             .bindTo(name));
   }
 

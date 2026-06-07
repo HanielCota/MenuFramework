@@ -61,12 +61,14 @@ class PagedMergerTest {
   @Test
   void supportsCustomInstantiatorForPagedMenusWithoutNoArgConstructor() {
     PagedStructure structure =
-        reader.read(PagedNeedsDependency.class, new Instantiator(() -> new PagedNeedsDependency("ok")));
+        reader.read(
+            PagedNeedsDependency.class, new Instantiator(() -> new PagedNeedsDependency("ok")));
     CompiledPagedMenu<String> compiled = merger.merge(structure, noButtonsConfig());
 
     Object instance = compiled.wiring().instantiator().create();
 
-    assertEquals("ok", compiled.wiring().provider().bind(instance).provide().getFirst().icon().name());
+    assertEquals(
+        "ok", compiled.wiring().provider().bind(instance).provide().getFirst().icon().name());
   }
 
   @Test
@@ -75,8 +77,7 @@ class PagedMergerTest {
     MenuConfig invalid = new MenuConfig("shop", 2, Map.of("toggle", toggle), pagination());
 
     assertThrows(
-        InvalidMenuException.class,
-        () -> merger.merge(reader.read(PagedSample.class), invalid));
+        InvalidMenuException.class, () -> merger.merge(reader.read(PagedSample.class), invalid));
   }
 
   @Test
@@ -85,8 +86,7 @@ class PagedMergerTest {
     MenuConfig invalid = new MenuConfig("shop", 2, Map.of("toggle", toggle), pagination());
 
     assertThrows(
-        InvalidMenuException.class,
-        () -> merger.merge(reader.read(PagedSample.class), invalid));
+        InvalidMenuException.class, () -> merger.merge(reader.read(PagedSample.class), invalid));
   }
 
   @Test
@@ -136,8 +136,7 @@ class PagedMergerTest {
     Object instance = compiled.wiring().instantiator().create();
 
     assertThrows(
-        InvalidMenuException.class,
-        () -> compiled.wiring().states().getFirst().read(instance));
+        InvalidMenuException.class, () -> compiled.wiring().states().getFirst().read(instance));
   }
 
   @Test
@@ -147,10 +146,12 @@ class PagedMergerTest {
 
   @Test
   void failsClearlyWhenProviderReturnsNull() {
-    CompiledPagedMenu<String> compiled = merger.merge(reader.read(PagedNullProvider.class), config());
+    CompiledPagedMenu<String> compiled =
+        merger.merge(reader.read(PagedNullProvider.class), config());
     Object instance = compiled.wiring().instantiator().create();
 
-    assertThrows(MenuActionException.class, () -> compiled.wiring().provider().bind(instance).provide());
+    assertThrows(
+        MenuActionException.class, () -> compiled.wiring().provider().bind(instance).provide());
   }
 
   private static MenuConfig config() {

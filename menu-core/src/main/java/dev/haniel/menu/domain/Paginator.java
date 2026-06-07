@@ -6,8 +6,8 @@ import java.util.List;
 /**
  * A first-class collection over the paginated items, slicing them into pages.
  *
- * <p>The page capacity ({@code perPage}) is the number of content slots in the mask and is
- * passed per call rather than stored, so the collection holds only the items.
+ * <p>The page capacity ({@code perPage}) is the number of content slots in the mask and is passed
+ * per call rather than stored, so the collection holds only the items.
  */
 public final class Paginator {
 

@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Adversarial invariants for {@link ReloadReport}: defensive copies, immutability, null handling. */
+/**
+ * Adversarial invariants for {@link ReloadReport}: defensive copies, immutability, null handling.
+ */
 class ReloadReportEdgeCasesTest {
 
   /** The failures list must be copied defensively, like the reloaded list. */
@@ -29,8 +31,7 @@ class ReloadReportEdgeCasesTest {
   void reloadedListIsImmutable() {
     ReloadReport report = new ReloadReport(List.of(new MenuId("a")), List.of());
 
-    assertThrows(
-        UnsupportedOperationException.class, () -> report.reloaded().add(new MenuId("b")));
+    assertThrows(UnsupportedOperationException.class, () -> report.reloaded().add(new MenuId("b")));
   }
 
   /** The failures list returned by the accessor must be immutable. */

@@ -5,8 +5,8 @@ import dev.haniel.menu.domain.PlayerId;
 /**
  * The minimal context handed to a button action when it fires.
  *
- * <p>It exposes who clicked and how, never the underlying inventory event. The Paper layer
- * provides the implementation; the domain only depends on this contract.
+ * <p>It exposes who clicked and how, never the underlying inventory event. The Paper layer provides
+ * the implementation; the domain only depends on this contract.
  */
 public interface ClickContext {
 

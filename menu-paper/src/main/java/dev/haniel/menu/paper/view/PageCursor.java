@@ -10,8 +10,8 @@ import org.bukkit.inventory.Inventory;
 /**
  * The per-player state of an open paginated view: its diff writer, current page and click actions.
  *
- * <p>Applying a rendered page writes only the changed slots into the existing inventory and
- * records the page and its action map for O(1) click routing.
+ * <p>Applying a rendered page writes only the changed slots into the existing inventory and records
+ * the page and its action map for O(1) click routing.
  */
 public final class PageCursor {
 

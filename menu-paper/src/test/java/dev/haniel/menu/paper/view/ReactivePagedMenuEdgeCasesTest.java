@@ -109,7 +109,8 @@ class ReactivePagedMenuEdgeCasesTest {
   }
 
   private static Inventory openedInventory(Player player) {
-    org.mockito.ArgumentCaptor<Inventory> captor = org.mockito.ArgumentCaptor.forClass(Inventory.class);
+    org.mockito.ArgumentCaptor<Inventory> captor =
+        org.mockito.ArgumentCaptor.forClass(Inventory.class);
     verify(player).openInventory(captor.capture());
     return captor.getValue();
   }
@@ -123,7 +124,8 @@ class ReactivePagedMenuEdgeCasesTest {
     MiniMessage miniMessage = mock(MiniMessage.class);
     when(miniMessage.deserialize(any(String.class))).thenReturn(Component.text("title"));
     IconFactory<ItemStack> icons = icon -> mock(ItemStack.class);
-    return new MenuRuntime(Logger.getLogger("paged-menu-test"), icons, miniMessage, scheduler, inventories);
+    return new MenuRuntime(
+        Logger.getLogger("paged-menu-test"), icons, miniMessage, scheduler, inventories);
   }
 
   private static CompiledPagedMenu<ItemStack> pagedPlan(Instantiator instantiator) {

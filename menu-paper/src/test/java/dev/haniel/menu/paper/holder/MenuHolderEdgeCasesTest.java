@@ -13,9 +13,9 @@ import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
 
 /**
- * Adversarial probes of raw-slot routing in {@code MenuHolder.click}, exercised through the
- * {@link MenuTemplate} it delegates to (the holder's inventory build needs a live server, so we
- * test the routing seam directly via the template).
+ * Adversarial probes of raw-slot routing in {@code MenuHolder.click}, exercised through the {@link
+ * MenuTemplate} it delegates to (the holder's inventory build needs a live server, so we test the
+ * routing seam directly via the template).
  *
  * <p>Hunts for: an action firing on an empty/unbound slot, an out-of-bounds raw slot triggering an
  * NPE or the wrong action, and the bottom-inventory click (raw slot &gt;= size) resolving to no

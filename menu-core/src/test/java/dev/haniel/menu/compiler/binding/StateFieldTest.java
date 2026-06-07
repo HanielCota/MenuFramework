@@ -31,7 +31,8 @@ class StateFieldTest {
 
   @Test
   void wrapsGetterFailureNamingTheField() throws ReflectiveOperationException {
-    MethodHandle broken = MethodHandles.lookup().unreflect(Sample.class.getDeclaredMethod("broken"));
+    MethodHandle broken =
+        MethodHandles.lookup().unreflect(Sample.class.getDeclaredMethod("broken"));
     StateField field = new StateField("broken", broken);
 
     InvalidMenuException error =

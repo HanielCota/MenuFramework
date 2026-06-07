@@ -129,5 +129,4 @@ public final class MenuFrameworkBuilder {
     }
     framework.scan(basePackages.toArray(String[]::new));
   }
-
 }

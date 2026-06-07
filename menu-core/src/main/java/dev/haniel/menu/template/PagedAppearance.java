@@ -7,8 +7,8 @@ import java.util.Map;
 /**
  * The shared, instance-free appearance of a paginated menu, built once at boot.
  *
- * <p>Content visuals are rendered per page at runtime; everything here (navigation, border and
- * any static overlay buttons) is fixed and reused by every player and page.
+ * <p>Content visuals are rendered per page at runtime; everything here (navigation, border and any
+ * static overlay buttons) is fixed and reused by every player and page.
  *
  * @param id the menu id
  * @param title the raw MiniMessage title string
@@ -18,7 +18,11 @@ import java.util.Map;
  * @param <V> the platform visual type
  */
 public record PagedAppearance<V>(
-    MenuId id, String title, MaskLayout layout, PagedDecor<V> decor, Map<Integer, V> overlayVisuals) {
+    MenuId id,
+    String title,
+    MaskLayout layout,
+    PagedDecor<V> decor,
+    Map<Integer, V> overlayVisuals) {
 
   public PagedAppearance {
     overlayVisuals = Map.copyOf(overlayVisuals);

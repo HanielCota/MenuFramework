@@ -7,8 +7,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Adversarial edge cases for the State -> listener notification contract: equal-value suppression by
- * value (not identity), null rejection, rebinding/aliasing of the single listener field, and the
+ * Adversarial edge cases for the State -> listener notification contract: equal-value suppression
+ * by value (not identity), null rejection, rebinding/aliasing of the single listener field, and the
  * StateBinding aliasing hazard when a state is shared across two views.
  */
 class StateNotificationEdgeCasesTest {
@@ -22,7 +22,8 @@ class StateNotificationEdgeCasesTest {
     // new String("ab") is .equals to "a"+"b" but not the same reference.
     state.set(new String(new char[] {'a'}));
 
-    assertEquals(0, notifications[0], "equal-by-value set must not notify even with a fresh object");
+    assertEquals(
+        0, notifications[0], "equal-by-value set must not notify even with a fresh object");
   }
 
   @Test
@@ -80,7 +81,8 @@ class StateNotificationEdgeCasesTest {
 
     // Documents the aliasing hazard: after A unbinds, the still-open B receives nothing.
     assertEquals(0, aCount[0]);
-    assertEquals(0, bCount[0], "view A's unbind silently severs the still-open view B (aliasing leak)");
+    assertEquals(
+        0, bCount[0], "view A's unbind silently severs the still-open view B (aliasing leak)");
   }
 
   @Test

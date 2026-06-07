@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Adversarial coalescing/notification semantics for {@link Flusher}: exactly one flush per pending
- * window, a fresh window after a run, cancel-after-run being a no-op, re-marking from inside a flush
- * scheduling the next tick, and a rejected schedule never sticking.
+ * window, a fresh window after a run, cancel-after-run being a no-op, re-marking from inside a
+ * flush scheduling the next tick, and a rejected schedule never sticking.
  */
 class FlusherNotificationEdgeCasesTest {
 

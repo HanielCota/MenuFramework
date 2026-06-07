@@ -13,8 +13,7 @@ class MenuCommandServiceTest {
   private final MenuNavigator navigator = mock(MenuNavigator.class);
   private final MenuReloader reloader = mock(MenuReloader.class);
   private final MenuMessages messages = mock(MenuMessages.class);
-  private final MenuCommandService service =
-      new MenuCommandService(navigator, reloader, messages);
+  private final MenuCommandService service = new MenuCommandService(navigator, reloader, messages);
 
   @Test
   void rejectsNonPlayerSenders() {
