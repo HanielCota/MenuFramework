@@ -1,0 +1,35 @@
+title: "<gradient:#facc15:#fb7185>Product Catalog</gradient>"
+rows: 6
+buttons:
+  back:
+    slot: 45
+    material: BARRIER
+    name: "<red>Back</red>"
+    lore:
+      - "<gray>Return to the main menu.</gray>"
+  next-category:
+    slot: 49
+    material: NETHER_STAR
+    name: "<aqua>Next Category</aqua>"
+    lore:
+      - "<gray>Cycles the reactive category state.</gray>"
+pagination:
+  mask:
+    - "#########"
+    - "#XXXXXXX#"
+    - "#XXXXXXX#"
+    - "#XXXXXXX#"
+    - "#XXXXXXX#"
+    - "#<#####>#"
+  previous-button:
+    slot: 0
+    material: ARROW
+    name: "<yellow>Previous Page</yellow>"
+    lore:
+      - "<gray>Go back one page.</gray>"
+  next-button:
+    slot: 0
+    material: ARROW
+    name: "<yellow>Next Page</yellow>"
+    lore:
+      - "<gray>Go forward one page.</gray>"

@@ -1,0 +1,14 @@
+# Normalise line endings so google-java-format / Spotless stay stable across OSes.
+* text=auto eol=lf
+*.java text eol=lf
+*.kts text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+
+# Gradle wrapper / scripts
+gradlew text eol=lf
+*.bat text eol=crlf
+
+# Binary
+*.jar binary
+*.png binary

@@ -1,0 +1,28 @@
+# Gradle
+.gradle/
+build/
+
+# Local test servers (Paper/Folia runtimes, worlds, logs — never commit)
+runtime/
+testserver/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java
+*.class
+hs_err_pid*
+replay_pid*
+
+# Generated reports / stray validation logs
+*.sarif.json
+/validation-*.log

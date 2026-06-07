@@ -1,0 +1,22 @@
+name: MenuExample
+version: 0.1.0
+main: dev.haniel.menu.example.ExamplePlugin
+api-version: '1.21'
+folia-supported: true
+description: Demonstrates MenuFramework with clean Paper-style layering.
+commands:
+  menuexample:
+    description: Opens and reloads the MenuFramework example menus.
+    usage: /menuexample [main|catalog|reload]
+    aliases:
+      - mex
+permissions:
+  menuexample.open.main:
+    description: Allows opening the main example menu.
+    default: true
+  menuexample.open.catalog:
+    description: Allows opening the catalog example menu.
+    default: true
+  menuexample.reload:
+    description: Allows reloading example menus.
+    default: op

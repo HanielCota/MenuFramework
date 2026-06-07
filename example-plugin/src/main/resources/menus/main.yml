@@ -1,0 +1,15 @@
+title: "<gradient:#37e8a5:#4f8cff>Example Menu</gradient>"
+rows: 3
+buttons:
+  open-catalog:
+    slot: 11
+    material: CHEST
+    name: "<green>Open Catalog</green>"
+    lore:
+      - "<gray>Shows a reactive paginated menu.</gray>"
+  reload:
+    slot: 15
+    material: COMPARATOR
+    name: "<yellow>Reload Menus</yellow>"
+    lore:
+      - "<gray>Reloads all menu YAML files.</gray>"
