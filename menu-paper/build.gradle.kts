@@ -8,7 +8,7 @@ dependencies {
     "implementation"(project(":menu-folia"))
     "compileOnly"("io.papermc.paper:paper-api:26.1.2.build.69-stable")
     // PlaceholderAPI is an optional runtime soft dependency; touched only via the isolated Papi class.
-    "compileOnly"("me.clip:placeholderapi:2.11.6")
+    "compileOnly"("me.clip:placeholderapi:2.12.2")
     "testCompileOnly"("io.papermc.paper:paper-api:26.1.2.build.69-stable")
     "testRuntimeOnly"("io.papermc.paper:paper-api:26.1.2.build.69-stable")
     "testImplementation"("org.mockito:mockito-core:5.20.0")
