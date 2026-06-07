@@ -2,7 +2,7 @@
 .gradle/
 build/
 
-# Local test servers (Paper/Folia runtimes, worlds, logs — never commit)
+# Local test servers (Paper/Folia runtimes, worlds, logs); never commit
 runtime/
 testserver/
 
@@ -13,6 +13,10 @@ testserver/
 *.iws
 .vscode/
 out/
+bin/
+
+# Static analysis caches
+.qodana/
 
 # OS
 .DS_Store
