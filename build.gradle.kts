@@ -91,7 +91,7 @@ subprojects {
             // provides its own classpath at runtime), so this only silences dependency scanners.
             force(
                 "org.apache.commons:commons-lang3:3.20.0",
-                "org.codehaus.plexus:plexus-utils:4.0.2",
+                "org.codehaus.plexus:plexus-utils:4.0.3",
             )
         }
     }
