@@ -11,7 +11,7 @@ dependencies {
     "compileOnly"("me.clip:placeholderapi:2.11.6")
     "testCompileOnly"("io.papermc.paper:paper-api:26.1.2.build.69-stable")
     "testRuntimeOnly"("io.papermc.paper:paper-api:26.1.2.build.69-stable")
-    "testImplementation"("org.mockito:mockito-core:5.20.0")
+    "testImplementation"("org.mockito:mockito-core:5.23.0")
     "implementation"("com.github.ben-manes.caffeine:caffeine:3.2.4")
 
     // Boot-time @Menu discovery. ClassGraph scans the classpath once at startup; it is never
