@@ -85,6 +85,15 @@ MenuFramework framework =
         .build();
 ```
 
+Tear it down in `onDisable` so listeners, tick tasks and open menus are cleaned up:
+
+```java
+@Override
+public void onDisable() {
+  framework.shutdown();
+}
+```
+
 ### 3. Open a menu
 
 ```java

@@ -21,7 +21,7 @@ not invent API that is not listed there.
 
 - [example-plugin](example-plugin/src/main/java/dev/haniel/menu/example): a complete, runnable plugin using the public API.
 - [menu-core annotations](menu-core/src/main/java/dev/haniel/menu/annotation): the annotation definitions.
-- [menu-paper public API](menu-paper/src/main/java/dev/haniel/menu/paper/api): `MenuClick` and `Icons`.
+- [menu-paper public API](menu-paper/src/main/java/dev/haniel/menu/paper/api): `MenuClick`, `Icons`, `AnvilPrompt`, `MenuSession`, `MenuErrorHandler`.
 
 ## Install (JitPack, Gradle Kotlin DSL)
 
