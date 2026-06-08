@@ -2,12 +2,15 @@ package dev.haniel.menu.paper.registry;
 
 import dev.haniel.menu.compiler.MenuCompiler;
 import dev.haniel.menu.compiler.model.CompiledMenu;
+import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.discovery.MenuDiscovery;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.discovery.MenuInstantiator;
 import dev.haniel.menu.paper.discovery.MenuScanner;
+import dev.haniel.menu.paper.hook.HookDefinitions;
 import dev.haniel.menu.paper.view.MenuFactory;
+import dev.haniel.menu.paper.view.PaperMenu;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -68,7 +71,9 @@ public final class MenuRegistry {
    */
   public void register(Object menu) {
     CompiledMenu<ItemStack> compiled = compiler.compile(menu);
-    catalog.put(compiled.id(), new RegisteredMenu(compiled.id(), menu, factory.create(compiled)));
+    catalog.put(
+        compiled.id(),
+        new RegisteredMenu(compiled.id(), menu, openable(menu.getClass(), compiled)));
   }
 
   /**
@@ -81,7 +86,10 @@ public final class MenuRegistry {
     catalog.put(
         compiled.id(),
         new RegisteredMenu(
-            compiled.id(), menuType, () -> instances.apply(menuType), factory.create(compiled)));
+            compiled.id(),
+            menuType,
+            () -> instances.apply(menuType),
+            openable(menuType, compiled)));
   }
 
   /**
@@ -258,7 +266,7 @@ public final class MenuRegistry {
       PreparedReload reload, List<MenuId> reloaded, List<ReloadFailure> failures) {
     try {
       RegisteredMenu menu = reload.menu();
-      menu.swap(factory.create(compile(menu, reload.config())));
+      menu.swap(openable(menu.sourceType(), compile(menu, reload.config())));
       reloaded.add(menu.id());
     } catch (RuntimeException exception) {
       MenuId id = reload.menu().id();
@@ -268,8 +276,15 @@ public final class MenuRegistry {
   }
 
   private RegisteredMenu recompile(RegisteredMenu menu) {
-    menu.swap(factory.create(compile(menu)));
+    menu.swap(openable(menu.sourceType(), compile(menu)));
     return menu;
+  }
+
+  private PaperMenu openable(Class<?> sourceType, CompiledMenu<ItemStack> compiled) {
+    if (compiled instanceof CompiledPagedMenu<?>) {
+      HookDefinitions.of(sourceType);
+    }
+    return factory.create(compiled);
   }
 
   private CompiledMenu<ItemStack> compile(RegisteredMenu menu) {

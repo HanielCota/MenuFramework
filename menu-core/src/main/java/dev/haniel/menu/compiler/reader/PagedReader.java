@@ -109,7 +109,12 @@ public final class PagedReader {
     if (menu == null) {
       throw new InvalidMenuException(type.getName() + " is not annotated with @Menu");
     }
-    return new MenuId(menu.id());
+    try {
+      return new MenuId(menu.id());
+    } catch (IllegalArgumentException exception) {
+      throw new InvalidMenuException(
+          "@Menu id on " + type.getName() + " is invalid: " + exception.getMessage(), exception);
+    }
   }
 
   private Menu findMenu(Class<?> type) {
@@ -166,12 +171,27 @@ public final class PagedReader {
   private void addButton(Map<ButtonId, UnboundAction> buttons, Method method) {
     ButtonArguments arguments = clickArguments.bindingFor(method);
     Button button = method.getAnnotation(Button.class);
-    ButtonId id = new ButtonId(button.id());
+    ButtonId id = buttonId(method, button);
     if (buttons.containsKey(id)) {
       throw new InvalidMenuException("Duplicate @Button id '" + id.value() + "'");
     }
     ButtonGuards guards = new ButtonGuards(button.permission(), button.cooldownMillis());
     buttons.put(id, new UnboundAction(unreflect(method), arguments, guards));
+  }
+
+  private ButtonId buttonId(Method method, Button button) {
+    try {
+      return new ButtonId(button.id());
+    } catch (IllegalArgumentException exception) {
+      throw new InvalidMenuException(
+          "@Button id on "
+              + method.getDeclaringClass().getName()
+              + "#"
+              + method.getName()
+              + " is invalid: "
+              + exception.getMessage(),
+          exception);
+    }
   }
 
   private List<StateField> states(Class<?> type) {

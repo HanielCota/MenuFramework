@@ -77,12 +77,9 @@ public final class ReactivePagedMenu implements PaperMenu {
   }
 
   private Runnable closeHook(MenuHooks hooks, java.util.UUID viewer) {
-    return () -> {
-      Player online = org.bukkit.Bukkit.getPlayer(viewer);
-      if (online != null) {
-        hooks.fireClose(online);
-      }
-    };
+    // Pass the viewer even when offline (a close fired by the quit backstop): no-arg @OnClose
+    // handlers still run their cleanup, while Player-accepting ones are skipped by MenuHooks.
+    return () -> hooks.fireClose(org.bukkit.Bukkit.getPlayer(viewer));
   }
 
   private PageScene scene(Object instance, PlayerId viewer) {

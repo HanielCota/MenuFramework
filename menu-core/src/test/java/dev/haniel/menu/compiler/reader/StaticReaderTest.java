@@ -5,8 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
+import dev.haniel.menu.annotation.OnOpen;
+import dev.haniel.menu.annotation.Reactive;
+import dev.haniel.menu.annotation.Tick;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.model.MenuBlueprint;
+import dev.haniel.menu.state.State;
 import org.junit.jupiter.api.Test;
 
 class StaticReaderTest {
@@ -36,6 +40,31 @@ class StaticReaderTest {
   @Test
   void rejectsDuplicateButtonIds() {
     assertThrows(InvalidMenuException.class, () -> reader.read(new DuplicateButtonMenu()));
+  }
+
+  @Test
+  void rejectsInvalidMenuIdAsMenuError() {
+    assertThrows(InvalidMenuException.class, () -> reader.read(new InvalidMenuIdMenu()));
+  }
+
+  @Test
+  void rejectsInvalidButtonIdAsMenuError() {
+    assertThrows(InvalidMenuException.class, () -> reader.read(new InvalidButtonIdMenu()));
+  }
+
+  @Test
+  void rejectsLifecycleHookOnStaticMenu() {
+    assertThrows(InvalidMenuException.class, () -> reader.read(new StaticLifecycleMenu()));
+  }
+
+  @Test
+  void rejectsTickOnStaticMenu() {
+    assertThrows(InvalidMenuException.class, () -> reader.read(new StaticTickMenu()));
+  }
+
+  @Test
+  void rejectsReactiveStateOnStaticMenu() {
+    assertThrows(InvalidMenuException.class, () -> reader.read(new StaticReactiveMenu()));
   }
 
   @Menu(id = "valid")
@@ -69,5 +98,35 @@ class StaticReaderTest {
 
     @Button(id = "same")
     void second() {}
+  }
+
+  @Menu(id = "Bad")
+  static final class InvalidMenuIdMenu {}
+
+  @Menu(id = "invalid-button-id")
+  static final class InvalidButtonIdMenu {
+
+    @Button(id = " ")
+    void blank() {}
+  }
+
+  @Menu(id = "static-lifecycle")
+  static final class StaticLifecycleMenu {
+
+    @OnOpen
+    void open() {}
+  }
+
+  @Menu(id = "static-tick")
+  static final class StaticTickMenu {
+
+    @Tick
+    void tick() {}
+  }
+
+  @Menu(id = "static-reactive")
+  static final class StaticReactiveMenu {
+
+    @Reactive private final State<Integer> count = State.of(0);
   }
 }

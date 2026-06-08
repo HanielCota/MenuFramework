@@ -38,6 +38,17 @@ class MenuErrorsTest {
   }
 
   @Test
+  void usesTheCauseTypeWhenItCarriesNoMessage() {
+    MenuErrors errors = new MenuErrors();
+    errors.add(String.class, new NullPointerException());
+
+    MenuDiscoveryException thrown = assertThrows(MenuDiscoveryException.class, errors::failIfAny);
+
+    assertTrue(thrown.getMessage().contains(String.class.getName()));
+    assertTrue(thrown.getMessage().contains("NullPointerException"));
+  }
+
+  @Test
   void messageNamesTheFailingClassForEachEntry() {
     MenuErrors errors = new MenuErrors();
     errors.add(Integer.class, new IllegalStateException("first"));

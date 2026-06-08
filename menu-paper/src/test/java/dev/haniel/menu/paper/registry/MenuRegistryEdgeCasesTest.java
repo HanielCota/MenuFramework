@@ -12,13 +12,26 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.haniel.menu.annotation.OnOpen;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.MenuCompiler;
+import dev.haniel.menu.compiler.binding.Instantiator;
+import dev.haniel.menu.compiler.binding.UnboundProvider;
 import dev.haniel.menu.compiler.model.CompiledMenu;
+import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.compiler.model.CompiledStaticMenu;
+import dev.haniel.menu.domain.MaskLayout;
 import dev.haniel.menu.domain.MenuId;
+import dev.haniel.menu.item.MenuItem;
 import dev.haniel.menu.paper.view.MenuFactory;
 import dev.haniel.menu.paper.view.PaperMenu;
+import dev.haniel.menu.template.PagedAppearance;
+import dev.haniel.menu.template.PagedDecor;
+import dev.haniel.menu.template.PagedWiring;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.List;
+import java.util.Map;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
@@ -86,6 +99,20 @@ class MenuRegistryEdgeCasesTest {
 
     assertThrows(InvalidMenuException.class, () -> registry.register(second));
     assertEquals(1, registry.size());
+  }
+
+  @Test
+  void registeringPagedMenuRejectsInvalidLifecycleHookBeforeOpen() {
+    MenuId id = new MenuId("bad-hook");
+    MenuCompiler<ItemStack> compiler = mock();
+    MenuFactory factory = mock();
+    MenuRegistry registry = new MenuRegistry(compiler, factory, new MenuCatalog());
+    InvalidHookPagedMenu menu = new InvalidHookPagedMenu();
+    when(compiler.compile(menu)).thenReturn(compiledPagedWithId(id));
+
+    assertThrows(InvalidMenuException.class, () -> registry.register(menu));
+
+    verify(factory, never()).create(any());
   }
 
   /** The first registration must survive a rejected duplicate (no partial overwrite). */
@@ -198,5 +225,42 @@ class MenuRegistryEdgeCasesTest {
 
   private static CompiledMenu<ItemStack> compiledWithId(MenuId id) {
     return new CompiledStaticMenu<>(id, "", null);
+  }
+
+  private static CompiledMenu<ItemStack> compiledPagedWithId(MenuId id) {
+    PagedAppearance<ItemStack> appearance =
+        new PagedAppearance<>(
+            id,
+            "",
+            MaskLayout.resolve(List.of("X        "), 1),
+            new PagedDecor<>(null, null, null),
+            Map.of());
+    PagedWiring wiring =
+        new PagedWiring(new Instantiator(Object::new), provider(), Map.of(), List.of());
+    return new CompiledPagedMenu<>(appearance, wiring);
+  }
+
+  private static UnboundProvider provider() {
+    try {
+      return new UnboundProvider(
+          MethodHandles.lookup()
+              .findStatic(
+                  MenuRegistryEdgeCasesTest.class,
+                  "noItems",
+                  MethodType.methodType(List.class, Object.class)));
+    } catch (ReflectiveOperationException error) {
+      throw new IllegalStateException(error);
+    }
+  }
+
+  @SuppressWarnings("unused")
+  private static List<MenuItem> noItems(Object ignored) {
+    return List.of();
+  }
+
+  static final class InvalidHookPagedMenu {
+
+    @OnOpen
+    void opened(Object player) {}
   }
 }
