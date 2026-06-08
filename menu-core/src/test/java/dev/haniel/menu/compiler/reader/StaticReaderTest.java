@@ -8,8 +8,10 @@ import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.OnOpen;
 import dev.haniel.menu.annotation.Reactive;
 import dev.haniel.menu.annotation.Tick;
+import dev.haniel.menu.annotation.Viewer;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.model.MenuBlueprint;
+import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.state.State;
 import org.junit.jupiter.api.Test;
 
@@ -65,6 +67,11 @@ class StaticReaderTest {
   @Test
   void rejectsReactiveStateOnStaticMenu() {
     assertThrows(InvalidMenuException.class, () -> reader.read(new StaticReactiveMenu()));
+  }
+
+  @Test
+  void rejectsViewerFieldOnStaticMenu() {
+    assertThrows(InvalidMenuException.class, () -> reader.read(new StaticViewerMenu()));
   }
 
   @Menu(id = "valid")
@@ -128,5 +135,11 @@ class StaticReaderTest {
   static final class StaticReactiveMenu {
 
     @Reactive private final State<Integer> count = State.of(0);
+  }
+
+  @Menu(id = "static-viewer")
+  static final class StaticViewerMenu {
+
+    @Viewer private PlayerId viewer;
   }
 }

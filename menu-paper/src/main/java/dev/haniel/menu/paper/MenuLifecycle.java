@@ -1,5 +1,8 @@
 package dev.haniel.menu.paper;
 
+import dev.haniel.menu.paper.holder.ClickableHolder;
+import dev.haniel.menu.paper.reactive.ReactiveView;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -8,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.Plugin;
 
 final class MenuLifecycle {
@@ -15,14 +19,14 @@ final class MenuLifecycle {
   private static final boolean FOLIA = detectFolia();
 
   private final Plugin plugin;
-  private final Listener listener;
+  private final List<Listener> listeners;
   private final Executor syncExecutor;
   private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
   private volatile boolean shutdown;
 
-  MenuLifecycle(Plugin plugin, Listener listener, Executor syncExecutor) {
+  MenuLifecycle(Plugin plugin, List<Listener> listeners, Executor syncExecutor) {
     this.plugin = plugin;
-    this.listener = listener;
+    this.listeners = List.copyOf(listeners);
     this.syncExecutor = syncExecutor;
   }
 
@@ -47,7 +51,7 @@ final class MenuLifecycle {
       return;
     }
     closeOpenMenus();
-    HandlerList.unregisterAll(listener);
+    listeners.forEach(HandlerList::unregisterAll);
     cancelPluginTasks();
     ioExecutor.shutdownNow();
     shutdown = true;
@@ -72,8 +76,13 @@ final class MenuLifecycle {
   }
 
   private void closeOpenMenuNow(Player player) {
-    if (player.getOpenInventory().getTopInventory().getHolder()
-        instanceof dev.haniel.menu.paper.holder.ClickableHolder) {
+    InventoryHolder holder = player.getOpenInventory().getTopInventory().getHolder();
+    if (holder instanceof ReactiveView view) {
+      // Explicit teardown: shutdown drops the listener, so the close event may not fire and the
+      // view's state/ticks would leak. close() is idempotent, so a later close event stays safe.
+      view.close();
+    }
+    if (holder instanceof ClickableHolder) {
       player.closeInventory();
     }
   }

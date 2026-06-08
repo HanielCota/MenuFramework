@@ -10,13 +10,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.haniel.menu.annotation.Viewer;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.UnboundProvider;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.domain.MaskLayout;
 import dev.haniel.menu.domain.MenuId;
+import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.item.Icon;
 import dev.haniel.menu.item.MenuItem;
+import dev.haniel.menu.paper.holder.OpenMenu;
 import dev.haniel.menu.paper.render.InventoryFactory;
 import dev.haniel.menu.scheduler.MenuScheduler;
 import dev.haniel.menu.scheduler.PlayerScheduler;
@@ -26,11 +29,13 @@ import dev.haniel.menu.template.PagedAppearance;
 import dev.haniel.menu.template.PagedDecor;
 import dev.haniel.menu.template.PagedWiring;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -108,6 +113,68 @@ class ReactivePagedMenuEdgeCasesTest {
     verify(player, never()).openInventory(any(Inventory.class));
   }
 
+  @Test
+  void viewerIsInjectedBeforeTheFirstPaginatedRender() {
+    AtomicReference<PlayerId> seenAtRender = new AtomicReference<>();
+    ReactivePagedMenu menu = viewerAwareMenu(seenAtRender);
+    Player player = player();
+
+    menu.open(player);
+
+    assertEquals(
+        player.getUniqueId(),
+        seenAtRender.get().value(),
+        "the @Paginated provider must already know the viewer on the first render");
+  }
+
+  private static ReactivePagedMenu viewerAwareMenu(AtomicReference<PlayerId> sink) {
+    PagedWiring wiring =
+        new PagedWiring(
+            new Instantiator(() -> new ViewerProbe(sink)),
+            viewerProvider(),
+            Map.of(),
+            List.of(),
+            List.of(),
+            viewerFields());
+    CompiledPagedMenu<ItemStack> plan = new CompiledPagedMenu<>(appearance(), wiring);
+    return new ReactivePagedMenu(plan, runtime(new RecordingScheduler(), inventoryFactory()));
+  }
+
+  private static UnboundProvider viewerProvider() {
+    try {
+      Method products = ViewerProbe.class.getDeclaredMethod("products");
+      products.setAccessible(true);
+      return new UnboundProvider(MethodHandles.lookup().unreflect(products));
+    } catch (ReflectiveOperationException error) {
+      throw new IllegalStateException(error);
+    }
+  }
+
+  private static List<dev.haniel.menu.compiler.binding.ViewerField> viewerFields() {
+    try {
+      java.lang.reflect.Field field = ViewerProbe.class.getDeclaredField("viewer");
+      field.setAccessible(true);
+      return List.of(
+          new dev.haniel.menu.compiler.binding.ViewerField(
+              "viewer", MethodHandles.lookup().unreflectSetter(field)));
+    } catch (ReflectiveOperationException error) {
+      throw new IllegalStateException(error);
+    }
+  }
+
+  @Test
+  void openedViewIsAnOpenMenuNamedByItsId() {
+    ReactivePagedMenu menu = menu(countingInstantiator(new AtomicInteger()), inventoryFactory());
+    Player player = player();
+
+    menu.open(player);
+
+    org.bukkit.inventory.InventoryHolder holder = openedInventory(player).getHolder();
+    assertTrue(
+        holder instanceof OpenMenu, "the open paged view must be discoverable as an OpenMenu");
+    assertEquals("paged", ((OpenMenu) holder).menuId().value());
+  }
+
   private static Inventory openedInventory(Player player) {
     org.mockito.ArgumentCaptor<Inventory> captor =
         org.mockito.ArgumentCaptor.forClass(Inventory.class);
@@ -128,16 +195,18 @@ class ReactivePagedMenuEdgeCasesTest {
         Logger.getLogger("paged-menu-test"), icons, miniMessage, scheduler, inventories);
   }
 
+  private static PagedAppearance<ItemStack> appearance() {
+    return new PagedAppearance<>(
+        new MenuId("paged"),
+        "<title>",
+        MaskLayout.resolve(List.of("<X>      "), 1),
+        new PagedDecor<>(null, null, null),
+        Map.of());
+  }
+
   private static CompiledPagedMenu<ItemStack> pagedPlan(Instantiator instantiator) {
-    PagedAppearance<ItemStack> appearance =
-        new PagedAppearance<>(
-            new MenuId("paged"),
-            "<title>",
-            MaskLayout.resolve(List.of("<X>      "), 1),
-            new PagedDecor<>(null, null, null),
-            Map.of());
     PagedWiring wiring = new PagedWiring(instantiator, provider(), Map.of(), List.of());
-    return new CompiledPagedMenu<>(appearance, wiring);
+    return new CompiledPagedMenu<>(appearance(), wiring);
   }
 
   private static UnboundProvider provider() {
@@ -183,6 +252,22 @@ class ReactivePagedMenuEdgeCasesTest {
           count.incrementAndGet();
           return new Object();
         });
+  }
+
+  /** A paginated menu that captures its injected {@code @Viewer} the moment it renders. */
+  private static final class ViewerProbe {
+    @Viewer private PlayerId viewer;
+    private final AtomicReference<PlayerId> sink;
+
+    ViewerProbe(AtomicReference<PlayerId> sink) {
+      this.sink = sink;
+    }
+
+    @SuppressWarnings("unused") // bound reflectively as the paginated provider
+    private List<MenuItem> products() {
+      sink.set(viewer);
+      return List.of(MenuItem.of(Icon.of("STONE")));
+    }
   }
 
   /** Records every inventory it creates so a test can assert two opens get distinct ones. */

@@ -6,6 +6,7 @@ import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.Paginated;
 import dev.haniel.menu.annotation.Reactive;
 import dev.haniel.menu.annotation.Tick;
+import dev.haniel.menu.annotation.Viewer;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.binding.ButtonGuards;
 import dev.haniel.menu.compiler.binding.Instantiator;
@@ -13,15 +14,18 @@ import dev.haniel.menu.compiler.binding.StateField;
 import dev.haniel.menu.compiler.binding.UnboundAction;
 import dev.haniel.menu.compiler.binding.UnboundProvider;
 import dev.haniel.menu.compiler.binding.UnboundTick;
+import dev.haniel.menu.compiler.binding.ViewerField;
 import dev.haniel.menu.compiler.model.PagedStructure;
 import dev.haniel.menu.domain.ButtonId;
 import dev.haniel.menu.domain.MenuId;
+import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.state.State;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +37,8 @@ import java.util.function.Function;
  * Discovers the structure of a paginated menu class at boot.
  *
  * <p>The single home of reflection for the paginated path: it reads {@code @Paginated},
- * {@code @Button} and {@code @Reactive} into unbound handles and resolves the no-arg constructor.
- * Nothing here is bound to an instance — that happens per open.
+ * {@code @Button}, {@code @Reactive} and {@code @Viewer} into unbound handles and resolves the
+ * no-arg constructor. Nothing here is bound to an instance — that happens per open.
  */
 public final class PagedReader {
 
@@ -98,7 +102,8 @@ public final class PagedReader {
     return caches.metadata(
         type,
         key ->
-            new PagedMetadata(readId(key), provider(key), buttons(key), states(key), ticks(key)));
+            new PagedMetadata(
+                readId(key), provider(key), buttons(key), states(key), ticks(key), viewers(key)));
   }
 
   private MenuId readId(Class<?> type) {
@@ -198,6 +203,13 @@ public final class PagedReader {
         .toList();
   }
 
+  private List<ViewerField> viewers(Class<?> type) {
+    return ReflectedMembers.fields(type).stream()
+        .filter(field -> field.isAnnotationPresent(Viewer.class))
+        .map(this::viewerField)
+        .toList();
+  }
+
   private List<UnboundTick> ticks(Class<?> type) {
     return ReflectedMembers.methods(type).stream()
         .filter(method -> method.isAnnotationPresent(Tick.class))
@@ -225,6 +237,17 @@ public final class PagedReader {
     }
   }
 
+  @SuppressWarnings("java:S3011") // Viewer fields may be private implementation details.
+  private ViewerField viewerField(Field field) {
+    validateViewerField(field);
+    try {
+      field.setAccessible(true);
+      return new ViewerField(field.getName(), MethodHandles.lookup().unreflectSetter(field));
+    } catch (IllegalAccessException exception) {
+      throw new InvalidMenuException("Cannot access @Viewer field " + field.getName(), exception);
+    }
+  }
+
   private void validateProvider(Method method) {
     validator.requirePaginatedProvider(method);
   }
@@ -232,6 +255,16 @@ public final class PagedReader {
   private void validateStateField(Field field) {
     if (!State.class.isAssignableFrom(field.getType())) {
       throw new InvalidMenuException("@Reactive field " + field.getName() + " must be State<?>");
+    }
+  }
+
+  private void validateViewerField(Field field) {
+    if (field.getType() != PlayerId.class) {
+      throw new InvalidMenuException("@Viewer field " + field.getName() + " must be PlayerId");
+    }
+    if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+      throw new InvalidMenuException(
+          "@Viewer field " + field.getName() + " must be non-final and non-static");
     }
   }
 
@@ -250,10 +283,11 @@ public final class PagedReader {
       UnboundProvider provider,
       Map<ButtonId, UnboundAction> buttons,
       List<StateField> states,
-      List<UnboundTick> ticks) {
+      List<UnboundTick> ticks,
+      List<ViewerField> viewers) {
 
     PagedStructure structure(Instantiator instantiator) {
-      return new PagedStructure(id, instantiator, provider, buttons, states, ticks);
+      return new PagedStructure(id, instantiator, provider, buttons, states, ticks, viewers);
     }
   }
 

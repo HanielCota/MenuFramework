@@ -20,6 +20,10 @@ Build the example plugin and drop it on a test server:
 ## 2. Static menu (`/menuexample main`)
 - [ ] Menu opens with the configured title, rows and items (names/lore render MiniMessage,
       no `§`/`&` artifacts).
+- [ ] A player-head icon renders its skin: `Icons.head(onlinePlayer)` shows that player's skin,
+      `Icons.headTexture(base64)` shows the custom skin, and an unknown `Icons.head(uuid)` shows the
+      default head — all with **no console error and no main-thread hang** (profiles complete from
+      cache only).
 - [ ] Every button fires its action exactly once per click.
 - [ ] Clicking an empty slot does nothing and does **not** drop/steal the item.
 - [ ] Shift-click, number-key (hotbar swap) and double-click **cannot** remove items.
@@ -56,6 +60,22 @@ Build the example plugin and drop it on a test server:
       no duplicate listeners after a re-enable).
 - [ ] No open-inventory or scheduler errors on disable.
 
+## 8. Anvil text input (`AnvilPrompt`)
+The anvil event flow (open, force a clickable result, capture the typed text, re-prompt, cancel) is
+the part the unit suite cannot reach — only `AnvilPrompt`'s parse/confirm/cancel logic is covered.
+Wire a button to `click.prompt(...)` and check:
+- [ ] `AnvilPrompt.text()` opens an anvil with the configured title; the result slot is clickable
+      even before typing.
+- [ ] Typing a value and clicking the result fires `onConfirm` **once** with the typed text.
+- [ ] `AnvilPrompt.numeric()` with non-numeric or blank text does **not** confirm and leaves the
+      anvil open; a valid integer confirms and closes.
+- [ ] The placeholder item **cannot** be taken (every click is cancelled) and is **not** returned to
+      the player on close (no free paper/name-tag in the inventory afterwards).
+- [ ] Closing the anvil (Esc) without a valid entry fires `onCancel` exactly once.
+- [ ] `onConfirm`/`onCancel` calling `click.open(...)` reopens the menu cleanly (no flicker, no
+      double open).
+- [ ] Disconnecting with an anvil open leaves no pending entry (reconnect and prompt again works).
+
 > Anything that fails here is a regression in code paths the unit suite cannot reach
-> (`ItemFactory`, `PaperPlayerScheduler`/`FoliaPlayerScheduler`, inventory open/click). File a
-> bug with the menu id, YAML and steps.
+> (`ItemFactory`, `PaperPlayerScheduler`/`FoliaPlayerScheduler`, inventory open/click, anvil
+> events). File a bug with the menu id, YAML and steps.

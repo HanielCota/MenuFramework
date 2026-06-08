@@ -50,6 +50,7 @@ public final class ReactivePagedMenu implements PaperMenu {
   public void open(Player player) {
     Object instance = plan.wiring().instantiator().create();
     PlayerId viewer = new PlayerId(player.getUniqueId());
+    injectViewer(instance, viewer);
     MenuHooks hooks = HookDefinitions.of(instance.getClass()).bind(instance);
     PageRenderer renderer =
         new PageRenderer(
@@ -74,6 +75,10 @@ public final class ReactivePagedMenu implements PaperMenu {
       view.close();
       throw exception;
     }
+  }
+
+  private void injectViewer(Object instance, PlayerId viewer) {
+    plan.wiring().viewers().forEach(field -> field.inject(instance, viewer));
   }
 
   private Runnable closeHook(MenuHooks hooks, java.util.UUID viewer) {

@@ -1,19 +1,26 @@
 package dev.haniel.menu.paper.render;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import dev.haniel.menu.item.HeadSkin;
 import dev.haniel.menu.item.Icon;
 import dev.haniel.menu.item.ItemTraits;
 import dev.haniel.menu.template.IconFactory;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
 /**
  * Builds an {@link ItemStack} from an {@link Icon}, deserializing MiniMessage into the display name
@@ -65,6 +72,33 @@ public final class ItemFactory implements IconFactory<ItemStack> {
     }
     traits.customModelData().ifPresent(value -> applyModelData(meta, value));
     applyFlags(meta, traits.flags());
+    traits.head().ifPresent(head -> applyHead(meta, head));
+  }
+
+  private void applyHead(ItemMeta meta, HeadSkin head) {
+    if (meta instanceof SkullMeta skull) {
+      skull.setPlayerProfile(profile(head));
+    }
+  }
+
+  private PlayerProfile profile(HeadSkin head) {
+    return switch (head) {
+      case HeadSkin.Owner owner -> ownerProfile(owner.uuid());
+      case HeadSkin.Texture texture -> textureProfile(texture.base64());
+    };
+  }
+
+  private PlayerProfile ownerProfile(UUID owner) {
+    PlayerProfile profile = Bukkit.createProfile(owner);
+    profile.completeFromCache(); // local only: fills the skin if the server knows this player
+    return profile;
+  }
+
+  private PlayerProfile textureProfile(String base64) {
+    PlayerProfile profile =
+        Bukkit.createProfile(UUID.nameUUIDFromBytes(base64.getBytes(StandardCharsets.UTF_8)));
+    profile.setProperty(new ProfileProperty("textures", base64));
+    return profile;
   }
 
   // Legacy integer model data is broadly compatible across resource packs; the component-based

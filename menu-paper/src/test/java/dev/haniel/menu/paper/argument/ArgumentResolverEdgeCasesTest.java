@@ -9,8 +9,10 @@ import static org.mockito.Mockito.mockStatic;
 
 import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.click.ClickType;
+import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.paper.api.MenuClick;
+import dev.haniel.menu.paper.api.MenuOpener;
 import dev.haniel.menu.paper.listener.PaperClickContext;
 import java.util.UUID;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -32,7 +34,8 @@ class ArgumentResolverEdgeCasesTest {
 
   private final PlayerArgumentResolver playerResolver = new PlayerArgumentResolver();
   private final MenuClickArgumentResolver clickResolver =
-      new MenuClickArgumentResolver(MiniMessage.miniMessage());
+      new MenuClickArgumentResolver(
+          MiniMessage.miniMessage(), noOpOpener(), (viewer, prompt) -> {});
 
   // ---- PlayerArgumentResolver ----
 
@@ -117,6 +120,20 @@ class ArgumentResolverEdgeCasesTest {
     UUID uuid = UUID.randomUUID();
     org.mockito.Mockito.when(player.getUniqueId()).thenReturn(uuid);
     return new PaperClickContext(new PlayerId(uuid), ClickType.LEFT);
+  }
+
+  private static MenuOpener noOpOpener() {
+    return new MenuOpener() {
+      @Override
+      public void open(Player viewer, MenuId id) {
+        // no-op: this resolver test never navigates
+      }
+
+      @Override
+      public void open(Player viewer, Class<?> menuType) {
+        // no-op: this resolver test never navigates
+      }
+    };
   }
 
   private static ClickContext foreignContext() {

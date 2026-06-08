@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +15,7 @@ import dev.haniel.menu.paper.facade.ManualFacadeMenu;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Logger;
@@ -36,7 +38,7 @@ class MenuFrameworkBuilderTest {
       """;
 
   @Test
-  void buildRegistersListenerOnceAndScansConfiguredPackages(@TempDir Path dir) throws IOException {
+  void buildRegistersListenersOnceAndScansConfiguredPackages(@TempDir Path dir) throws IOException {
     Files.writeString(dir.resolve("alpha.yml"), MENU_YAML);
     Files.writeString(dir.resolve("bravo.yml"), MENU_YAML);
     PluginManager pluginManager = mock(PluginManager.class);
@@ -47,7 +49,8 @@ class MenuFrameworkBuilderTest {
             .scan("dev.haniel.menu.paper.samples")
             .build();
 
-    verify(pluginManager).registerEvents(any(Listener.class), any(JavaPlugin.class));
+    // The click listener and the anvil-prompt listener, each registered exactly once.
+    verify(pluginManager, times(2)).registerEvents(any(Listener.class), any(JavaPlugin.class));
     assertEquals(2, framework.reloadAll());
   }
 
@@ -79,6 +82,36 @@ class MenuFrameworkBuilderTest {
   }
 
   @Test
+  void shutdownTearsDownAnOpenReactiveViewEvenIfNoCloseEventFires(@TempDir Path dir) {
+    JavaPlugin plugin = plugin(dir, mock(PluginManager.class));
+    dev.haniel.menu.paper.reactive.ReactiveView view =
+        mock(dev.haniel.menu.paper.reactive.ReactiveView.class);
+    org.bukkit.entity.Player player = playerViewing(view);
+
+    try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+      bukkit.when(Bukkit::getScheduler).thenReturn(mock(BukkitScheduler.class));
+      bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(player));
+
+      new MenuLifecycle(plugin, List.of(mock(Listener.class)), Runnable::run).shutdown();
+    }
+
+    // shutdown unregisters listeners, so the close event may never fire — teardown must be
+    // explicit.
+    verify(view).close();
+  }
+
+  private static org.bukkit.entity.Player playerViewing(
+      org.bukkit.inventory.InventoryHolder holder) {
+    org.bukkit.entity.Player player = mock(org.bukkit.entity.Player.class);
+    org.bukkit.inventory.InventoryView openView = mock(org.bukkit.inventory.InventoryView.class);
+    org.bukkit.inventory.Inventory top = mock(org.bukkit.inventory.Inventory.class);
+    when(player.getOpenInventory()).thenReturn(openView);
+    when(openView.getTopInventory()).thenReturn(top);
+    when(top.getHolder()).thenReturn(holder);
+    return player;
+  }
+
+  @Test
   void shutdownCancelsPluginTasks(@TempDir Path dir) {
     JavaPlugin plugin = plugin(dir, mock(PluginManager.class));
     BukkitScheduler scheduler = mock(BukkitScheduler.class);
@@ -86,7 +119,7 @@ class MenuFrameworkBuilderTest {
     try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
       bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
 
-      new MenuLifecycle(plugin, mock(Listener.class), Runnable::run).shutdown();
+      new MenuLifecycle(plugin, List.of(mock(Listener.class)), Runnable::run).shutdown();
 
       verify(scheduler).cancelTasks(plugin);
     }
@@ -105,7 +138,7 @@ class MenuFrameworkBuilderTest {
 
       // On Folia the legacy scheduler throws; disable must still complete cleanly.
       assertDoesNotThrow(
-          () -> new MenuLifecycle(plugin, mock(Listener.class), Runnable::run).shutdown());
+          () -> new MenuLifecycle(plugin, List.of(mock(Listener.class)), Runnable::run).shutdown());
     }
   }
 
@@ -118,7 +151,7 @@ class MenuFrameworkBuilderTest {
           ran[0]++;
           command.run();
         };
-    MenuLifecycle lifecycle = new MenuLifecycle(plugin, mock(Listener.class), delegate);
+    MenuLifecycle lifecycle = new MenuLifecycle(plugin, List.of(mock(Listener.class)), delegate);
 
     lifecycle.syncExecutor().execute(() -> {});
     assertEquals(1, ran[0], "before shutdown the sync apply stage runs on the delegate");

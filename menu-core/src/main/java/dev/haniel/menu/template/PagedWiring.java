@@ -5,6 +5,7 @@ import dev.haniel.menu.compiler.binding.StateField;
 import dev.haniel.menu.compiler.binding.UnboundAction;
 import dev.haniel.menu.compiler.binding.UnboundProvider;
 import dev.haniel.menu.compiler.binding.UnboundTick;
+import dev.haniel.menu.compiler.binding.ViewerField;
 import java.util.List;
 import java.util.Map;
 
@@ -16,22 +17,25 @@ import java.util.Map;
  * @param overlayActions the unbound static button actions, by slot
  * @param states the {@code @Reactive} field getters
  * @param ticks the unbound {@code @Tick} handles
+ * @param viewers the {@code @Viewer} field setters
  */
 public record PagedWiring(
     Instantiator instantiator,
     UnboundProvider provider,
     Map<Integer, UnboundAction> overlayActions,
     List<StateField> states,
-    List<UnboundTick> ticks) {
+    List<UnboundTick> ticks,
+    List<ViewerField> viewers) {
 
   public PagedWiring {
     overlayActions = Map.copyOf(overlayActions);
     states = List.copyOf(states);
     ticks = List.copyOf(ticks);
+    viewers = List.copyOf(viewers);
   }
 
   /**
-   * Creates wiring with no periodic ticks.
+   * Creates wiring with no periodic ticks and no viewer injection.
    *
    * @param instantiator builds the per-player instance
    * @param provider the unbound paginated content handle
@@ -43,6 +47,6 @@ public record PagedWiring(
       UnboundProvider provider,
       Map<Integer, UnboundAction> overlayActions,
       List<StateField> states) {
-    this(instantiator, provider, overlayActions, states, List.of());
+    this(instantiator, provider, overlayActions, states, List.of(), List.of());
   }
 }

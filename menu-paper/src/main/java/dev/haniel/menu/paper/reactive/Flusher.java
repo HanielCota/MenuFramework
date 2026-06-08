@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.reactive;
 
 import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.scheduler.ScheduledTask;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -60,7 +61,7 @@ public final class Flusher {
       logger.fine("coalesced flush was not accepted by scheduler");
       return null;
     } catch (RuntimeException notSchedulable) {
-      logger.fine("scheduler rejected coalesced flush: " + notSchedulable);
+      logger.log(Level.FINE, "scheduler rejected coalesced flush", notSchedulable);
       return null;
     }
   }

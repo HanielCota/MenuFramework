@@ -8,6 +8,7 @@ import dev.haniel.menu.annotation.OnClose;
 import dev.haniel.menu.annotation.OnOpen;
 import dev.haniel.menu.annotation.Reactive;
 import dev.haniel.menu.annotation.Tick;
+import dev.haniel.menu.annotation.Viewer;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.binding.ButtonActions;
 import dev.haniel.menu.compiler.binding.ButtonGuards;
@@ -137,10 +138,15 @@ public final class StaticReader {
     rejectMethod(type, methods, Tick.class, "@Tick");
     rejectMethod(type, methods, OnOpen.class, "@OnOpen");
     rejectMethod(type, methods, OnClose.class, "@OnClose");
+    rejectField(type, Reactive.class, "@Reactive");
+    rejectField(type, Viewer.class, "@Viewer");
+  }
+
+  private void rejectField(Class<?> type, Class<? extends Annotation> annotation, String label) {
     ReflectedMembers.fields(type).stream()
-        .filter(field -> field.isAnnotationPresent(Reactive.class))
+        .filter(field -> field.isAnnotationPresent(annotation))
         .findFirst()
-        .ifPresent(field -> failStaticOnly(type, "@Reactive", field.getName()));
+        .ifPresent(field -> failStaticOnly(type, label, field.getName()));
   }
 
   private void rejectMethod(

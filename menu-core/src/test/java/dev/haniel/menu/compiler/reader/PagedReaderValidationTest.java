@@ -8,7 +8,9 @@ import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.Paginated;
 import dev.haniel.menu.annotation.Reactive;
 import dev.haniel.menu.annotation.Tick;
+import dev.haniel.menu.annotation.Viewer;
 import dev.haniel.menu.compiler.InvalidMenuException;
+import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.item.MenuItem;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -81,6 +83,29 @@ class PagedReaderValidationTest {
     InvalidMenuException error =
         assertThrows(InvalidMenuException.class, () -> reader.read(BadReactiveMenu.class));
     assertTrue(error.getMessage().contains("must be State<?>"));
+  }
+
+  @Test
+  void rejectsViewerFieldThatIsNotPlayerId() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(BadViewerTypeMenu.class));
+    assertTrue(error.getMessage().contains("must be PlayerId"));
+  }
+
+  @Test
+  void rejectsFinalViewerField() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(FinalViewerMenu.class));
+    assertTrue(error.getMessage().contains("non-final"));
+  }
+
+  @Test
+  void acceptsViewerField() {
+    PlayerId injected = new PlayerId(java.util.UUID.randomUUID());
+    Object instance = reader.read(ViewerMenu.class).instantiator().create();
+    reader.read(ViewerMenu.class).viewers().forEach(field -> field.inject(instance, injected));
+
+    assertTrue(((ViewerMenu) instance).viewer == injected, "viewer must be written into the field");
   }
 
   @Test
@@ -200,6 +225,39 @@ class PagedReaderValidationTest {
   static final class BadReactiveMenu {
 
     @Reactive String notState = "value";
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+  }
+
+  @Menu(id = "bad-viewer-type")
+  static final class BadViewerTypeMenu {
+
+    @Viewer String notPlayerId = "value";
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+  }
+
+  @Menu(id = "final-viewer")
+  static final class FinalViewerMenu {
+
+    @Viewer final PlayerId viewer = null;
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+  }
+
+  @Menu(id = "viewer")
+  static final class ViewerMenu {
+
+    @Viewer PlayerId viewer;
 
     @Paginated
     List<MenuItem> items() {

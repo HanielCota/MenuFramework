@@ -2,8 +2,11 @@ package dev.haniel.menu.paper.listener;
 
 import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.domain.PlayerId;
+import dev.haniel.menu.paper.api.MenuErrorHandler;
 import dev.haniel.menu.paper.holder.ClickableHolder;
 import dev.haniel.menu.paper.reactive.ReactiveView;
+import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -28,25 +31,44 @@ import org.bukkit.inventory.Inventory;
  * InventoryClickEvent}.
  *
  * <p>Click and drag run at {@link EventPriority#HIGHEST} so the cancel is the last word and another
- * plugin cannot silently re-enable the item move. A button action that throws is caught and logged,
- * not allowed to escape into Bukkit's event pipeline (the cancel is already committed first).
+ * plugin cannot silently re-enable the item move. A button action that throws is caught and routed
+ * to the {@link MenuErrorHandler} (logged with its stacktrace by default), not allowed to escape
+ * into Bukkit's event pipeline (the cancel is already committed first).
  */
 public final class MenuListener implements Listener {
 
+  private final MenuErrorHandler errorHandler;
   private final Logger logger;
 
-  /** Creates a listener logging to the framework's default logger. */
+  /** Creates a listener that logs failed actions to the framework's default logger. */
   public MenuListener() {
     this(Logger.getLogger(MenuListener.class.getName()));
   }
 
   /**
-   * Creates a listener logging to the given logger.
+   * Creates a listener that logs failed actions (with their stacktrace) to the given logger.
    *
    * @param logger the logger for failed button actions; never null
    */
   public MenuListener(Logger logger) {
-    this.logger = logger;
+    this(loggingHandler(logger), logger);
+  }
+
+  /**
+   * Creates a listener that routes failed actions to the given handler.
+   *
+   * @param errorHandler the handler invoked when an action throws; never null
+   * @param logger the logger used if the handler itself throws; never null
+   */
+  public MenuListener(MenuErrorHandler errorHandler, Logger logger) {
+    this.errorHandler = Objects.requireNonNull(errorHandler, "errorHandler");
+    this.logger = Objects.requireNonNull(logger, "logger");
+  }
+
+  private static MenuErrorHandler loggingHandler(Logger logger) {
+    Objects.requireNonNull(logger, "logger");
+    return (viewer, failure) ->
+        logger.log(Level.WARNING, "Menu action failed for " + viewer.getName(), failure);
   }
 
   /**
@@ -70,7 +92,15 @@ public final class MenuListener implements Listener {
     try {
       holder.click(rawSlot, context(player, click));
     } catch (RuntimeException failure) {
-      logger.warning("Menu action failed for " + player.getName() + ": " + failure);
+      reportFailure(player, failure);
+    }
+  }
+
+  private void reportFailure(Player player, RuntimeException failure) {
+    try {
+      errorHandler.onError(player, failure);
+    } catch (RuntimeException thrownByHandler) {
+      logger.log(Level.SEVERE, "Menu error handler threw for " + player.getName(), thrownByHandler);
     }
   }
 

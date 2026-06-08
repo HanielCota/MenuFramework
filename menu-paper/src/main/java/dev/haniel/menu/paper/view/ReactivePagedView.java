@@ -2,8 +2,10 @@ package dev.haniel.menu.paper.view;
 
 import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.compiler.binding.BoundTick;
+import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.PageNumber;
 import dev.haniel.menu.paper.holder.ClickableHolder;
+import dev.haniel.menu.paper.holder.OpenMenu;
 import dev.haniel.menu.paper.reactive.Flusher;
 import dev.haniel.menu.paper.reactive.ReactiveBinding;
 import dev.haniel.menu.paper.reactive.ReactiveLifecycle;
@@ -26,7 +28,8 @@ import org.jetbrains.annotations.NotNull;
  * diff. Navigation re-renders immediately into the same inventory. Closing unbinds everything
  * (anti-leak).
  */
-public final class ReactivePagedView implements ClickableHolder, ReactiveView, StateListener {
+public final class ReactivePagedView
+    implements ClickableHolder, ReactiveView, StateListener, OpenMenu {
 
   private final PageRenderer renderer;
   private final PageCursor cursor;
@@ -82,6 +85,17 @@ public final class ReactivePagedView implements ClickableHolder, ReactiveView, S
     }
     renderer.invalidate();
     lifecycle.schedule();
+  }
+
+  @Override
+  public MenuId menuId() {
+    return renderer.menuId();
+  }
+
+  /** Re-renders on external request, exactly as a reactive state change would. */
+  @Override
+  public void refresh() {
+    onChange();
   }
 
   @Override
