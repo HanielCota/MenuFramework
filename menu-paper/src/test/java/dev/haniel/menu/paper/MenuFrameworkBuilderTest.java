@@ -82,6 +82,36 @@ class MenuFrameworkBuilderTest {
   }
 
   @Test
+  void shutdownTearsDownAnOpenReactiveViewEvenIfNoCloseEventFires(@TempDir Path dir) {
+    JavaPlugin plugin = plugin(dir, mock(PluginManager.class));
+    dev.haniel.menu.paper.reactive.ReactiveView view =
+        mock(dev.haniel.menu.paper.reactive.ReactiveView.class);
+    org.bukkit.entity.Player player = playerViewing(view);
+
+    try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+      bukkit.when(Bukkit::getScheduler).thenReturn(mock(BukkitScheduler.class));
+      bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(player));
+
+      new MenuLifecycle(plugin, List.of(mock(Listener.class)), Runnable::run).shutdown();
+    }
+
+    // shutdown unregisters listeners, so the close event may never fire — teardown must be
+    // explicit.
+    verify(view).close();
+  }
+
+  private static org.bukkit.entity.Player playerViewing(
+      org.bukkit.inventory.InventoryHolder holder) {
+    org.bukkit.entity.Player player = mock(org.bukkit.entity.Player.class);
+    org.bukkit.inventory.InventoryView openView = mock(org.bukkit.inventory.InventoryView.class);
+    org.bukkit.inventory.Inventory top = mock(org.bukkit.inventory.Inventory.class);
+    when(player.getOpenInventory()).thenReturn(openView);
+    when(openView.getTopInventory()).thenReturn(top);
+    when(top.getHolder()).thenReturn(holder);
+    return player;
+  }
+
+  @Test
   void shutdownCancelsPluginTasks(@TempDir Path dir) {
     JavaPlugin plugin = plugin(dir, mock(PluginManager.class));
     BukkitScheduler scheduler = mock(BukkitScheduler.class);

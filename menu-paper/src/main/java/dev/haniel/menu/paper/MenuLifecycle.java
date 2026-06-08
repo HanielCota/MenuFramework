@@ -1,5 +1,7 @@
 package dev.haniel.menu.paper;
 
+import dev.haniel.menu.paper.holder.ClickableHolder;
+import dev.haniel.menu.paper.reactive.ReactiveView;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -9,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.Plugin;
 
 final class MenuLifecycle {
@@ -73,8 +76,13 @@ final class MenuLifecycle {
   }
 
   private void closeOpenMenuNow(Player player) {
-    if (player.getOpenInventory().getTopInventory().getHolder()
-        instanceof dev.haniel.menu.paper.holder.ClickableHolder) {
+    InventoryHolder holder = player.getOpenInventory().getTopInventory().getHolder();
+    if (holder instanceof ReactiveView view) {
+      // Explicit teardown: shutdown drops the listener, so the close event may not fire and the
+      // view's state/ticks would leak. close() is idempotent, so a later close event stays safe.
+      view.close();
+    }
+    if (holder instanceof ClickableHolder) {
       player.closeInventory();
     }
   }
