@@ -1,5 +1,6 @@
 package dev.haniel.menu.item;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -36,7 +37,7 @@ public record ItemTraits(
     }
     customModelData = (customModelData == null) ? OptionalInt.empty() : customModelData;
     flags = (flags == null) ? Set.of() : Set.copyOf(flags);
-    head = (head == null) ? Optional.empty() : head;
+    head = Objects.requireNonNull(head, "head");
   }
 
   /**
