@@ -15,12 +15,10 @@ import dev.haniel.menu.compiler.model.ButtonBehavior;
 import dev.haniel.menu.compiler.model.MenuBlueprint;
 import dev.haniel.menu.domain.ButtonId;
 import dev.haniel.menu.domain.MenuId;
+import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -102,19 +100,9 @@ public final class StaticReader {
   }
 
   private List<Method> discoverButtons(Class<?> type) {
-    return allMethods(type).stream()
+    return ReflectedMembers.methods(type).stream()
         .filter(method -> method.isAnnotationPresent(Button.class))
         .toList();
-  }
-
-  private static List<Method> allMethods(Class<?> type) {
-    List<Method> methods = new ArrayList<>();
-    Class<?> current = type;
-    while (current != null && current != Object.class) {
-      methods.addAll(Arrays.asList(current.getDeclaredMethods()));
-      current = current.getSuperclass();
-    }
-    return methods;
   }
 
   private ButtonBehavior behavior(Object instance, Method method, Set<ButtonId> ids) {
@@ -145,22 +133,22 @@ public final class StaticReader {
   }
 
   private void rejectReactiveOnlyAnnotations(Class<?> type) {
-    allMethods(type).stream()
-        .filter(method -> method.isAnnotationPresent(Tick.class))
-        .findFirst()
-        .ifPresent(method -> failStaticOnly(type, "@Tick", method.getName()));
-    allMethods(type).stream()
-        .filter(method -> method.isAnnotationPresent(OnOpen.class))
-        .findFirst()
-        .ifPresent(method -> failStaticOnly(type, "@OnOpen", method.getName()));
-    allMethods(type).stream()
-        .filter(method -> method.isAnnotationPresent(OnClose.class))
-        .findFirst()
-        .ifPresent(method -> failStaticOnly(type, "@OnClose", method.getName()));
-    allFields(type).stream()
+    List<Method> methods = ReflectedMembers.methods(type);
+    rejectMethod(type, methods, Tick.class, "@Tick");
+    rejectMethod(type, methods, OnOpen.class, "@OnOpen");
+    rejectMethod(type, methods, OnClose.class, "@OnClose");
+    ReflectedMembers.fields(type).stream()
         .filter(field -> field.isAnnotationPresent(Reactive.class))
         .findFirst()
         .ifPresent(field -> failStaticOnly(type, "@Reactive", field.getName()));
+  }
+
+  private void rejectMethod(
+      Class<?> type, List<Method> methods, Class<? extends Annotation> annotation, String label) {
+    methods.stream()
+        .filter(method -> method.isAnnotationPresent(annotation))
+        .findFirst()
+        .ifPresent(method -> failStaticOnly(type, label, method.getName()));
   }
 
   private void failStaticOnly(Class<?> type, String annotation, String member) {
@@ -171,16 +159,6 @@ public final class StaticReader {
             + " on static menu "
             + type.getName()
             + " requires a @Paginated menu");
-  }
-
-  private static List<Field> allFields(Class<?> type) {
-    List<Field> fields = new ArrayList<>();
-    Class<?> current = type;
-    while (current != null && current != Object.class) {
-      fields.addAll(Arrays.asList(current.getDeclaredFields()));
-      current = current.getSuperclass();
-    }
-    return fields;
   }
 
   @SuppressWarnings("java:S3011") // Button methods may be private annotated handlers.

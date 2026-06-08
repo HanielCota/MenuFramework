@@ -9,12 +9,12 @@ import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.config.PaginationConfig;
 import dev.haniel.menu.domain.ButtonId;
 import dev.haniel.menu.domain.MaskLayout;
-import dev.haniel.menu.domain.Slot;
 import dev.haniel.menu.item.Icon;
 import dev.haniel.menu.template.IconFactory;
 import dev.haniel.menu.template.PagedAppearance;
 import dev.haniel.menu.template.PagedDecor;
 import dev.haniel.menu.template.PagedWiring;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -95,7 +95,7 @@ public final class PagedMerger<V> {
   }
 
   private void place(Map<Integer, V> visuals, ButtonConfig button, MenuConfig config) {
-    int slot = slot(button, config);
+    int slot = MergeButtons.slot(button, config);
     if (visuals.putIfAbsent(slot, icons.create(button.icon())) != null) {
       throw new InvalidMenuException("Slot " + slot + " is used by more than one button");
     }
@@ -126,36 +126,26 @@ public final class PagedMerger<V> {
   private void ensureOverlayDoesNotReplaceDynamicSlots(MenuConfig config, MaskLayout layout) {
     config
         .buttons()
-        .forEach(
-            (id, button) -> {
-              int slot = slot(button, config);
-              if (contains(layout.contentSlots(), slot)) {
-                throw new InvalidMenuException(
-                    "Button '" + id + "' cannot use content slot " + slot + " in pagination mask");
-              }
-              if (slot == layout.previousSlot() || slot == layout.nextSlot()) {
-                throw new InvalidMenuException(
-                    "Button '"
-                        + id
-                        + "' cannot use navigation slot "
-                        + slot
-                        + " in pagination mask");
-              }
-            });
+        .forEach((id, button) -> rejectDynamicSlot(id, MergeButtons.slot(button, config), layout));
+  }
+
+  private void rejectDynamicSlot(String id, int slot, MaskLayout layout) {
+    if (contains(layout.contentSlots(), slot)) {
+      throw new InvalidMenuException(
+          "Button '" + id + "' cannot use content slot " + slot + " in pagination mask");
+    }
+    if (slot == layout.previousSlot() || slot == layout.nextSlot()) {
+      throw new InvalidMenuException(
+          "Button '" + id + "' cannot use navigation slot " + slot + " in pagination mask");
+    }
   }
 
   private boolean contains(int[] slots, int wanted) {
-    for (int slot : slots) {
-      if (slot == wanted) {
-        return true;
-      }
-    }
-    return false;
+    return Arrays.stream(slots).anyMatch(slot -> slot == wanted);
   }
 
   private void failMissingButton(ButtonId id) {
-    throw new InvalidMenuException(
-        "Button '" + id.value() + "' is annotated but missing in YAML; add buttons." + id.value());
+    throw MergeButtons.missingButton(id.value());
   }
 
   private PaginationConfig requirePagination(PagedStructure structure, MenuConfig config) {
@@ -177,15 +167,6 @@ public final class PagedMerger<V> {
   }
 
   private int slotOf(ButtonId id, MenuConfig config) {
-    return slot(config.buttons().get(id.value()), config);
-  }
-
-  private int slot(ButtonConfig button, MenuConfig config) {
-    try {
-      return Slot.of(button.slot(), config.rows()).value();
-    } catch (IllegalArgumentException exception) {
-      throw new InvalidMenuException(
-          "Button slot " + button.slot() + " is outside the menu bounds");
-    }
+    return MergeButtons.slot(config.buttons().get(id.value()), config);
   }
 }
