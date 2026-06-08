@@ -83,6 +83,46 @@ The handler runs on the view's owning thread (so it may touch the Bukkit API) an
 `Player` and the thrown `RuntimeException`. A handler that itself throws is logged and swallowed,
 never escaping into Bukkit's event pipeline.
 
+Tear the framework down in `onDisable` — it unregisters the listeners, cancels tick tasks, closes
+open menus and clears the registry:
+
+```java
+@Override
+public void onDisable() {
+  framework.shutdown();
+}
+```
+
+### `MenuFramework` facade methods
+
+| Method | Returns | Use |
+|--------|---------|-----|
+| `scan(String... basePackages)` | `MenuFramework` | Discover and register every `@Menu` under the packages. |
+| `register(Object menu)` | `MenuFramework` | Manually register one already-constructed `@Menu` instance. |
+| `open(Player, MenuId)` / `open(Player, Class<?>)` | `void` | Open a registered menu for a player (no-op without permission or if unregistered). |
+| `session(Player)` / `session(PlayerId)` | `Optional<MenuSession>` | Handle to the player's currently open framework menu. |
+| `reload(MenuId)` | `boolean` | Reload one menu from YAML; `true` if it existed. |
+| `reloadReport(MenuId)` | `ReloadReport` | Reload one menu and report success/failure. |
+| `reloadAll()` | `int` | Reload every menu; returns the count reloaded. |
+| `reloadAllReport()` | `ReloadReport` | Reload every menu with a success/failure report. |
+| `reloadAllReportAsync()` | `CompletableFuture<ReloadReport>` | Same, with YAML IO off the main thread. |
+| `close(Player)` | `void` | Close the player's open inventory. |
+| `shutdown()` | `void` | Unregister listeners, cancel tasks, close menus, clear the registry. Call in `onDisable`. |
+
+`ReloadReport` exposes `successful()`, `successCount()`, `reloaded()` (a `List<MenuId>`) and
+`failures()` (a `List<ReloadFailure>`, each with `id()` and `message()`).
+
+### `MenuFramework.builder(plugin)` methods
+
+| Builder method | Use |
+|----------------|-----|
+| `scan(String... packages)` | Packages to scan for `@Menu` classes during `build()`. |
+| `instantiator(MenuInstanceFactory)` | Custom construction (e.g. a DI container) for scanned menu classes. |
+| `menusDirectory(Path)` | Override the YAML directory (default `plugins/<PluginName>/menus`). |
+| `scheduler(MenuScheduler)` | Override platform scheduler auto-detection (Paper vs Folia). |
+| `onActionError(MenuErrorHandler)` | Replace the default logging of a throwing button action. |
+| `build()` | Wire the framework, register listeners once, scan configured packages. Call once. |
+
 ## Annotations
 
 | Annotation | Target | Parameters (with defaults) | Rules |
@@ -141,6 +181,8 @@ public void setAmount(MenuClick click) {
 ```
 
 - `AnvilPrompt.text()` confirms the raw typed `String`; `AnvilPrompt.numeric()` confirms an `int`.
+- `.title(String)` sets the anvil title (trusted MiniMessage); `.initialText(String)` pre-fills the
+  text field. Both are optional and default to empty.
 - Invalid numeric input (non-numeric or blank) leaves the anvil open for another try — `onConfirm`
   only fires on a valid value.
 - `onCancel` runs when the player closes the anvil without confirming. The framework does not reopen
@@ -180,7 +222,7 @@ Icon icon = Icons.of(Material.DIAMOND)
 ```
 
 `ItemFlag` values: `HIDE_ENCHANTS`, `HIDE_ATTRIBUTES`, `HIDE_UNBREAKABLE`, `HIDE_DESTROYS`,
-`HIDE_PLACED_ON`, `HIDE_DYE`, `HIDE_ARMOR_TRIM`.
+`HIDE_PLACED_ON`, `HIDE_DYE`, `HIDE_ARMOR_TRIM`, `HIDE_ADDITIONAL_TOOLTIP`.
 
 `amount` must be in `1..64`. Building an Icon in code with an out-of-range amount throws. (In YAML an
 out-of-range `amount` is clamped to 1 instead.)

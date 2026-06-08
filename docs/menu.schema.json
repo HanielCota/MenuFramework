@@ -88,7 +88,8 @@
               "HIDE_DESTROYS",
               "HIDE_PLACED_ON",
               "HIDE_DYE",
-              "HIDE_ARMOR_TRIM"
+              "HIDE_ARMOR_TRIM",
+              "HIDE_ADDITIONAL_TOOLTIP"
             ]
           },
           "default": []
