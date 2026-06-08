@@ -91,8 +91,7 @@ public final class HookDefinitions {
   private static boolean validate(Method method, Class<? extends Annotation> annotation) {
     boolean validShape = method.getReturnType() == void.class && method.getParameterCount() <= 1;
     boolean playerParam =
-        method.getParameterCount() == 1
-            && method.getParameterTypes()[0].isAssignableFrom(Player.class);
+        method.getParameterCount() == 1 && method.getParameterTypes()[0] == Player.class;
     if (!validShape || (method.getParameterCount() == 1 && !playerParam)) {
       throw new InvalidMenuException(
           "@"
@@ -118,7 +117,15 @@ public final class HookDefinitions {
 
     Consumer<Player> bind(Object instance) {
       MethodHandle bound = handle.bindTo(instance);
-      return acceptsPlayer ? player -> invoke(bound, player) : player -> invoke(bound);
+      return acceptsPlayer ? player -> invokeWithPlayer(bound, player) : player -> invoke(bound);
+    }
+
+    // A player-accepting handler cannot run for an absent viewer (a close fired after disconnect),
+    // so it is skipped; a no-arg handler still runs and can perform viewer-independent cleanup.
+    private static void invokeWithPlayer(MethodHandle bound, Player player) {
+      if (player != null) {
+        invoke(bound, player);
+      }
     }
 
     @SuppressWarnings(

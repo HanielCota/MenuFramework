@@ -6,17 +6,24 @@ import dev.haniel.menu.paper.registry.ReloadReport;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 /** Reloads framework menus and reports the outcome, keeping the permission check in one place. */
 public final class MenuReloader {
 
   private final MenuMessages messages;
   private final Logger logger;
+  private final Plugin plugin;
   private MenuFramework framework;
 
   public MenuReloader(MenuMessages messages, Logger logger) {
+    this(messages, logger, null);
+  }
+
+  public MenuReloader(MenuMessages messages, Logger logger, Plugin plugin) {
     this.messages = messages;
     this.logger = logger;
+    this.plugin = plugin;
   }
 
   public void attach(MenuFramework framework) {
@@ -34,13 +41,28 @@ public final class MenuReloader {
     }
     framework
         .reloadAllReportAsync()
-        .thenAccept(
-            report -> {
-              if (player.isOnline()) {
-                report(player, report);
-              }
-            })
+        .thenAccept(report -> scheduleReport(player, report))
         .exceptionally(error -> logFailure(error));
+  }
+
+  private void scheduleReport(Player player, ReloadReport report) {
+    if (plugin == null) {
+      reportIfOnline(player, report);
+      return;
+    }
+    try {
+      player.getScheduler().run(plugin, ignored -> reportIfOnline(player, report), () -> {});
+    } catch (RuntimeException unschedulable) {
+      // The player left or is no longer schedulable; the reload itself succeeded, so a lost report
+      // must not surface as a reload failure through the future's exceptionally handler.
+      logger.log(Level.FINE, "Skipped reload report for an unschedulable player", unschedulable);
+    }
+  }
+
+  private void reportIfOnline(Player player, ReloadReport report) {
+    if (player.isOnline()) {
+      report(player, report);
+    }
   }
 
   private Void logFailure(Throwable error) {

@@ -8,7 +8,6 @@ import dev.haniel.menu.compiler.model.MenuBlueprint;
 import dev.haniel.menu.config.ButtonConfig;
 import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.domain.ButtonId;
-import dev.haniel.menu.domain.Slot;
 import dev.haniel.menu.template.IconFactory;
 import dev.haniel.menu.template.MenuTemplate;
 import dev.haniel.menu.template.SlotBinding;
@@ -55,7 +54,7 @@ public final class StaticMerger<V> {
   }
 
   private void place(Object[] visuals, ButtonConfig button, MenuConfig config) {
-    int slot = slot(button, config);
+    int slot = MergeButtons.slot(button, config);
     if (visuals[slot] != null) {
       throw new InvalidMenuException("Slot " + slot + " is used by more than one button");
     }
@@ -70,27 +69,14 @@ public final class StaticMerger<V> {
 
   private SlotBinding bind(ButtonBehavior behavior, MenuConfig config) {
     ButtonConfig button = require(behavior.id(), config);
-    return new SlotBinding(slot(button, config), behavior.action());
+    return new SlotBinding(MergeButtons.slot(button, config), behavior.action());
   }
 
   private ButtonConfig require(ButtonId id, MenuConfig config) {
     ButtonConfig button = config.buttons().get(id.value());
     if (button == null) {
-      throw new InvalidMenuException(
-          "Button '"
-              + id.value()
-              + "' is annotated but missing in YAML; add buttons."
-              + id.value());
+      throw MergeButtons.missingButton(id.value());
     }
     return button;
-  }
-
-  private int slot(ButtonConfig button, MenuConfig config) {
-    try {
-      return Slot.of(button.slot(), config.rows()).value();
-    } catch (IllegalArgumentException exception) {
-      throw new InvalidMenuException(
-          "Button slot " + button.slot() + " is outside the menu bounds");
-    }
   }
 }

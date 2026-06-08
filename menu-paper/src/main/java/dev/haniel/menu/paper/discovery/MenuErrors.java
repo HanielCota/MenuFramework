@@ -20,7 +20,9 @@ public final class MenuErrors {
    * @param cause the failure; never null
    */
   public void add(Class<?> type, Throwable cause) {
-    failures.add(type.getName() + " -> " + cause.getMessage());
+    String message = cause.getMessage();
+    failures.add(
+        type.getName() + " -> " + (message != null ? message : cause.getClass().getSimpleName()));
   }
 
   /**

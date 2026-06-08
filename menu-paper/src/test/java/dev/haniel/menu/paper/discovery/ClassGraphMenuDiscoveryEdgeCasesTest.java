@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.discovery;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.haniel.menu.discovery.MenuDiscovery;
@@ -31,5 +32,16 @@ class ClassGraphMenuDiscoveryEdgeCasesTest {
     int count = discovery.discover(Set.of("dev.haniel.menu.paper.samples")).size();
 
     assertEquals(2, count, "PlainClass must be ignored; only @Menu classes discovered");
+  }
+
+  @Test
+  void aggregatesInvalidDiscoveredMenuIds() {
+    MenuDiscoveryException failure =
+        assertThrows(
+            MenuDiscoveryException.class,
+            () -> discovery.discover(Set.of("dev.haniel.menu.paper.invalidsamples")));
+
+    assertTrue(failure.getMessage().contains("MenuInvalidId"));
+    assertTrue(failure.getMessage().contains("@Menu id"));
   }
 }

@@ -35,17 +35,33 @@ public final class Flusher {
     this.logger = logger;
   }
 
-  /** Schedules a flush for the next tick, unless one is already pending. */
+  /**
+   * Schedules a flush for the next tick, unless one is already pending.
+   *
+   * <p>A scheduler that refuses the work — Folia returning an unscheduled task, or Paper throwing
+   * because the plugin is disabling — leaves {@code task} null so the mark can be retried and never
+   * lets the rejection escape into the state write that triggered it.
+   */
   public void mark() {
     if (task != null) {
       logger.fine("coalesced flush already pending");
       return;
     }
-    logger.fine("scheduled coalesced flush");
-    task = scheduler.schedule(this::run);
-    if (!task.scheduled()) {
+    task = trySchedule();
+  }
+
+  private ScheduledTask trySchedule() {
+    try {
+      ScheduledTask scheduled = scheduler.schedule(this::run);
+      if (scheduled.scheduled()) {
+        logger.fine("scheduled coalesced flush");
+        return scheduled;
+      }
       logger.fine("coalesced flush was not accepted by scheduler");
-      task = null;
+      return null;
+    } catch (RuntimeException notSchedulable) {
+      logger.fine("scheduler rejected coalesced flush: " + notSchedulable);
+      return null;
     }
   }
 

@@ -1,5 +1,6 @@
 package dev.haniel.menu.paper.reactive;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -99,6 +100,19 @@ class FlusherNotificationEdgeCasesTest {
     assertFalse(rejecting.cancelled(), "a never-accepted task must not be cancelled");
   }
 
+  @Test
+  void aSchedulerThatThrowsNeverLeaksTheRejectionAndStaysRetryable() {
+    ThrowingScheduler throwing = new ThrowingScheduler();
+    Flusher viaThrowing = new Flusher(throwing, () -> flushes[0]++, logger());
+
+    // A scheduler throwing (Paper rejecting a task while the plugin disables) must be swallowed,
+    // not propagated into the state write that triggered the mark, and must stay retryable.
+    assertDoesNotThrow(viaThrowing::mark);
+    assertDoesNotThrow(viaThrowing::mark);
+
+    assertEquals(2, throwing.attempts(), "a throwing schedule must reset, allowing a retry");
+  }
+
   private final Flusher[] flusherRef = new Flusher[1];
 
   private static Logger logger() {
@@ -161,6 +175,25 @@ class FlusherNotificationEdgeCasesTest {
 
     boolean cancelled() {
       return cancelled;
+    }
+  }
+
+  private static final class ThrowingScheduler implements PlayerScheduler {
+    private int attempts;
+
+    @Override
+    public ScheduledTask schedule(Runnable task) {
+      attempts++;
+      throw new IllegalStateException("plugin attempted to register task while disabled");
+    }
+
+    @Override
+    public ScheduledTask scheduleRepeating(Runnable task, long period) {
+      return schedule(task);
+    }
+
+    int attempts() {
+      return attempts;
     }
   }
 }

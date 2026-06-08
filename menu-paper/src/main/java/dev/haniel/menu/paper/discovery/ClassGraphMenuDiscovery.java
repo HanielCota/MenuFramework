@@ -5,6 +5,7 @@ import dev.haniel.menu.discovery.DiscoveredMenu;
 import dev.haniel.menu.discovery.MenuDiscovery;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +21,9 @@ public final class ClassGraphMenuDiscovery implements MenuDiscovery {
 
   @Override
   public List<DiscoveredMenu> discover(Set<String> basePackages) {
+    if (basePackages.isEmpty()) {
+      return List.of();
+    }
     try (ScanResult scan = scan(basePackages)) {
       return menus(scan);
     }
@@ -33,9 +37,20 @@ public final class ClassGraphMenuDiscovery implements MenuDiscovery {
   }
 
   private List<DiscoveredMenu> menus(ScanResult scan) {
-    return scan.getClassesWithAnnotation(Menu.class).loadClasses().stream()
-        .map(DiscoveredMenu::from)
-        .sorted(Comparator.comparing(menu -> menu.id().value()))
-        .toList();
+    List<DiscoveredMenu> discovered = new ArrayList<>();
+    MenuErrors errors = new MenuErrors();
+    scan.getClassesWithAnnotation(Menu.class)
+        .loadClasses()
+        .forEach(type -> addDiscovered(type, discovered, errors));
+    errors.failIfAny();
+    return discovered.stream().sorted(Comparator.comparing(menu -> menu.id().value())).toList();
+  }
+
+  private void addDiscovered(Class<?> type, List<DiscoveredMenu> discovered, MenuErrors errors) {
+    try {
+      discovered.add(DiscoveredMenu.from(type));
+    } catch (RuntimeException failure) {
+      errors.add(type, failure);
+    }
   }
 }

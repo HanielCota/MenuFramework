@@ -4,6 +4,10 @@ import dev.haniel.menu.action.ButtonArguments;
 import dev.haniel.menu.action.MenuAction;
 import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
+import dev.haniel.menu.annotation.OnClose;
+import dev.haniel.menu.annotation.OnOpen;
+import dev.haniel.menu.annotation.Reactive;
+import dev.haniel.menu.annotation.Tick;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.binding.ButtonActions;
 import dev.haniel.menu.compiler.binding.ButtonGuards;
@@ -11,11 +15,10 @@ import dev.haniel.menu.compiler.model.ButtonBehavior;
 import dev.haniel.menu.compiler.model.MenuBlueprint;
 import dev.haniel.menu.domain.ButtonId;
 import dev.haniel.menu.domain.MenuId;
+import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +61,7 @@ public final class StaticReader {
    */
   public MenuBlueprint read(Object instance) {
     Class<?> type = instance.getClass();
+    rejectReactiveOnlyAnnotations(type);
     return new MenuBlueprint(readId(type), behaviors(instance, type));
   }
 
@@ -66,7 +70,12 @@ public final class StaticReader {
     if (menu == null) {
       throw new InvalidMenuException(type.getName() + " is not annotated with @Menu");
     }
-    return new MenuId(menu.id());
+    try {
+      return new MenuId(menu.id());
+    } catch (IllegalArgumentException exception) {
+      throw new InvalidMenuException(
+          "@Menu id on " + type.getName() + " is invalid: " + exception.getMessage(), exception);
+    }
   }
 
   private Menu findMenu(Class<?> type) {
@@ -91,31 +100,65 @@ public final class StaticReader {
   }
 
   private List<Method> discoverButtons(Class<?> type) {
-    return allMethods(type).stream()
+    return ReflectedMembers.methods(type).stream()
         .filter(method -> method.isAnnotationPresent(Button.class))
         .toList();
-  }
-
-  private static List<Method> allMethods(Class<?> type) {
-    List<Method> methods = new ArrayList<>();
-    Class<?> current = type;
-    while (current != null && current != Object.class) {
-      methods.addAll(Arrays.asList(current.getDeclaredMethods()));
-      current = current.getSuperclass();
-    }
-    return methods;
   }
 
   private ButtonBehavior behavior(Object instance, Method method, Set<ButtonId> ids) {
     ButtonArguments arguments = clickArguments.bindingFor(method);
     Button button = method.getAnnotation(Button.class);
-    ButtonId id = new ButtonId(button.id());
+    ButtonId id = buttonId(method, button);
     if (!ids.add(id)) {
       throw new InvalidMenuException("Duplicate @Button id '" + id.value() + "'");
     }
     MenuAction action = ButtonActions.bind(bind(instance, method), arguments);
     ButtonGuards guards = new ButtonGuards(button.permission(), button.cooldownMillis());
     return new ButtonBehavior(id, guards.apply(action));
+  }
+
+  private ButtonId buttonId(Method method, Button button) {
+    try {
+      return new ButtonId(button.id());
+    } catch (IllegalArgumentException exception) {
+      throw new InvalidMenuException(
+          "@Button id on "
+              + method.getDeclaringClass().getName()
+              + "#"
+              + method.getName()
+              + " is invalid: "
+              + exception.getMessage(),
+          exception);
+    }
+  }
+
+  private void rejectReactiveOnlyAnnotations(Class<?> type) {
+    List<Method> methods = ReflectedMembers.methods(type);
+    rejectMethod(type, methods, Tick.class, "@Tick");
+    rejectMethod(type, methods, OnOpen.class, "@OnOpen");
+    rejectMethod(type, methods, OnClose.class, "@OnClose");
+    ReflectedMembers.fields(type).stream()
+        .filter(field -> field.isAnnotationPresent(Reactive.class))
+        .findFirst()
+        .ifPresent(field -> failStaticOnly(type, "@Reactive", field.getName()));
+  }
+
+  private void rejectMethod(
+      Class<?> type, List<Method> methods, Class<? extends Annotation> annotation, String label) {
+    methods.stream()
+        .filter(method -> method.isAnnotationPresent(annotation))
+        .findFirst()
+        .ifPresent(method -> failStaticOnly(type, label, method.getName()));
+  }
+
+  private void failStaticOnly(Class<?> type, String annotation, String member) {
+    throw new InvalidMenuException(
+        annotation
+            + " member "
+            + member
+            + " on static menu "
+            + type.getName()
+            + " requires a @Paginated menu");
   }
 
   @SuppressWarnings("java:S3011") // Button methods may be private annotated handlers.

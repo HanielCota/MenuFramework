@@ -27,6 +27,11 @@ public record DiscoveredMenu(Class<?> type, MenuId id) {
     if (menu == null) {
       throw new InvalidMenuException(type.getName() + " is not annotated with @Menu");
     }
-    return new DiscoveredMenu(type, new MenuId(menu.id()));
+    try {
+      return new DiscoveredMenu(type, new MenuId(menu.id()));
+    } catch (IllegalArgumentException exception) {
+      throw new InvalidMenuException(
+          "@Menu id on " + type.getName() + " is invalid: " + exception.getMessage(), exception);
+    }
   }
 }

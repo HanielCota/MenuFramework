@@ -22,13 +22,12 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * Discovers the structure of a paginated menu class at boot.
@@ -41,9 +40,7 @@ public final class PagedReader {
 
   private final MethodSignatureValidator validator = new MethodSignatureValidator();
   private final ClickArguments clickArguments;
-  private final ConcurrentMap<Class<?>, Boolean> handles = new ConcurrentHashMap<>();
-  private final ConcurrentMap<Class<?>, PagedMetadata> metadata = new ConcurrentHashMap<>();
-  private final ConcurrentMap<Class<?>, Instantiator> instantiators = new ConcurrentHashMap<>();
+  private final Caches caches = new Caches();
 
   /** Creates a reader supporting only the built-in {@code ClickContext} parameter. */
   public PagedReader() {
@@ -66,7 +63,7 @@ public final class PagedReader {
    * @return {@code true} if it declares a {@code @Paginated} method
    */
   public boolean handles(Class<?> type) {
-    return handles.computeIfAbsent(type, this::hasPaginatedProvider);
+    return caches.handles(type, this::hasPaginatedProvider);
   }
 
   /**
@@ -93,12 +90,12 @@ public final class PagedReader {
   }
 
   private boolean hasPaginatedProvider(Class<?> type) {
-    return allMethods(type).stream()
+    return ReflectedMembers.methods(type).stream()
         .anyMatch(method -> method.isAnnotationPresent(Paginated.class));
   }
 
   private PagedMetadata metadata(Class<?> type) {
-    return metadata.computeIfAbsent(
+    return caches.metadata(
         type,
         key ->
             new PagedMetadata(readId(key), provider(key), buttons(key), states(key), ticks(key)));
@@ -109,7 +106,12 @@ public final class PagedReader {
     if (menu == null) {
       throw new InvalidMenuException(type.getName() + " is not annotated with @Menu");
     }
-    return new MenuId(menu.id());
+    try {
+      return new MenuId(menu.id());
+    } catch (IllegalArgumentException exception) {
+      throw new InvalidMenuException(
+          "@Menu id on " + type.getName() + " is invalid: " + exception.getMessage(), exception);
+    }
   }
 
   private Menu findMenu(Class<?> type) {
@@ -125,7 +127,7 @@ public final class PagedReader {
   }
 
   private Instantiator instantiator(Class<?> type) {
-    return instantiators.computeIfAbsent(type, this::createInstantiator);
+    return caches.instantiator(type, this::createInstantiator);
   }
 
   @SuppressWarnings("java:S3011") // Menu annotations intentionally support private constructors.
@@ -141,7 +143,7 @@ public final class PagedReader {
 
   private UnboundProvider provider(Class<?> type) {
     List<Method> providers =
-        allMethods(type).stream()
+        ReflectedMembers.methods(type).stream()
             .filter(candidate -> candidate.isAnnotationPresent(Paginated.class))
             .toList();
     if (providers.isEmpty()) {
@@ -157,7 +159,7 @@ public final class PagedReader {
 
   private Map<ButtonId, UnboundAction> buttons(Class<?> type) {
     Map<ButtonId, UnboundAction> buttons = new HashMap<>();
-    allMethods(type).stream()
+    ReflectedMembers.methods(type).stream()
         .filter(method -> method.isAnnotationPresent(Button.class))
         .forEach(method -> addButton(buttons, method));
     return Map.copyOf(buttons);
@@ -166,7 +168,7 @@ public final class PagedReader {
   private void addButton(Map<ButtonId, UnboundAction> buttons, Method method) {
     ButtonArguments arguments = clickArguments.bindingFor(method);
     Button button = method.getAnnotation(Button.class);
-    ButtonId id = new ButtonId(button.id());
+    ButtonId id = buttonId(method, button);
     if (buttons.containsKey(id)) {
       throw new InvalidMenuException("Duplicate @Button id '" + id.value() + "'");
     }
@@ -174,15 +176,30 @@ public final class PagedReader {
     buttons.put(id, new UnboundAction(unreflect(method), arguments, guards));
   }
 
+  private ButtonId buttonId(Method method, Button button) {
+    try {
+      return new ButtonId(button.id());
+    } catch (IllegalArgumentException exception) {
+      throw new InvalidMenuException(
+          "@Button id on "
+              + method.getDeclaringClass().getName()
+              + "#"
+              + method.getName()
+              + " is invalid: "
+              + exception.getMessage(),
+          exception);
+    }
+  }
+
   private List<StateField> states(Class<?> type) {
-    return allFields(type).stream()
+    return ReflectedMembers.fields(type).stream()
         .filter(field -> field.isAnnotationPresent(Reactive.class))
         .map(this::stateField)
         .toList();
   }
 
   private List<UnboundTick> ticks(Class<?> type) {
-    return allMethods(type).stream()
+    return ReflectedMembers.methods(type).stream()
         .filter(method -> method.isAnnotationPresent(Tick.class))
         .map(this::tick)
         .toList();
@@ -195,26 +212,6 @@ public final class PagedReader {
       throw new InvalidMenuException("@Tick period on " + method.getName() + " must be >= 1");
     }
     return new UnboundTick(unreflect(method), period);
-  }
-
-  private static List<Method> allMethods(Class<?> type) {
-    List<Method> methods = new ArrayList<>();
-    Class<?> current = type;
-    while (current != null && current != Object.class) {
-      methods.addAll(Arrays.asList(current.getDeclaredMethods()));
-      current = current.getSuperclass();
-    }
-    return methods;
-  }
-
-  private static List<Field> allFields(Class<?> type) {
-    List<Field> fields = new ArrayList<>();
-    Class<?> current = type;
-    while (current != null && current != Object.class) {
-      fields.addAll(Arrays.asList(current.getDeclaredFields()));
-      current = current.getSuperclass();
-    }
-    return fields;
   }
 
   @SuppressWarnings("java:S3011") // Reactive state fields may be private implementation details.
@@ -257,6 +254,29 @@ public final class PagedReader {
 
     PagedStructure structure(Instantiator instantiator) {
       return new PagedStructure(id, instantiator, provider, buttons, states, ticks);
+    }
+  }
+
+  /**
+   * The boot-reflection memo of this reader: the three per-class caches grouped so the reader keeps
+   * a single field for its lazily-computed structure rather than three loose maps.
+   */
+  private static final class Caches {
+
+    private final ConcurrentMap<Class<?>, Boolean> handles = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, PagedMetadata> metadata = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, Instantiator> instantiators = new ConcurrentHashMap<>();
+
+    boolean handles(Class<?> type, Function<Class<?>, Boolean> compute) {
+      return handles.computeIfAbsent(type, compute);
+    }
+
+    PagedMetadata metadata(Class<?> type, Function<Class<?>, PagedMetadata> compute) {
+      return metadata.computeIfAbsent(type, compute);
+    }
+
+    Instantiator instantiator(Class<?> type, Function<Class<?>, Instantiator> compute) {
+      return instantiators.computeIfAbsent(type, compute);
     }
   }
 }

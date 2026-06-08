@@ -56,6 +56,20 @@ class PagedReaderValidationTest {
   }
 
   @Test
+  void rejectsInvalidMenuIdAsMenuError() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(InvalidMenuIdMenu.class));
+    assertTrue(error.getMessage().contains("@Menu id"));
+  }
+
+  @Test
+  void rejectsInvalidButtonIdAsMenuError() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(InvalidButtonIdMenu.class));
+    assertTrue(error.getMessage().contains("@Button id"));
+  }
+
+  @Test
   void rejectsDuplicateButtonIds() {
     InvalidMenuException error =
         assertThrows(InvalidMenuException.class, () -> reader.read(DuplicateButtonMenu.class));
@@ -144,6 +158,27 @@ class PagedReaderValidationTest {
     List<String> items() {
       return List.of();
     }
+  }
+
+  @Menu(id = "Bad")
+  static final class InvalidMenuIdMenu {
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+  }
+
+  @Menu(id = "invalid-button-id")
+  static final class InvalidButtonIdMenu {
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+
+    @Button(id = " ")
+    void blank() {}
   }
 
   @Menu(id = "dup-button")

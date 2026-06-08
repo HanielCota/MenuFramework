@@ -32,7 +32,11 @@ public final class MenuHooks {
   /**
    * Runs every {@code @OnClose} handler for the viewer.
    *
-   * @param player the viewer; never null
+   * <p>The viewer may be {@code null} when the close fires after the player has disconnected:
+   * no-arg handlers still run their viewer-independent cleanup, while {@code Player}-accepting
+   * handlers are skipped because there is no online entity to hand them.
+   *
+   * @param player the viewer, or {@code null} if already offline
    */
   public void fireClose(Player player) {
     onClose.forEach(handler -> handler.accept(player));

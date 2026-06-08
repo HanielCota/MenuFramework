@@ -32,7 +32,7 @@ public final class ExamplePlugin extends JavaPlugin {
     CatalogRepository catalog = InMemoryCatalogRepository.create();
     MenuMessages messages = new MenuMessages();
     MenuNavigator navigator = new MenuNavigator(messages);
-    MenuReloader reloader = new MenuReloader(messages, getLogger());
+    MenuReloader reloader = new MenuReloader(messages, getLogger(), this);
 
     MenuFramework menus =
         MenuFramework.builder(this)

@@ -189,6 +189,27 @@ class ReactivePagedViewEdgeCasesTest {
   }
 
   @Test
+  void closeIsIdempotentAndRunsTheCloseHookOnce() {
+    ManualScheduler scheduler = new ManualScheduler();
+    int[] closes = {0};
+    ReactivePagedView view =
+        new ReactivePagedView(
+            renderer(new RecordingSource(1)),
+            new StateBinding(List.of()),
+            List.of(),
+            () -> closes[0]++,
+            scheduler,
+            logger());
+    view.show(PageNumber.first());
+    view.bind();
+
+    view.close();
+    view.close(); // a quit after a normal close must not run teardown twice
+
+    assertEquals(1, closes[0], "a second close must be a no-op");
+  }
+
+  @Test
   void tickStartsOnBindAndCancelsOnClose() {
     ManualScheduler scheduler = new ManualScheduler();
     int[] runs = {0};

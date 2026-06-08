@@ -14,6 +14,8 @@ import dev.haniel.menu.paper.facade.ManualFacadeMenu;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
@@ -105,6 +107,30 @@ class MenuFrameworkBuilderTest {
       assertDoesNotThrow(
           () -> new MenuLifecycle(plugin, mock(Listener.class), Runnable::run).shutdown());
     }
+  }
+
+  @Test
+  void syncExecutorDelegatesUntilShutdownThenRejects(@TempDir Path dir) {
+    JavaPlugin plugin = plugin(dir, mock(PluginManager.class));
+    int[] ran = {0};
+    Executor delegate =
+        command -> {
+          ran[0]++;
+          command.run();
+        };
+    MenuLifecycle lifecycle = new MenuLifecycle(plugin, mock(Listener.class), delegate);
+
+    lifecycle.syncExecutor().execute(() -> {});
+    assertEquals(1, ran[0], "before shutdown the sync apply stage runs on the delegate");
+
+    try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+      bukkit.when(Bukkit::getScheduler).thenReturn(mock(BukkitScheduler.class));
+      lifecycle.shutdown();
+    }
+
+    assertThrows(
+        RejectedExecutionException.class, () -> lifecycle.syncExecutor().execute(() -> {}));
+    assertEquals(1, ran[0], "a late apply stage must not reach the delegate after shutdown");
   }
 
   @Test

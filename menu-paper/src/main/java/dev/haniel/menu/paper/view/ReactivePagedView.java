@@ -86,6 +86,9 @@ public final class ReactivePagedView implements ClickableHolder, ReactiveView, S
 
   @Override
   public void close() {
+    if (closed) {
+      return;
+    }
     closed = true;
     lifecycle.close();
     cursor.clear();
