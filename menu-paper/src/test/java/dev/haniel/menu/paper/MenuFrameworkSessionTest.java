@@ -76,7 +76,9 @@ class MenuFrameworkSessionTest {
     }
 
     @Override
-    public void refresh() {}
+    public void refresh() {
+      // no-op: session resolution does not re-render
+    }
 
     @Override
     public Inventory getInventory() {

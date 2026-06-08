@@ -255,15 +255,19 @@ class MenuListenerEdgeCasesTest {
     logger.addHandler(
         new Handler() {
           @Override
-          public void publish(java.util.logging.LogRecord record) {
-            sink.set(record.getThrown());
+          public void publish(java.util.logging.LogRecord logRecord) {
+            sink.set(logRecord.getThrown());
           }
 
           @Override
-          public void flush() {}
+          public void flush() {
+            // no-op: the captured throwable is read directly from the sink
+          }
 
           @Override
-          public void close() {}
+          public void close() {
+            // no-op: nothing to release
+          }
         });
     return logger;
   }

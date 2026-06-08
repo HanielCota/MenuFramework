@@ -125,10 +125,14 @@ class ArgumentResolverEdgeCasesTest {
   private static MenuOpener noOpOpener() {
     return new MenuOpener() {
       @Override
-      public void open(Player viewer, MenuId id) {}
+      public void open(Player viewer, MenuId id) {
+        // no-op: this resolver test never navigates
+      }
 
       @Override
-      public void open(Player viewer, Class<?> menuType) {}
+      public void open(Player viewer, Class<?> menuType) {
+        // no-op: this resolver test never navigates
+      }
     };
   }
 
