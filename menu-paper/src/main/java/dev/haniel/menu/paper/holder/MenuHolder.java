@@ -1,6 +1,7 @@
 package dev.haniel.menu.paper.holder;
 
 import dev.haniel.menu.click.ClickContext;
+import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.template.MenuTemplate;
 import java.util.stream.IntStream;
 import net.kyori.adventure.text.Component;
@@ -17,18 +18,21 @@ import org.jetbrains.annotations.NotNull;
  * The inventory is filled from the template's pre-built items; opening allocates no items of its
  * own.
  */
-public final class MenuHolder implements ClickableHolder {
+public final class MenuHolder implements ClickableHolder, OpenMenu {
 
+  private final MenuId menuId;
   private final MenuTemplate<ItemStack> template;
   private final Inventory inventory;
 
   /**
    * Builds a view of the given template with the given title.
    *
+   * @param menuId the id of the menu being shown; never null
    * @param template the shared, pre-rendered blueprint; never null
    * @param title the inventory title; never null
    */
-  public MenuHolder(MenuTemplate<ItemStack> template, Component title) {
+  public MenuHolder(MenuId menuId, MenuTemplate<ItemStack> template, Component title) {
+    this.menuId = menuId;
     this.template = template;
     this.inventory = build(title);
   }
@@ -36,6 +40,17 @@ public final class MenuHolder implements ClickableHolder {
   @Override
   public @NotNull Inventory getInventory() {
     return inventory;
+  }
+
+  @Override
+  public MenuId menuId() {
+    return menuId;
+  }
+
+  /** A static menu has no dynamic content, so a refresh has nothing to recompute. */
+  @Override
+  public void refresh() {
+    // no-op
   }
 
   /**

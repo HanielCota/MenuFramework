@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +15,7 @@ import dev.haniel.menu.paper.facade.ManualFacadeMenu;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Logger;
@@ -36,7 +38,7 @@ class MenuFrameworkBuilderTest {
       """;
 
   @Test
-  void buildRegistersListenerOnceAndScansConfiguredPackages(@TempDir Path dir) throws IOException {
+  void buildRegistersListenersOnceAndScansConfiguredPackages(@TempDir Path dir) throws IOException {
     Files.writeString(dir.resolve("alpha.yml"), MENU_YAML);
     Files.writeString(dir.resolve("bravo.yml"), MENU_YAML);
     PluginManager pluginManager = mock(PluginManager.class);
@@ -47,7 +49,8 @@ class MenuFrameworkBuilderTest {
             .scan("dev.haniel.menu.paper.samples")
             .build();
 
-    verify(pluginManager).registerEvents(any(Listener.class), any(JavaPlugin.class));
+    // The click listener and the anvil-prompt listener, each registered exactly once.
+    verify(pluginManager, times(2)).registerEvents(any(Listener.class), any(JavaPlugin.class));
     assertEquals(2, framework.reloadAll());
   }
 
@@ -86,7 +89,7 @@ class MenuFrameworkBuilderTest {
     try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
       bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
 
-      new MenuLifecycle(plugin, mock(Listener.class), Runnable::run).shutdown();
+      new MenuLifecycle(plugin, List.of(mock(Listener.class)), Runnable::run).shutdown();
 
       verify(scheduler).cancelTasks(plugin);
     }
@@ -105,7 +108,7 @@ class MenuFrameworkBuilderTest {
 
       // On Folia the legacy scheduler throws; disable must still complete cleanly.
       assertDoesNotThrow(
-          () -> new MenuLifecycle(plugin, mock(Listener.class), Runnable::run).shutdown());
+          () -> new MenuLifecycle(plugin, List.of(mock(Listener.class)), Runnable::run).shutdown());
     }
   }
 
@@ -118,7 +121,7 @@ class MenuFrameworkBuilderTest {
           ran[0]++;
           command.run();
         };
-    MenuLifecycle lifecycle = new MenuLifecycle(plugin, mock(Listener.class), delegate);
+    MenuLifecycle lifecycle = new MenuLifecycle(plugin, List.of(mock(Listener.class)), delegate);
 
     lifecycle.syncExecutor().execute(() -> {});
     assertEquals(1, ran[0], "before shutdown the sync apply stage runs on the delegate");

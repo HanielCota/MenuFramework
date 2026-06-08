@@ -70,7 +70,8 @@ public final class PagedMerger<V> {
         structure.provider(),
         overlayActions(structure, config),
         structure.states(),
-        structure.ticks());
+        structure.ticks(),
+        structure.viewers());
   }
 
   private PagedDecor<V> decor(MaskLayout layout, PaginationConfig pagination) {

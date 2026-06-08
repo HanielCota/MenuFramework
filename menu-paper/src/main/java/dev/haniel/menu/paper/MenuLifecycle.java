@@ -1,5 +1,6 @@
 package dev.haniel.menu.paper;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,14 +16,14 @@ final class MenuLifecycle {
   private static final boolean FOLIA = detectFolia();
 
   private final Plugin plugin;
-  private final Listener listener;
+  private final List<Listener> listeners;
   private final Executor syncExecutor;
   private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
   private volatile boolean shutdown;
 
-  MenuLifecycle(Plugin plugin, Listener listener, Executor syncExecutor) {
+  MenuLifecycle(Plugin plugin, List<Listener> listeners, Executor syncExecutor) {
     this.plugin = plugin;
-    this.listener = listener;
+    this.listeners = List.copyOf(listeners);
     this.syncExecutor = syncExecutor;
   }
 
@@ -47,7 +48,7 @@ final class MenuLifecycle {
       return;
     }
     closeOpenMenus();
-    HandlerList.unregisterAll(listener);
+    listeners.forEach(HandlerList::unregisterAll);
     cancelPluginTasks();
     ioExecutor.shutdownNow();
     shutdown = true;

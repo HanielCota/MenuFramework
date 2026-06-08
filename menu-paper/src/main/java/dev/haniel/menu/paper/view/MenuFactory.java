@@ -37,7 +37,7 @@ public final class MenuFactory implements CompiledMenuVisitor<ItemStack, PaperMe
   @Override
   public PaperMenu visitStatic(CompiledStaticMenu<ItemStack> compiled) {
     Component title = runtime.miniMessage().deserialize(compiled.title());
-    return new StaticPaperMenu(new MenuView(title, compiled.template()));
+    return new StaticPaperMenu(compiled.id(), new MenuView(title, compiled.template()));
   }
 
   @Override

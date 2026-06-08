@@ -4,6 +4,7 @@ import dev.haniel.menu.item.Icon;
 import dev.haniel.menu.item.ItemFlag;
 import dev.haniel.menu.item.ItemTraits;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -70,6 +71,6 @@ public record ButtonConfig(
 
   private ItemTraits traits() {
     OptionalInt model = modelData > 0 ? OptionalInt.of(modelData) : OptionalInt.empty();
-    return new ItemTraits(amount, glow, unbreakable, model, Set.copyOf(flags));
+    return new ItemTraits(amount, glow, unbreakable, model, Set.copyOf(flags), Optional.empty());
   }
 }

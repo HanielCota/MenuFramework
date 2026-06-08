@@ -1,12 +1,18 @@
 package dev.haniel.menu.paper;
 
 import dev.haniel.menu.domain.MenuId;
+import dev.haniel.menu.domain.PlayerId;
+import dev.haniel.menu.paper.api.MenuSession;
 import dev.haniel.menu.paper.discovery.MenuScanner;
+import dev.haniel.menu.paper.holder.OpenMenu;
 import dev.haniel.menu.paper.registry.MenuRegistry;
 import dev.haniel.menu.paper.registry.ReloadReport;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -78,6 +84,38 @@ public final class MenuFramework {
    */
   public void open(Player player, Class<?> menuType) {
     registry.open(player, menuType);
+  }
+
+  /**
+   * Returns a handle to the menu the given player currently has open, if it is one of this
+   * framework's menus.
+   *
+   * <p>The handle is a transient snapshot — query it again rather than caching it. Use it to
+   * refresh or close a player's menu in reaction to a domain event, without holding the menu
+   * instance.
+   *
+   * @param player the player to inspect; never null
+   * @return the open menu session, or {@link Optional#empty()} if no framework menu is open
+   */
+  public Optional<MenuSession> session(Player player) {
+    InventoryHolder holder = player.getOpenInventory().getTopInventory().getHolder();
+    if (holder instanceof OpenMenu menu) {
+      return Optional.of(new MenuSession(player, menu));
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Returns a handle to the menu the identified player currently has open, if they are online and
+   * viewing one of this framework's menus.
+   *
+   * @param id the player's id; never null
+   * @return the open menu session, or {@link Optional#empty()} if the player is offline or has no
+   *     framework menu open
+   */
+  public Optional<MenuSession> session(PlayerId id) {
+    Player player = Bukkit.getPlayer(id.value());
+    return player == null ? Optional.empty() : session(player);
   }
 
   /**

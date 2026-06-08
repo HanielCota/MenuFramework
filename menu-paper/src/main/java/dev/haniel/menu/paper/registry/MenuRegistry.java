@@ -6,6 +6,7 @@ import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.discovery.MenuDiscovery;
 import dev.haniel.menu.domain.MenuId;
+import dev.haniel.menu.paper.api.MenuOpener;
 import dev.haniel.menu.paper.discovery.MenuInstantiator;
 import dev.haniel.menu.paper.discovery.MenuScanner;
 import dev.haniel.menu.paper.hook.HookDefinitions;
@@ -31,7 +32,7 @@ import org.bukkit.inventory.ItemStack;
  * builds the openable menu; {@link #open(Player, MenuId)} delegates to it; {@link #reload(MenuId)}
  * recompiles from the YAML and swaps the openable atomically.
  */
-public final class MenuRegistry {
+public final class MenuRegistry implements MenuOpener {
 
   private final MenuCompiler<ItemStack> compiler;
   private final MenuFactory factory;
@@ -124,6 +125,7 @@ public final class MenuRegistry {
    * @param player the viewer; never null
    * @param id the menu id to open; never null
    */
+  @Override
   public void open(Player player, MenuId id) {
     catalog
         .find(id)
@@ -137,6 +139,7 @@ public final class MenuRegistry {
    * @param player the viewer; never null
    * @param sourceType the annotated menu class; never null
    */
+  @Override
   public void open(Player player, Class<?> sourceType) {
     catalog
         .find(sourceType)

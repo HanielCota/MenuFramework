@@ -46,10 +46,28 @@ class ItemTraitsTest {
   }
 
   @Test
+  void withHeadIsPreservedThroughOtherTraitChanges() {
+    HeadSkin skin = new HeadSkin.Texture("dGV4");
+
+    ItemTraits traits = ItemTraits.none().withHead(skin).amount(5).withGlow();
+
+    assertEquals(
+        java.util.Optional.of(skin), traits.head(), "head must survive later with-changes");
+    assertEquals(5, traits.amount());
+    assertTrue(traits.glowing());
+  }
+
+  @Test
+  void noneHasNoHead() {
+    assertTrue(ItemTraits.none().head().isEmpty());
+  }
+
+  @Test
   void copiesFlagsDefensively() {
     java.util.Set<ItemFlag> flags = new java.util.HashSet<>();
     flags.add(ItemFlag.HIDE_ENCHANTS);
-    ItemTraits traits = new ItemTraits(1, false, false, OptionalInt.empty(), flags);
+    ItemTraits traits =
+        new ItemTraits(1, false, false, OptionalInt.empty(), flags, java.util.Optional.empty());
 
     flags.add(ItemFlag.HIDE_ATTRIBUTES);
 

@@ -42,6 +42,22 @@ framework.open(player, new MenuId("main"));   // by id
 framework.open(player, MainMenu.class);        // by class
 ```
 
+To act on the menu a player already has open — e.g. to refresh it when a domain event changes data it
+reads — ask the framework for the session (it reads the live open inventory, so there is no view
+registry to maintain):
+
+```java
+framework.session(player).ifPresent(session -> {
+  session.menuId();   // which menu is open (a MenuId)
+  session.refresh();  // re-render its dynamic content (re-runs @Paginated; no-op for static menus)
+  session.close();    // close it for the player
+});
+// also: framework.session(playerId) — empty if the player is offline
+```
+
+`MenuSession` is a transient snapshot — query it again rather than caching it. `refresh()` is for data
+the menu reads but does not own; state the menu owns should still change through a `@Reactive` field.
+
 If menus need constructor dependencies, pass an instantiator:
 
 ```java
@@ -51,6 +67,22 @@ MenuFramework.builder(this)
     .build();
 ```
 
+When a button action throws, the framework cancels the click and logs the failure with its full
+stacktrace. To react in your own way (message the viewer, report to an error tracker), register a
+handler — it replaces the default logging:
+
+```java
+MenuFramework.builder(this)
+    .onActionError((viewer, failure) ->
+        viewer.sendMessage(Component.text("Something went wrong.", NamedTextColor.RED)))
+    .scan("com.example.plugin.menu")
+    .build();
+```
+
+The handler runs on the view's owning thread (so it may touch the Bukkit API) and receives the
+`Player` and the thrown `RuntimeException`. A handler that itself throws is logged and swallowed,
+never escaping into Bukkit's event pipeline.
+
 ## Annotations
 
 | Annotation | Target | Parameters (with defaults) | Rules |
@@ -59,6 +91,7 @@ MenuFramework.builder(this)
 | `@Button` | method | `id` (required), `permission` (default `""`), `cooldownMillis` (default `0`) | `id` must match a key under `buttons` in the YAML. Takes 0 or 1 parameter (see below). |
 | `@Paginated` | method | none | Exactly one per paginated menu. Must take no args and return `List<MenuItem>`. |
 | `@Reactive` | field | none | Field type must be `State<?>`. Paginated menus only. |
+| `@Viewer` | field | none | Field type must be a non-final, non-static `PlayerId`. The viewer is injected before the first render, so `@Paginated`/`@Button` methods can read it. Paginated menus only. |
 | `@Tick` | method | `period` (ticks, default `20`) | Must take no args and return `void`. `period` must be >= 1. Paginated menus only. |
 | `@OnOpen` | method | none | Takes no args or a single `Player`. Paginated menus only. |
 | `@OnClose` | method | none | Takes no args or a single `Player`. Runs after state and ticks are torn down. Paginated menus only. |
@@ -84,8 +117,47 @@ PlayerId playerId();      // their id
 ClickType clickType();    // LEFT, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, MIDDLE, DROP,
                           // DOUBLE_CLICK, NUMBER_KEY, SWAP_OFFHAND, OTHER
 void message(String miniMessageText); // sends a MiniMessage line to the player
+void open(MenuId id);     // opens another registered menu for the player
+void open(Class<?> menuType); // same, by the menu's class
+void prompt(AnvilPrompt<?> prompt); // opens an anvil text input for the player
 void close();             // closes the player's menu
 ```
+
+### Anvil text input (`AnvilPrompt`)
+
+Ask the player to type a value in an anvil instead of building a keypad menu:
+
+```java
+import dev.haniel.menu.paper.api.AnvilPrompt;
+
+@Button(id = "set-amount")
+public void setAmount(MenuClick click) {
+  click.prompt(
+      AnvilPrompt.numeric()
+          .title("<gray>Enter an amount")
+          .onConfirm(amount -> { /* amount is an int */ })
+          .onCancel(() -> click.open(new MenuId("shop"))));
+}
+```
+
+- `AnvilPrompt.text()` confirms the raw typed `String`; `AnvilPrompt.numeric()` confirms an `int`.
+- Invalid numeric input (non-numeric or blank) leaves the anvil open for another try — `onConfirm`
+  only fires on a valid value.
+- `onCancel` runs when the player closes the anvil without confirming. The framework does not reopen
+  the previous menu — do that yourself from `onConfirm`/`onCancel` with `click.open(...)`.
+- Like `open(...)`, `prompt(...)` works on a `@Button`-injected `MenuClick`, not on `MenuClick.of(...)`.
+- **Security:** the confirmed value is the player's raw input. Never pass it to `message(...)` or any
+  MiniMessage deserialization without escaping it first (see the `message` warning above).
+
+Use `open(...)` to navigate between menus from a button — no need to inject a reference to the
+framework. Opening a menu the player may not see (missing permission) or that is not registered is a
+silent no-op, matching `MenuFramework.open`. Navigation is only available on a `MenuClick` injected
+into a `@Button` method; a `MenuClick.of(context)` built inside a code-built `MenuItem.onClick`
+lambda can read the player, message and close, but `open(...)` there throws `IllegalStateException`.
+
+To go back, open the parent menu explicitly: a "back" button is just `click.open(parentId)`. Tree and
+wizard flows (e.g. select → confirm) each have a fixed, known predecessor, so there is no framework
+back-stack — the parent is whatever menu you choose to open.
 
 ## Java API for items and state
 
@@ -113,6 +185,21 @@ Icon icon = Icons.of(Material.DIAMOND)
 `amount` must be in `1..64`. Building an Icon in code with an out-of-range amount throws. (In YAML an
 out-of-range `amount` is clamped to 1 instead.)
 
+#### Player heads
+
+Build a `PLAYER_HEAD` icon with a skin — the returned `Icon` chains `named`/`describedBy`/etc. as
+usual:
+
+```java
+Icons.head(player);          // OfflinePlayer — that player's skin
+Icons.head(uuid);            // by UUID
+Icons.headTexture(base64);   // a fixed custom skin (base64 textures value)
+```
+
+`head(player)`/`head(uuid)` resolve the skin from the server's profile cache (a recently-seen player
+shows correctly; an unknown id shows the default head until the client resolves it). `headTexture(...)`
+is fully local and always renders. Heads are only available in code (no YAML key yet).
+
 ### MenuItem (a paginated content entry)
 
 ```java
@@ -135,6 +222,25 @@ count.set(count.get() + 1); // write; schedules a coalesced, diff-based re-rende
 ```
 
 `State.set` is the only thing that triggers a re-render. Mutating a field directly does not.
+
+### Viewer (the opening player)
+
+```java
+import dev.haniel.menu.annotation.Viewer;
+import dev.haniel.menu.domain.PlayerId;
+
+@Viewer private PlayerId viewer; // non-final, non-static
+
+@Paginated
+public List<MenuItem> items() {
+  return shop.offersFor(viewer).stream().map(this::item).toList(); // viewer is set before this runs
+}
+```
+
+The framework writes the viewer into every `@Viewer` field of the fresh per-player instance **before
+the first render**, so a `@Paginated` provider (and any `@Button`/`@Tick`) can read it directly.
+Prefer this over smuggling the viewer through `@Reactive State<UUID>` — that leaves the viewer unknown
+on the first render and forces a wasted re-render.
 
 ## YAML reference
 
@@ -196,6 +302,7 @@ pane, but never on an `X`, `<`, or `>` slot.
 - `@Paginated` method: no args, returns `List<MenuItem>`. Only one per menu.
 - `@Tick` method: no args, returns `void`, `period >= 1`.
 - `@Reactive` field must be `State<?>`.
+- `@Viewer` field must be a non-final, non-static `PlayerId`.
 - Menu `id` must match `[a-z0-9_-]+` and be at most 64 characters.
 
 Validation failures throw `InvalidMenuException` with a message naming the menu, at boot or reload.
@@ -399,6 +506,6 @@ public final class VaultMenu {
 - Do return a fresh `List<MenuItem>` from `@Paginated`; it is called per render.
 - Do use `state.set(...)` to update; do not mutate reactive fields directly.
 - Do keep `@Tick`/`@Button` work cheap; offload IO to async and hop back to the main thread.
-- Do not store `Player`/`Entity` in fields; keep `UUID`.
+- Do not store `Player`/`Entity` in fields; keep `UUID`, or use a `@Viewer PlayerId` for the opener.
 - Do not use legacy color codes (`&`, the section sign); use MiniMessage tags.
-- Do not put `@Reactive`, `@Tick`, `@OnOpen`, or `@OnClose` on a static (non-paginated) menu.
+- Do not put `@Reactive`, `@Viewer`, `@Tick`, `@OnOpen`, or `@OnClose` on a static (non-paginated) menu.

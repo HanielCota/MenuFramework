@@ -1,14 +1,22 @@
 package dev.haniel.menu.paper.listener;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import dev.haniel.menu.click.ClickContext;
+import dev.haniel.menu.paper.api.MenuErrorHandler;
 import dev.haniel.menu.paper.holder.ClickableHolder;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -145,6 +153,71 @@ class MenuListenerEdgeCasesTest {
         .click(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any());
   }
 
+  // ---- Failure logging: the throwable (and its cause) must reach the log ----
+
+  /**
+   * A failing action must be logged with the throwable attached, not just its {@code toString()},
+   * so the wrapped cause's stacktrace is visible without decompiling the framework.
+   */
+  @Test
+  void logsTheThrowableWhenAnActionFails() {
+    ClickableHolder holder = mock(ClickableHolder.class);
+    RuntimeException failure = new RuntimeException("boom");
+    doThrow(failure).when(holder).click(anyInt(), any(ClickContext.class));
+    InventoryClickEvent event = clickEvent(holder, 0, ClickType.LEFT, mock(Player.class));
+
+    AtomicReference<Throwable> logged = new AtomicReference<>();
+    Logger logger = capturingLogger(logged);
+
+    new MenuListener(logger).onClick(event);
+
+    assertSame(
+        failure, logged.get(), "the failing action's throwable must be logged, not its text");
+  }
+
+  /** A configured handler receives the viewer and the exact exception the action threw. */
+  @Test
+  void routesFailuresToTheConfiguredErrorHandler() {
+    ClickableHolder holder = mock(ClickableHolder.class);
+    RuntimeException failure = new RuntimeException("boom");
+    doThrow(failure).when(holder).click(anyInt(), any(ClickContext.class));
+    Player player = mock(Player.class);
+    InventoryClickEvent event = clickEvent(holder, 0, ClickType.LEFT, player);
+
+    AtomicReference<Player> seenViewer = new AtomicReference<>();
+    AtomicReference<RuntimeException> seenFailure = new AtomicReference<>();
+    MenuErrorHandler handler =
+        (viewer, thrown) -> {
+          seenViewer.set(viewer);
+          seenFailure.set(thrown);
+        };
+
+    new MenuListener(handler, Logger.getLogger("menu-listener-handler-test")).onClick(event);
+
+    assertSame(player, seenViewer.get(), "the handler must receive the clicking viewer");
+    assertSame(failure, seenFailure.get(), "the handler must receive the thrown exception");
+  }
+
+  /** A handler that itself throws is logged and never escapes into Bukkit's event pipeline. */
+  @Test
+  void aThrowingErrorHandlerIsLoggedAndSwallowed() {
+    ClickableHolder holder = mock(ClickableHolder.class);
+    doThrow(new RuntimeException("action")).when(holder).click(anyInt(), any(ClickContext.class));
+    InventoryClickEvent event = clickEvent(holder, 0, ClickType.LEFT, mock(Player.class));
+
+    RuntimeException thrownByHandler = new RuntimeException("handler boom");
+    MenuErrorHandler handler =
+        (viewer, thrown) -> {
+          throw thrownByHandler;
+        };
+    AtomicReference<Throwable> logged = new AtomicReference<>();
+
+    // onClick must complete normally even though the handler throws.
+    new MenuListener(handler, capturingLogger(logged)).onClick(event);
+
+    assertSame(thrownByHandler, logged.get(), "a throwing handler must be logged, not propagated");
+  }
+
   // ---- Drag edge cases ----
 
   /**
@@ -174,6 +247,25 @@ class MenuListenerEdgeCasesTest {
 
     // ClickableHolder is not a ReactiveView; close() must be a no-op with no exception.
     new MenuListener().onClose(event);
+  }
+
+  private static Logger capturingLogger(AtomicReference<Throwable> sink) {
+    Logger logger = Logger.getLogger("menu-listener-failure-test");
+    logger.setUseParentHandlers(false);
+    logger.addHandler(
+        new Handler() {
+          @Override
+          public void publish(java.util.logging.LogRecord record) {
+            sink.set(record.getThrown());
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        });
+    return logger;
   }
 
   private InventoryClickEvent clickEvent(

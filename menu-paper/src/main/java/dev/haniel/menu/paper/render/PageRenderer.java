@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.render;
 
 import dev.haniel.menu.action.MenuAction;
 import dev.haniel.menu.domain.MaskLayout;
+import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.PageNumber;
 import dev.haniel.menu.domain.Paginator;
 import dev.haniel.menu.item.Icon;
@@ -70,6 +71,15 @@ public final class PageRenderer {
    */
   public MaskLayout layout() {
     return scene.layout();
+  }
+
+  /**
+   * Returns the id of the menu being rendered.
+   *
+   * @return the menu id
+   */
+  public MenuId menuId() {
+    return scene.id();
   }
 
   /** Invalidates cached pages so the next render rebuilds from current data. */
