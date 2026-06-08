@@ -47,12 +47,16 @@ public final class MenuReloader {
 
   private void scheduleReport(Player player, ReloadReport report) {
     if (plugin == null) {
-      if (player.isOnline()) {
-        report(player, report);
-      }
+      reportIfOnline(player, report);
       return;
     }
-    player.getScheduler().run(plugin, ignored -> reportIfOnline(player, report), () -> {});
+    try {
+      player.getScheduler().run(plugin, ignored -> reportIfOnline(player, report), () -> {});
+    } catch (RuntimeException unschedulable) {
+      // The player left or is no longer schedulable; the reload itself succeeded, so a lost report
+      // must not surface as a reload failure through the future's exceptionally handler.
+      logger.log(Level.FINE, "Skipped reload report for an unschedulable player", unschedulable);
+    }
   }
 
   private void reportIfOnline(Player player, ReloadReport report) {

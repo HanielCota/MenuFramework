@@ -97,6 +97,34 @@ class MenuReloaderTest {
   }
 
   @Test
+  void aSchedulerThatRejectsTheReportDoesNotLogAReloadFailure() {
+    Plugin plugin = mock(Plugin.class);
+    MenuReloader scheduled = new MenuReloader(messages, logger, plugin);
+    Player player = mock(Player.class);
+    EntityScheduler scheduler = mock(EntityScheduler.class);
+    when(player.hasPermission("menuexample.reload")).thenReturn(true);
+    when(player.getScheduler()).thenReturn(scheduler);
+    when(scheduler.run(any(), any(), any()))
+        .thenThrow(new IllegalStateException("player is no longer schedulable"));
+    ReloadReport report = new ReloadReport(List.of(new MenuId("main")), List.of());
+    when(framework.reloadAllReportAsync()).thenReturn(CompletableFuture.completedFuture(report));
+    scheduled.attach(framework);
+
+    AtomicInteger severe = new AtomicInteger();
+    Handler handler = capture(severe);
+    logger.addHandler(handler);
+    try {
+      scheduled.reloadAll(player); // a scheduler rejection must not become a reload failure
+    } finally {
+      logger.removeHandler(handler);
+    }
+
+    assertEquals(
+        0, severe.get(), "a successful reload must not log a failure when reporting fails");
+    verify(messages, never()).send(eq(player), any());
+  }
+
+  @Test
   void reportsFailedReloadWithDetails() {
     Player player = mock(Player.class);
     when(player.hasPermission("menuexample.reload")).thenReturn(true);
