@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.scheduler;
 
 import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.scheduler.ScheduledTask;
+import java.util.Objects;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
@@ -19,7 +20,7 @@ public final class PaperPlayerScheduler implements PlayerScheduler {
    * @param plugin the owning plugin; never null
    */
   public PaperPlayerScheduler(Plugin plugin) {
-    this.plugin = plugin;
+    this.plugin = Objects.requireNonNull(plugin, "plugin");
   }
 
   @Override

@@ -4,6 +4,7 @@ import dev.haniel.menu.compiler.model.CompiledMenu;
 import dev.haniel.menu.compiler.model.CompiledMenuVisitor;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.compiler.model.CompiledStaticMenu;
+import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import org.bukkit.inventory.ItemStack;
 
@@ -21,7 +22,7 @@ public final class MenuFactory implements CompiledMenuVisitor<ItemStack, PaperMe
    * @param runtime the platform services; never null
    */
   public MenuFactory(MenuRuntime runtime) {
-    this.runtime = runtime;
+    this.runtime = Objects.requireNonNull(runtime, "runtime");
   }
 
   /**

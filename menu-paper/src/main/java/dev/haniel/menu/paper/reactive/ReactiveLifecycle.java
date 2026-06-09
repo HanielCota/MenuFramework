@@ -1,6 +1,7 @@
 package dev.haniel.menu.paper.reactive;
 
 import dev.haniel.menu.state.StateListener;
+import java.util.Objects;
 
 /**
  * The teardown-bearing lifecycle of one open reactive view: its state binding plus its ticks.
@@ -23,9 +24,9 @@ public final class ReactiveLifecycle {
    * @param onClose the action to run when the view closes (after teardown); never null
    */
   public ReactiveLifecycle(ReactiveBinding reactive, Ticking ticking, Runnable onClose) {
-    this.reactive = reactive;
-    this.ticking = ticking;
-    this.onClose = onClose;
+    this.reactive = Objects.requireNonNull(reactive, "reactive");
+    this.ticking = Objects.requireNonNull(ticking, "ticking");
+    this.onClose = Objects.requireNonNull(onClose, "onClose");
   }
 
   /**

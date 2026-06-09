@@ -17,10 +17,7 @@ public final class ExamplePlugin extends JavaPlugin {
   public void onEnable() {
     MENU_FILES.forEach(path -> saveResource(path, false));
 
-    framework =
-        MenuFramework.builder(this)
-            .scan("dev.haniel.menu.example.menu")
-            .build();
+    framework = MenuFramework.builder(this).scan("dev.haniel.menu.example.menu").build();
 
     PluginCommand command = getCommand("menuexample");
     if (command != null) {

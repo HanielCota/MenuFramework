@@ -7,6 +7,7 @@ import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.config.MenuLoader;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.merge.StaticMerger;
+import java.util.Objects;
 
 /**
  * Compiles a static menu: read bound behaviour, load appearance, merge.
@@ -29,9 +30,9 @@ public final class StaticCompiler<V> {
    * @param merger joins behaviour and appearance; never null
    */
   public StaticCompiler(StaticReader reader, MenuLoader loader, StaticMerger<V> merger) {
-    this.reader = reader;
-    this.loader = loader;
-    this.merger = merger;
+    this.reader = Objects.requireNonNull(reader, "reader");
+    this.loader = Objects.requireNonNull(loader, "loader");
+    this.merger = Objects.requireNonNull(merger, "merger");
   }
 
   /**

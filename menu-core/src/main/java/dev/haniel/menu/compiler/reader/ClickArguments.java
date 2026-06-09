@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,6 +31,7 @@ public final class ClickArguments {
    * @param platformResolvers resolvers contributed by the platform layer; never null
    */
   public ClickArguments(List<ClickArgumentResolver> platformResolvers) {
+    Objects.requireNonNull(platformResolvers, "platformResolvers");
     List<ClickArgumentResolver> all = new ArrayList<>();
     all.add(new ClickContextResolver());
     all.addAll(platformResolvers);

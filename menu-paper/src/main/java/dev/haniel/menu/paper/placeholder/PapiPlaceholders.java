@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.placeholder;
 
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.placeholder.PlaceholderResolver;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -40,7 +41,7 @@ public final class PapiPlaceholders implements PlaceholderResolver {
    * @param miniMessage the serializer whose escaping makes resolved values inert; never null
    */
   public PapiPlaceholders(MiniMessage miniMessage) {
-    this.miniMessage = miniMessage;
+    this.miniMessage = Objects.requireNonNull(miniMessage, "miniMessage");
   }
 
   @Override

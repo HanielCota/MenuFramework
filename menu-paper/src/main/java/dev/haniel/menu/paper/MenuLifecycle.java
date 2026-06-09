@@ -3,6 +3,7 @@ package dev.haniel.menu.paper;
 import dev.haniel.menu.paper.holder.ClickableHolder;
 import dev.haniel.menu.paper.reactive.ReactiveView;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,9 +26,9 @@ final class MenuLifecycle {
   private volatile boolean shutdown;
 
   MenuLifecycle(Plugin plugin, List<Listener> listeners, Executor syncExecutor) {
-    this.plugin = plugin;
-    this.listeners = List.copyOf(listeners);
-    this.syncExecutor = syncExecutor;
+    this.plugin = Objects.requireNonNull(plugin, "plugin");
+    this.listeners = List.copyOf(Objects.requireNonNull(listeners, "listeners"));
+    this.syncExecutor = Objects.requireNonNull(syncExecutor, "syncExecutor");
   }
 
   Executor asyncExecutor() {
@@ -63,9 +64,9 @@ final class MenuLifecycle {
     for (Player player : Bukkit.getOnlinePlayers()) {
       if (FOLIA) {
         closeOpenMenuOnPlayerThread(player);
-      } else {
-        closeOpenMenuNow(player);
+        continue;
       }
+      closeOpenMenuNow(player);
     }
   }
 

@@ -23,6 +23,7 @@ import dev.haniel.menu.paper.view.MenuRuntime;
 import dev.haniel.menu.scheduler.MenuScheduler;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.inventory.ItemStack;
@@ -34,8 +35,8 @@ final class MenuRegistryFactory {
   private final Function<Class<?>, Object> instances;
 
   MenuRegistryFactory(JavaPlugin plugin, Function<Class<?>, Object> instances) {
-    this.plugin = plugin;
-    this.instances = instances;
+    this.plugin = Objects.requireNonNull(plugin, "plugin");
+    this.instances = Objects.requireNonNull(instances, "instances");
   }
 
   MenuRegistry create(Path menusPath, MenuScheduler scheduler, AnvilPrompts prompts) {

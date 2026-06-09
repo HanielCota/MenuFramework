@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.reactive;
 
 import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.scheduler.ScheduledTask;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,9 +32,9 @@ public final class Flusher {
    * @param flush the re-render action; never null
    */
   public Flusher(PlayerScheduler scheduler, Runnable flush, Logger logger) {
-    this.scheduler = scheduler;
-    this.flush = flush;
-    this.logger = logger;
+    this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
+    this.flush = Objects.requireNonNull(flush, "flush");
+    this.logger = Objects.requireNonNull(logger, "logger");
   }
 
   /**

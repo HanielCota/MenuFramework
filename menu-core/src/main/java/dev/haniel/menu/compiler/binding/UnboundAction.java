@@ -3,6 +3,7 @@ package dev.haniel.menu.compiler.binding;
 import dev.haniel.menu.action.ButtonArguments;
 import dev.haniel.menu.action.MenuAction;
 import java.lang.invoke.MethodHandle;
+import java.util.Objects;
 
 /**
  * A boot-resolved, instance-free {@code @Button} handle, bound to an instance per open.
@@ -33,9 +34,9 @@ public final class UnboundAction {
    * @param guards the permission and cooldown rules; never null
    */
   public UnboundAction(MethodHandle handle, ButtonArguments arguments, ButtonGuards guards) {
-    this.handle = handle;
-    this.arguments = arguments;
-    this.guards = guards;
+    this.handle = Objects.requireNonNull(handle, "handle");
+    this.arguments = Objects.requireNonNull(arguments, "arguments");
+    this.guards = Objects.requireNonNull(guards, "guards");
   }
 
   /**

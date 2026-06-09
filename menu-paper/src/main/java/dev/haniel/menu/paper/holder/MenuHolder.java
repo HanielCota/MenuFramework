@@ -3,6 +3,7 @@ package dev.haniel.menu.paper.holder;
 import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.template.MenuTemplate;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -32,9 +33,9 @@ public final class MenuHolder implements ClickableHolder, OpenMenu {
    * @param title the inventory title; never null
    */
   public MenuHolder(MenuId menuId, MenuTemplate<ItemStack> template, Component title) {
-    this.menuId = menuId;
-    this.template = template;
-    this.inventory = build(title);
+    this.menuId = Objects.requireNonNull(menuId, "menuId");
+    this.template = Objects.requireNonNull(template, "template");
+    this.inventory = build(Objects.requireNonNull(title, "title"));
   }
 
   @Override

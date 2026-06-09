@@ -16,6 +16,7 @@ import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.state.StateBinding;
 import dev.haniel.menu.state.StateListener;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +53,7 @@ public final class ReactivePagedView
       Runnable onClose,
       PlayerScheduler scheduler,
       Logger logger) {
-    this.renderer = renderer;
+    this.renderer = Objects.requireNonNull(renderer, "renderer");
     this.cursor = new PageCursor(renderer.newInventory(this));
     ReactiveBinding reactive =
         new ReactiveBinding(states, new Flusher(scheduler, this::flush, logger));

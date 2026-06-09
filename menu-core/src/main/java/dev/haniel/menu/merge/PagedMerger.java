@@ -17,6 +17,7 @@ import dev.haniel.menu.template.PagedWiring;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Joins a paginated {@link PagedStructure} with its {@link MenuConfig} appearance.
@@ -39,7 +40,7 @@ public final class PagedMerger<V> {
    * @param icons the factory used to build each visual; never null
    */
   public PagedMerger(IconFactory<V> icons) {
-    this.icons = icons;
+    this.icons = Objects.requireNonNull(icons, "icons");
   }
 
   /**

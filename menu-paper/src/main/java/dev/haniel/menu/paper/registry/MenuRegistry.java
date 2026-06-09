@@ -3,7 +3,6 @@ package dev.haniel.menu.paper.registry;
 import dev.haniel.menu.compiler.MenuCompiler;
 import dev.haniel.menu.compiler.model.CompiledMenu;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
-import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.discovery.MenuDiscovery;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.api.MenuOpener;
@@ -12,15 +11,11 @@ import dev.haniel.menu.paper.discovery.MenuScanner;
 import dev.haniel.menu.paper.hook.HookDefinitions;
 import dev.haniel.menu.paper.view.MenuFactory;
 import dev.haniel.menu.paper.view.PaperMenu;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -38,7 +33,7 @@ public final class MenuRegistry implements MenuOpener {
   private final MenuFactory factory;
   private final MenuCatalog catalog;
   private final Function<Class<?>, Object> instances;
-  private final Logger logger;
+  private final MenuReloader reloader;
 
   public MenuRegistry(MenuCompiler<ItemStack> compiler, MenuFactory factory, MenuCatalog catalog) {
     this(compiler, factory, catalog, new MenuInstantiator());
@@ -62,7 +57,8 @@ public final class MenuRegistry implements MenuOpener {
     this.factory = Objects.requireNonNull(factory, "factory");
     this.catalog = Objects.requireNonNull(catalog, "catalog");
     this.instances = Objects.requireNonNull(instances, "instances");
-    this.logger = Objects.requireNonNull(logger, "logger");
+    this.reloader =
+        new MenuReloader(compiler, factory, catalog, Objects.requireNonNull(logger, "logger"));
   }
 
   /**
@@ -161,12 +157,7 @@ public final class MenuRegistry implements MenuOpener {
    *     tell the two apart programmatically.
    */
   public boolean reload(MenuId id) {
-    Optional<RegisteredMenu> found = catalog.find(id);
-    if (found.isEmpty()) {
-      logger.warning("Cannot reload unknown menu '" + id.value() + "'");
-      return false;
-    }
-    return reloadOne(found.get()).successful();
+    return reloader.reload(id);
   }
 
   /**
@@ -176,7 +167,7 @@ public final class MenuRegistry implements MenuOpener {
    * @return the reload report
    */
   public ReloadReport reloadReport(MenuId id) {
-    return catalog.find(id).map(this::reloadOne).orElseGet(ReloadReport::empty);
+    return reloader.reloadReport(id);
   }
 
   /**
@@ -199,7 +190,7 @@ public final class MenuRegistry implements MenuOpener {
    * @return the number of reloaded menus
    */
   public int reloadAll() {
-    return reloadAllReport().successCount();
+    return reloader.reloadAllReport().successCount();
   }
 
   /**
@@ -208,10 +199,7 @@ public final class MenuRegistry implements MenuOpener {
    * @return the reload report
    */
   public ReloadReport reloadAllReport() {
-    List<MenuId> reloaded = new ArrayList<>();
-    List<ReloadFailure> failures = new ArrayList<>();
-    catalog.all().forEach(menu -> reloadInto(menu, reloaded, failures));
-    return new ReloadReport(reloaded, failures);
+    return reloader.reloadAllReport();
   }
 
   /**
@@ -224,68 +212,7 @@ public final class MenuRegistry implements MenuOpener {
    */
   public CompletableFuture<ReloadReport> reloadAllReportAsync(
       Executor asyncExecutor, Executor syncExecutor) {
-    return CompletableFuture.supplyAsync(this::prepareAll, asyncExecutor)
-        .thenApplyAsync(this::applyPrepared, syncExecutor);
-  }
-
-  private ReloadReport reloadOne(RegisteredMenu menu) {
-    List<MenuId> reloaded = new ArrayList<>();
-    List<ReloadFailure> failures = new ArrayList<>();
-    reloadInto(menu, reloaded, failures);
-    return new ReloadReport(reloaded, failures);
-  }
-
-  private void reloadInto(
-      RegisteredMenu menu, List<MenuId> reloaded, List<ReloadFailure> failures) {
-    try {
-      recompile(menu);
-      reloaded.add(menu.id());
-    } catch (RuntimeException exception) {
-      logger.log(Level.WARNING, "Failed to reload menu '" + menu.id().value() + "'", exception);
-      failures.add(ReloadFailure.from(menu.id(), exception));
-    }
-  }
-
-  private PreparedReloads prepareAll() {
-    List<PreparedReload> prepared = new ArrayList<>();
-    List<ReloadFailure> failures = new ArrayList<>();
-    catalog.all().forEach(menu -> prepareInto(menu, prepared, failures));
-    return new PreparedReloads(prepared, failures);
-  }
-
-  private void prepareInto(
-      RegisteredMenu menu, List<PreparedReload> prepared, List<ReloadFailure> failures) {
-    try {
-      prepared.add(new PreparedReload(menu, compiler.load(menu.id())));
-    } catch (RuntimeException exception) {
-      logger.log(Level.WARNING, "Failed to load menu '" + menu.id().value() + "'", exception);
-      failures.add(ReloadFailure.from(menu.id(), exception));
-    }
-  }
-
-  private ReloadReport applyPrepared(PreparedReloads prepared) {
-    List<MenuId> reloaded = new ArrayList<>();
-    List<ReloadFailure> failures = new ArrayList<>(prepared.failures());
-    prepared.reloads().forEach(reload -> applyInto(reload, reloaded, failures));
-    return new ReloadReport(reloaded, failures);
-  }
-
-  private void applyInto(
-      PreparedReload reload, List<MenuId> reloaded, List<ReloadFailure> failures) {
-    try {
-      RegisteredMenu menu = reload.menu();
-      menu.swap(openable(menu.sourceType(), compile(menu, reload.config())));
-      reloaded.add(menu.id());
-    } catch (RuntimeException exception) {
-      MenuId id = reload.menu().id();
-      logger.log(Level.WARNING, "Failed to apply reloaded menu '" + id.value() + "'", exception);
-      failures.add(ReloadFailure.from(id, exception));
-    }
-  }
-
-  private RegisteredMenu recompile(RegisteredMenu menu) {
-    menu.swap(openable(menu.sourceType(), compile(menu)));
-    return menu;
+    return reloader.reloadAllReportAsync(asyncExecutor, syncExecutor);
   }
 
   private PaperMenu openable(Class<?> sourceType, CompiledMenu<ItemStack> compiled) {
@@ -294,22 +221,4 @@ public final class MenuRegistry implements MenuOpener {
     }
     return factory.create(compiled);
   }
-
-  private CompiledMenu<ItemStack> compile(RegisteredMenu menu) {
-    if (menu.source() != null) {
-      return compiler.compile(menu.source());
-    }
-    return compiler.compile(menu.sourceType(), ignored -> menu.createSource());
-  }
-
-  private CompiledMenu<ItemStack> compile(RegisteredMenu menu, MenuConfig config) {
-    if (menu.source() != null) {
-      return compiler.compile(menu.source(), config);
-    }
-    return compiler.compile(menu.sourceType(), ignored -> menu.createSource(), config);
-  }
-
-  private record PreparedReload(RegisteredMenu menu, MenuConfig config) {}
-
-  private record PreparedReloads(List<PreparedReload> reloads, List<ReloadFailure> failures) {}
 }

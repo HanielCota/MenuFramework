@@ -1,6 +1,7 @@
 package dev.haniel.menu.compiler.binding;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Objects;
 
 /**
  * A boot-resolved, instance-free {@code @Paginated} handle, bound to an instance per open.
@@ -17,7 +18,7 @@ public final class UnboundProvider {
    * @param handle the unbound method handle; never null
    */
   public UnboundProvider(MethodHandle handle) {
-    this.handle = handle;
+    this.handle = Objects.requireNonNull(handle, "handle");
   }
 
   /**

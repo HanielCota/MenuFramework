@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.discovery;
 
 import dev.haniel.menu.discovery.DiscoveredMenu;
 import dev.haniel.menu.discovery.MenuDiscovery;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -25,8 +26,8 @@ public final class MenuScanner {
    * @param instances the instantiation strategy; never null
    */
   public MenuScanner(MenuDiscovery discovery, Function<Class<?>, Object> instances) {
-    this.discovery = discovery;
-    this.instances = instances;
+    this.discovery = Objects.requireNonNull(discovery, "discovery");
+    this.instances = Objects.requireNonNull(instances, "instances");
   }
 
   /**

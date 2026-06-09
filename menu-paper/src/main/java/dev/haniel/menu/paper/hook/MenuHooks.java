@@ -1,6 +1,7 @@
 package dev.haniel.menu.paper.hook;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.bukkit.entity.Player;
 
@@ -16,8 +17,8 @@ public final class MenuHooks {
   private final List<Consumer<Player>> onClose;
 
   MenuHooks(List<Consumer<Player>> onOpen, List<Consumer<Player>> onClose) {
-    this.onOpen = onOpen;
-    this.onClose = onClose;
+    this.onOpen = Objects.requireNonNull(onOpen, "onOpen");
+    this.onClose = Objects.requireNonNull(onClose, "onClose");
   }
 
   /**

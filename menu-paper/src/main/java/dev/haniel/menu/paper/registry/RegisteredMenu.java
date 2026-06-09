@@ -3,6 +3,7 @@ package dev.haniel.menu.paper.registry;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.view.PaperMenu;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.bukkit.entity.Player;
@@ -30,11 +31,11 @@ public final class RegisteredMenu {
    * @param initial the first compiled menu; never null
    */
   public RegisteredMenu(MenuId id, Object source, PaperMenu initial) {
-    this.id = id;
-    this.source = source;
+    this.id = Objects.requireNonNull(id, "id");
+    this.source = Objects.requireNonNull(source, "source");
     this.sourceType = source.getClass();
     this.sourceFactory = () -> source;
-    this.current = new AtomicReference<>(initial);
+    this.current = new AtomicReference<>(Objects.requireNonNull(initial, "initial"));
     this.permission = readPermission(this.sourceType);
   }
 
@@ -48,11 +49,11 @@ public final class RegisteredMenu {
    */
   public RegisteredMenu(
       MenuId id, Class<?> sourceType, Supplier<Object> sourceFactory, PaperMenu initial) {
-    this.id = id;
+    this.id = Objects.requireNonNull(id, "id");
     this.source = null;
-    this.sourceType = sourceType;
-    this.sourceFactory = sourceFactory;
-    this.current = new AtomicReference<>(initial);
+    this.sourceType = Objects.requireNonNull(sourceType, "sourceType");
+    this.sourceFactory = Objects.requireNonNull(sourceFactory, "sourceFactory");
+    this.current = new AtomicReference<>(Objects.requireNonNull(initial, "initial"));
     this.permission = readPermission(sourceType);
   }
 

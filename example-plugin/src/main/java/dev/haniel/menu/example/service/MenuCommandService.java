@@ -35,7 +35,8 @@ public final class MenuCommandService {
 
   private void reload(Player player) {
     if (!player.hasPermission("menuexample.reload")) {
-      player.sendMessage(MINI.deserialize("<red>You do not have permission to reload menus.</red>"));
+      player.sendMessage(
+          MINI.deserialize("<red>You do not have permission to reload menus.</red>"));
       return;
     }
     framework
@@ -46,6 +47,8 @@ public final class MenuCommandService {
                     MINI.deserialize(
                         report.successful()
                             ? "<green>Reloaded " + report.successCount() + " menu(s).</green>"
-                            : "<red>Reloaded with " + report.failures().size() + " failure(s).</red>")));
+                            : "<red>Reloaded with "
+                                + report.failures().size()
+                                + " failure(s).</red>")));
   }
 }

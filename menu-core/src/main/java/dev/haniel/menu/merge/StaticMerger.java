@@ -11,6 +11,7 @@ import dev.haniel.menu.domain.ButtonId;
 import dev.haniel.menu.template.IconFactory;
 import dev.haniel.menu.template.MenuTemplate;
 import dev.haniel.menu.template.SlotBinding;
+import java.util.Objects;
 
 /**
  * Joins a static {@link MenuBlueprint} with its {@link MenuConfig} appearance.
@@ -31,7 +32,7 @@ public final class StaticMerger<V> {
    * @param icons the factory used to build each visual; never null
    */
   public StaticMerger(IconFactory<V> icons) {
-    this.icons = icons;
+    this.icons = Objects.requireNonNull(icons, "icons");
   }
 
   /**

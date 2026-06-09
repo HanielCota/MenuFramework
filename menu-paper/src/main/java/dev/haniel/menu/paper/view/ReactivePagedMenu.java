@@ -20,6 +20,7 @@ import dev.haniel.menu.template.PagedAppearance;
 import dev.haniel.menu.template.PagedContent;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -42,8 +43,8 @@ public final class ReactivePagedMenu implements PaperMenu {
    * @param runtime the platform services; never null
    */
   public ReactivePagedMenu(CompiledPagedMenu<ItemStack> plan, MenuRuntime runtime) {
-    this.plan = plan;
-    this.runtime = runtime;
+    this.plan = Objects.requireNonNull(plan, "plan");
+    this.runtime = Objects.requireNonNull(runtime, "runtime");
   }
 
   @Override

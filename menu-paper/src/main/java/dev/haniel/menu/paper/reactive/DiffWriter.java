@@ -23,7 +23,7 @@ public final class DiffWriter {
    * @param inventory the inventory to update; never null
    */
   public DiffWriter(Inventory inventory) {
-    this.inventory = inventory;
+    this.inventory = Objects.requireNonNull(inventory, "inventory");
     this.previous = new ItemStack[inventory.getSize()];
   }
 
@@ -47,26 +47,18 @@ public final class DiffWriter {
   public void write(ItemStack[] next) {
     int limit = Math.min(next.length, inventory.getSize());
     IntStream.range(0, limit)
-        .filter(slot -> changed(slot, next))
-        .forEach(slot -> apply(slot, next));
+        .filter(slot -> !Objects.equals(previous[slot], next[slot]))
+        .forEach(slot -> inventory.setItem(slot, next[slot]));
     IntStream.range(limit, inventory.getSize())
         .filter(slot -> previous[slot] != null)
         .forEach(slot -> inventory.setItem(slot, null));
     previous = snapshot(next);
   }
 
-  private boolean changed(int slot, ItemStack[] next) {
-    return !Objects.equals(previous[slot], next[slot]);
-  }
-
   private ItemStack[] snapshot(ItemStack[] next) {
     ItemStack[] copy = new ItemStack[inventory.getSize()];
     System.arraycopy(next, 0, copy, 0, Math.min(next.length, copy.length));
     return copy;
-  }
-
-  private void apply(int slot, ItemStack[] next) {
-    inventory.setItem(slot, next[slot]);
   }
 
   /** Drops the inventory reference so a closed view can be garbage-collected. */

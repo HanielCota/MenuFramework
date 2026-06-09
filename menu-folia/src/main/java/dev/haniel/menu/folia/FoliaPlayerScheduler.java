@@ -3,6 +3,7 @@ package dev.haniel.menu.folia;
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.scheduler.ScheduledTask;
+import java.util.Objects;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -26,8 +27,8 @@ public final class FoliaPlayerScheduler implements PlayerScheduler {
    * @param player the player whose region runs the re-render; never null
    */
   public FoliaPlayerScheduler(Plugin plugin, PlayerId player) {
-    this.plugin = plugin;
-    this.player = player;
+    this.plugin = Objects.requireNonNull(plugin, "plugin");
+    this.player = Objects.requireNonNull(player, "player");
   }
 
   @Override

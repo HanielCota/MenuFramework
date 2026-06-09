@@ -58,6 +58,8 @@ public final class CatalogMenu {
                     "<gray>Category: <white>" + product.category() + "</white></gray>",
                     "<gray>Price: <gold>" + product.price() + " coins</gold></gray>"));
     return MenuItem.of(icon)
-        .onClick(context -> MenuClick.of(context).message("<green>Selected " + product.name() + "</green>"));
+        .onClick(
+            context ->
+                MenuClick.of(context).message("<green>Selected " + product.name() + "</green>"));
   }
 }

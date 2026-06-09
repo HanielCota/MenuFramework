@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.view;
 
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.holder.MenuHolder;
+import java.util.Objects;
 import org.bukkit.entity.Player;
 
 /** A static menu: every open reuses the same pre-rendered template. */
@@ -17,8 +18,8 @@ public final class StaticPaperMenu implements PaperMenu {
    * @param view the title and pre-rendered template; never null
    */
   public StaticPaperMenu(MenuId menuId, MenuView view) {
-    this.menuId = menuId;
-    this.view = view;
+    this.menuId = Objects.requireNonNull(menuId, "menuId");
+    this.view = Objects.requireNonNull(view, "view");
   }
 
   @Override
