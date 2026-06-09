@@ -2,7 +2,6 @@ package dev.haniel.menu.example.repository;
 
 import dev.haniel.menu.example.domain.CatalogCategory;
 import dev.haniel.menu.example.domain.CatalogProduct;
-import dev.haniel.menu.example.domain.CatalogProducts;
 import dev.haniel.menu.example.domain.MaterialName;
 import dev.haniel.menu.example.domain.Price;
 import java.util.List;
@@ -12,19 +11,19 @@ import java.util.stream.Stream;
 /** In-memory catalog used by the example plugin. */
 public final class InMemoryCatalogRepository implements CatalogRepository {
 
-  private final CatalogProducts products;
+  private final List<CatalogProduct> products;
 
-  private InMemoryCatalogRepository(CatalogProducts products) {
-    this.products = products;
+  private InMemoryCatalogRepository(List<CatalogProduct> products) {
+    this.products = List.copyOf(products);
   }
 
   public static InMemoryCatalogRepository create() {
-    return new InMemoryCatalogRepository(new CatalogProducts(seedProducts()));
+    return new InMemoryCatalogRepository(seedProducts());
   }
 
   @Override
-  public CatalogProducts products() {
-    return products;
+  public List<CatalogProduct> productsIn(CatalogCategory category) {
+    return products.stream().filter(product -> product.category() == category).toList();
   }
 
   private static List<CatalogProduct> seedProducts() {

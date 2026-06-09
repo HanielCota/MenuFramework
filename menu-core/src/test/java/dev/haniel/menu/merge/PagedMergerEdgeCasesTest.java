@@ -80,6 +80,22 @@ class PagedMergerEdgeCasesTest {
     assertEquals("LEVER", compiled.appearance().overlayVisuals().get(emptySlot));
   }
 
+  /**
+   * A paginated overlay button is interactive by definition: if YAML configures one, there must be
+   * a matching @Button handler. Otherwise the menu renders a button-looking item that silently does
+   * nothing.
+   */
+  @Test
+  void rejectsConfigOnlyOverlayButton() {
+    ButtonConfig toggle = new ButtonConfig(3, "LEVER", "<gray>Toggle</gray>", List.of());
+    ButtonConfig decoration = new ButtonConfig(4, "BARRIER", "<red>Decor</red>", List.of());
+    MenuConfig config =
+        new MenuConfig("shop", 2, Map.of("toggle", toggle, "decoration", decoration), pagination());
+
+    assertThrows(
+        InvalidMenuException.class, () -> merger.merge(reader.read(PagedSample.class), config));
+  }
+
   private static PaginationConfig pagination() {
     ButtonConfig nav = new ButtonConfig(0, "ARROW", "", List.of());
     return new PaginationConfig(List.of("<XX   XX>", "#XXXXXX #"), nav, nav);

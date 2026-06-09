@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +16,7 @@ import dev.haniel.menu.paper.registry.ReloadReport;
 import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -22,23 +24,24 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 
 class MenuReloaderTest {
 
   private final MenuMessages messages = mock(MenuMessages.class);
   private final MenuFramework framework = mock(MenuFramework.class);
   private final Logger logger = Logger.getLogger("MenuReloaderTest");
-  private final MenuReloader reloader = new MenuReloader(messages, logger);
+  private final MenuReloader reloader = new MenuReloader(messages, logger, () -> framework);
 
   @Test
   void deniesReloadWithoutPermission() {
     Player player = mock(Player.class);
     when(player.hasPermission("menuexample.reload")).thenReturn(false);
-    reloader.attach(framework);
 
     reloader.reloadAll(player);
 
@@ -48,10 +51,11 @@ class MenuReloaderTest {
 
   @Test
   void warnsWhenFrameworkNotAttached() {
+    MenuReloader notReady = new MenuReloader(messages, logger, () -> null);
     Player player = mock(Player.class);
     when(player.hasPermission("menuexample.reload")).thenReturn(true);
 
-    reloader.reloadAll(player);
+    notReady.reloadAll(player);
 
     verify(messages).send(player, "<red>Menu framework is not ready.</red>");
   }
@@ -64,7 +68,6 @@ class MenuReloaderTest {
     ReloadReport report =
         new ReloadReport(List.of(new MenuId("main"), new MenuId("catalog")), List.of());
     when(framework.reloadAllReportAsync()).thenReturn(CompletableFuture.completedFuture(report));
-    reloader.attach(framework);
 
     reloader.reloadAll(player);
 
@@ -74,15 +77,16 @@ class MenuReloaderTest {
   @Test
   void schedulesReloadReportOnPlayerSchedulerWhenPluginIsAvailable() {
     Plugin plugin = mock(Plugin.class);
-    MenuReloader scheduled = new MenuReloader(messages, logger, plugin);
+    MenuReloader scheduled = new MenuReloader(messages, logger, plugin, () -> framework);
     Player player = mock(Player.class);
+    UUID playerId = UUID.randomUUID();
     EntityScheduler scheduler = mock(EntityScheduler.class);
     when(player.hasPermission("menuexample.reload")).thenReturn(true);
+    when(player.getUniqueId()).thenReturn(playerId);
     when(player.getScheduler()).thenReturn(scheduler);
     when(player.isOnline()).thenReturn(true);
     ReloadReport report = new ReloadReport(List.of(new MenuId("main")), List.of());
     when(framework.reloadAllReportAsync()).thenReturn(CompletableFuture.completedFuture(report));
-    scheduled.attach(framework);
 
     scheduled.reloadAll(player);
 
@@ -91,7 +95,10 @@ class MenuReloaderTest {
     verify(scheduler).run(eq(plugin), task.capture(), any());
     verify(messages, never()).send(player, "<green>Reloaded 1 menu(s).</green>");
 
-    task.getValue().accept(mock(ScheduledTask.class));
+    try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+      bukkit.when(() -> Bukkit.getPlayer(playerId)).thenReturn(player);
+      task.getValue().accept(mock(ScheduledTask.class));
+    }
 
     verify(messages).send(player, "<green>Reloaded 1 menu(s).</green>");
   }
@@ -99,16 +106,16 @@ class MenuReloaderTest {
   @Test
   void aSchedulerThatRejectsTheReportDoesNotLogAReloadFailure() {
     Plugin plugin = mock(Plugin.class);
-    MenuReloader scheduled = new MenuReloader(messages, logger, plugin);
+    MenuReloader scheduled = new MenuReloader(messages, logger, plugin, () -> framework);
     Player player = mock(Player.class);
     EntityScheduler scheduler = mock(EntityScheduler.class);
     when(player.hasPermission("menuexample.reload")).thenReturn(true);
+    when(player.getUniqueId()).thenReturn(UUID.randomUUID());
     when(player.getScheduler()).thenReturn(scheduler);
     when(scheduler.run(any(), any(), any()))
         .thenThrow(new IllegalStateException("player is no longer schedulable"));
     ReloadReport report = new ReloadReport(List.of(new MenuId("main")), List.of());
     when(framework.reloadAllReportAsync()).thenReturn(CompletableFuture.completedFuture(report));
-    scheduled.attach(framework);
 
     AtomicInteger severe = new AtomicInteger();
     Handler handler = capture(severe);
@@ -132,7 +139,6 @@ class MenuReloaderTest {
     ReloadFailure failure = new ReloadFailure(new MenuId("catalog"), "broken yaml");
     ReloadReport report = new ReloadReport(List.of(), List.of(failure));
     when(framework.reloadAllReportAsync()).thenReturn(CompletableFuture.completedFuture(report));
-    reloader.attach(framework);
 
     reloader.reloadAll(player);
 
@@ -146,7 +152,6 @@ class MenuReloaderTest {
     when(player.hasPermission("menuexample.reload")).thenReturn(true);
     when(framework.reloadAllReportAsync())
         .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("boom")));
-    reloader.attach(framework);
 
     AtomicInteger severe = new AtomicInteger();
     Handler handler = capture(severe);

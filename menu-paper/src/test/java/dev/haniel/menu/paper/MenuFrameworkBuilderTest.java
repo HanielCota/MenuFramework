@@ -7,10 +7,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.haniel.menu.paper.discovery.MenuDiscoveryException;
 import dev.haniel.menu.paper.facade.ManualFacadeMenu;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -79,6 +81,21 @@ class MenuFrameworkBuilderTest {
     builder.build();
 
     assertThrows(IllegalStateException.class, builder::build);
+  }
+
+  @Test
+  void failedScanDoesNotRegisterListeners(@TempDir Path dir) {
+    PluginManager pluginManager = mock(PluginManager.class);
+
+    assertThrows(
+        MenuDiscoveryException.class,
+        () ->
+            MenuFramework.builder(plugin(dir, pluginManager))
+                .menusDirectory(dir)
+                .scan("dev.haniel.menu.paper.invalidsamples")
+                .build());
+
+    verify(pluginManager, never()).registerEvents(any(Listener.class), any(JavaPlugin.class));
   }
 
   @Test

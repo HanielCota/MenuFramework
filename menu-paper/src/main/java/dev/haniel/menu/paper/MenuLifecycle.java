@@ -52,7 +52,9 @@ final class MenuLifecycle {
     }
     closeOpenMenus();
     listeners.forEach(HandlerList::unregisterAll);
-    cancelPluginTasks();
+    if (!FOLIA) {
+      cancelPluginTasks();
+    }
     ioExecutor.shutdownNow();
     shutdown = true;
   }
@@ -91,8 +93,8 @@ final class MenuLifecycle {
     try {
       Bukkit.getScheduler().cancelTasks(plugin);
     } catch (UnsupportedOperationException foliaHasNoGlobalScheduler) {
-      // Folia: re-renders run on per-entity schedulers (not the legacy scheduler) and are torn down
-      // with their views via InventoryCloseEvent, so there is nothing to cancel here.
+      // Some test or hybrid environments expose Folia-like scheduler behavior without the
+      // detection marker. Close teardown already ran before this best-effort cleanup.
     }
   }
 

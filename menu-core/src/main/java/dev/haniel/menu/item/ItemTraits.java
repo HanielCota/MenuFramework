@@ -35,7 +35,7 @@ public record ItemTraits(
     if (amount < 1 || amount > 64) {
       throw new IllegalArgumentException("amount must be between 1 and 64 but was " + amount);
     }
-    customModelData = (customModelData == null) ? OptionalInt.empty() : customModelData;
+    customModelData = (customModelData.isEmpty()) ? OptionalInt.empty() : customModelData;
     flags = (flags == null) ? Set.of() : Set.copyOf(flags);
     head = Objects.requireNonNull(head, "head");
   }

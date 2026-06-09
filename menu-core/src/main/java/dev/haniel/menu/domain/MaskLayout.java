@@ -169,10 +169,10 @@ public record MaskLayout(
       if (this == other) {
         return true;
       }
-      if (!(other instanceof MaskKey key)) {
+      if (!(other instanceof MaskKey(List<String> mask1, int rows1))) {
         return false;
       }
-      return rows == key.rows && mask.equals(key.mask);
+      return rows == rows1 && mask.equals(mask1);
     }
 
     @Override
