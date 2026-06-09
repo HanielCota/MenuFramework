@@ -1,54 +1,51 @@
 package dev.haniel.menu.example.service;
 
-import dev.haniel.menu.example.domain.ExampleMenu;
+import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.MenuFramework;
 import java.util.Locale;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-/** Handles command intent without depending on Bukkit command boilerplate. */
 public final class MenuCommandService {
 
-  private final MenuFramework framework;
-  private final MenuReloader reloader;
-  private final MenuMessages messages;
+  private static final MiniMessage MINI = MiniMessage.miniMessage();
 
-  public MenuCommandService(MenuFramework framework, MenuReloader reloader, MenuMessages messages) {
+  private final MenuFramework framework;
+
+  public MenuCommandService(MenuFramework framework) {
     this.framework = framework;
-    this.reloader = reloader;
-    this.messages = messages;
   }
 
   public void execute(CommandSender sender, String[] args) {
     if (!(sender instanceof Player player)) {
-      messages.send(sender, "<red>Only players can use this command.</red>");
+      sender.sendMessage(MINI.deserialize("<red>Only players can use this command.</red>"));
       return;
     }
-    execute(player, action(args));
-  }
-
-  private void execute(Player player, String action) {
+    String action = args.length == 0 ? "main" : args[0].toLowerCase(Locale.ROOT);
     switch (action) {
-      case "main" -> open(player, ExampleMenu.MAIN);
-      case "catalog" -> open(player, ExampleMenu.CATALOG);
-      case "reload" -> reloader.reloadAll(player);
+      case "main" -> framework.open(player, new MenuId("main"));
+      case "catalog" -> framework.open(player, new MenuId("catalog"));
+      case "reload" -> reload(player);
       default ->
-          messages.send(player, "<yellow>Usage: /menuexample [main|catalog|reload]</yellow>");
+          sender.sendMessage(
+              MINI.deserialize("<yellow>Usage: /menuexample [main|catalog|reload]</yellow>"));
     }
   }
 
-  private void open(Player player, ExampleMenu menu) {
-    if (!player.hasPermission(menu.permission())) {
-      messages.send(player, "<red>You do not have permission to open this menu.</red>");
+  private void reload(Player player) {
+    if (!player.hasPermission("menuexample.reload")) {
+      player.sendMessage(MINI.deserialize("<red>You do not have permission to reload menus.</red>"));
       return;
     }
-    framework.open(player, menu.id());
-  }
-
-  private String action(String[] args) {
-    if (args.length == 0) {
-      return "main";
-    }
-    return args[0].toLowerCase(Locale.ROOT);
+    framework
+        .reloadAllReportAsync()
+        .thenAccept(
+            report ->
+                player.sendMessage(
+                    MINI.deserialize(
+                        report.successful()
+                            ? "<green>Reloaded " + report.successCount() + " menu(s).</green>"
+                            : "<red>Reloaded with " + report.failures().size() + " failure(s).</red>")));
   }
 }
