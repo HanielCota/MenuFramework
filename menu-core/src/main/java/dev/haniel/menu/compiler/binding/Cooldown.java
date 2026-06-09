@@ -2,6 +2,7 @@ package dev.haniel.menu.compiler.binding;
 
 import dev.haniel.menu.domain.PlayerId;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
@@ -38,7 +39,7 @@ public final class Cooldown {
       throw new IllegalArgumentException("cooldownMillis must be >= 1 but was " + cooldownMillis);
     }
     this.cooldownMillis = cooldownMillis;
-    this.clock = clock;
+    this.clock = Objects.requireNonNull(clock, "clock");
   }
 
   /**

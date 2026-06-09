@@ -15,6 +15,7 @@ import dev.haniel.menu.paper.render.model.RenderedPage;
 import dev.haniel.menu.template.PagedDecor;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -48,10 +49,10 @@ public final class PageRenderer {
    */
   public PageRenderer(
       PageScene scene, PageCache cache, DataVersion version, InventoryFactory inventories) {
-    this.scene = scene;
-    this.cache = cache;
-    this.version = version;
-    this.inventories = inventories;
+    this.scene = Objects.requireNonNull(scene, "scene");
+    this.cache = Objects.requireNonNull(cache, "cache");
+    this.version = Objects.requireNonNull(version, "version");
+    this.inventories = Objects.requireNonNull(inventories, "inventories");
   }
 
   /**

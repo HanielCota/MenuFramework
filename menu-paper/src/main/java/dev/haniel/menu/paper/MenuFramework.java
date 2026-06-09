@@ -7,6 +7,7 @@ import dev.haniel.menu.paper.discovery.MenuScanner;
 import dev.haniel.menu.paper.holder.OpenMenu;
 import dev.haniel.menu.paper.registry.MenuRegistry;
 import dev.haniel.menu.paper.registry.ReloadReport;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -28,9 +29,9 @@ public final class MenuFramework {
   private final MenuLifecycle lifecycle;
 
   MenuFramework(MenuRegistry registry, MenuScanner scanner, MenuLifecycle lifecycle) {
-    this.registry = registry;
-    this.scanner = scanner;
-    this.lifecycle = lifecycle;
+    this.registry = Objects.requireNonNull(registry, "registry");
+    this.scanner = Objects.requireNonNull(scanner, "scanner");
+    this.lifecycle = Objects.requireNonNull(lifecycle, "lifecycle");
   }
 
   /**

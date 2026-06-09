@@ -4,6 +4,7 @@ import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.model.CompiledMenu;
 import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.domain.MenuId;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -26,8 +27,8 @@ public final class MenuCompiler<V> {
    * @param pagedCompiler the paginated path; never null
    */
   public MenuCompiler(StaticCompiler<V> staticCompiler, PagedCompiler<V> pagedCompiler) {
-    this.staticCompiler = staticCompiler;
-    this.pagedCompiler = pagedCompiler;
+    this.staticCompiler = Objects.requireNonNull(staticCompiler, "staticCompiler");
+    this.pagedCompiler = Objects.requireNonNull(pagedCompiler, "pagedCompiler");
   }
 
   /**

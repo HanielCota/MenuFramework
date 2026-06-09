@@ -1,14 +1,13 @@
 package dev.haniel.menu.config;
 
 import dev.haniel.menu.compiler.InvalidMenuException;
-import dev.haniel.menu.domain.MaskLayout;
 import dev.haniel.menu.domain.MenuId;
-import dev.haniel.menu.domain.Slot;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.zip.CRC32;
@@ -33,7 +32,7 @@ public final class MenuLoader {
    * @param directory the directory holding the {@code <menuId>.yml} files; never null
    */
   public MenuLoader(Path directory) {
-    this.directory = directory;
+    this.directory = Objects.requireNonNull(directory, "directory");
   }
 
   /**
@@ -120,44 +119,8 @@ public final class MenuLoader {
     if (config == null) {
       throw new InvalidMenuException("Menu '" + id.value() + "' has no configuration at " + file);
     }
-    validate(id, config);
+    MenuConfigValidator.validate(id, config);
     return config;
-  }
-
-  private void validate(MenuId id, MenuConfig config) {
-    validateButtons(id, config);
-    config.paginationConfig().ifPresent(pagination -> validatePagination(id, config, pagination));
-  }
-
-  private void validateButtons(MenuId id, MenuConfig config) {
-    config
-        .buttons()
-        .forEach((buttonId, button) -> validateSlot(id, buttonId, button.slot(), config.rows()));
-  }
-
-  private void validatePagination(MenuId id, MenuConfig config, PaginationConfig pagination) {
-    try {
-      MaskLayout.resolve(pagination.mask(), config.rows());
-    } catch (RuntimeException exception) {
-      throw new InvalidMenuException(
-          "Menu '" + id.value() + "' has invalid pagination mask: " + exception.getMessage(),
-          exception);
-    }
-  }
-
-  private void validateSlot(MenuId id, String buttonId, int slot, int rows) {
-    try {
-      Slot.of(slot, rows);
-    } catch (IllegalArgumentException exception) {
-      throw new InvalidMenuException(
-          "Menu '"
-              + id.value()
-              + "' button '"
-              + buttonId
-              + "' has invalid slot: "
-              + exception.getMessage(),
-          exception);
-    }
   }
 
   private record CachedConfig(FileStamp stamp, MenuConfig config) {

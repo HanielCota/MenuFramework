@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,7 +51,7 @@ public final class StaticReader {
    * @param clickArguments the registry of injectable parameter types; never null
    */
   public StaticReader(ClickArguments clickArguments) {
-    this.clickArguments = clickArguments;
+    this.clickArguments = Objects.requireNonNull(clickArguments, "clickArguments");
   }
 
   /**

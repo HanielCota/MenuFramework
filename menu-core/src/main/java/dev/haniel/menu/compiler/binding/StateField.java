@@ -24,7 +24,7 @@ public final class StateField {
    */
   public StateField(String name, MethodHandle getter) {
     this.name = Objects.requireNonNull(name, "name");
-    this.getter = getter;
+    this.getter = Objects.requireNonNull(getter, "getter");
   }
 
   /**

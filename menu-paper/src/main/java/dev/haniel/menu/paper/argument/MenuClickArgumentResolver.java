@@ -5,6 +5,7 @@ import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.paper.api.AnvilPromptOpener;
 import dev.haniel.menu.paper.api.MenuClick;
 import dev.haniel.menu.paper.api.MenuOpener;
+import java.util.Objects;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 /** Supplies a {@link MenuClick} to {@code @Button} methods that ask for one. */
@@ -22,8 +23,10 @@ public final class MenuClickArgumentResolver implements ClickArgumentResolver {
    */
   public MenuClickArgumentResolver(
       MiniMessage miniMessage, MenuOpener opener, AnvilPromptOpener prompts) {
-    this.miniMessage = miniMessage;
-    this.navigation = new Navigation(opener, prompts);
+    this.miniMessage = Objects.requireNonNull(miniMessage, "miniMessage");
+    this.navigation =
+        new Navigation(
+            Objects.requireNonNull(opener, "opener"), Objects.requireNonNull(prompts, "prompts"));
   }
 
   @Override

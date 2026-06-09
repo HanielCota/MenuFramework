@@ -3,6 +3,7 @@ package dev.haniel.menu.template;
 import dev.haniel.menu.compiler.binding.ContentProvider;
 import dev.haniel.menu.item.MenuItem;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The dynamic half of a paginated template: where content comes from and how it is rendered.
@@ -25,8 +26,8 @@ public final class PagedContent<V> {
    * @param icons the factory rendering each item's icon; never null
    */
   public PagedContent(ContentProvider provider, IconFactory<V> icons) {
-    this.provider = provider;
-    this.icons = icons;
+    this.provider = Objects.requireNonNull(provider, "provider");
+    this.icons = Objects.requireNonNull(icons, "icons");
   }
 
   /**

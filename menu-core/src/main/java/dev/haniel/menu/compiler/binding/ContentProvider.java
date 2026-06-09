@@ -26,7 +26,7 @@ public final class ContentProvider {
    * @param handle the bound content handle; never null
    */
   public ContentProvider(MethodHandle handle) {
-    this.handle = handle;
+    this.handle = Objects.requireNonNull(handle, "handle");
   }
 
   /**

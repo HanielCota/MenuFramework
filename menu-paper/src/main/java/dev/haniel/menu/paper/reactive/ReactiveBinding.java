@@ -2,6 +2,7 @@ package dev.haniel.menu.paper.reactive;
 
 import dev.haniel.menu.state.StateBinding;
 import dev.haniel.menu.state.StateListener;
+import java.util.Objects;
 
 /**
  * Ties a view's bound states to its coalescing flusher.
@@ -21,8 +22,8 @@ public final class ReactiveBinding {
    * @param flusher the coalescing flusher; never null
    */
   public ReactiveBinding(StateBinding states, Flusher flusher) {
-    this.states = states;
-    this.flusher = flusher;
+    this.states = Objects.requireNonNull(states, "states");
+    this.flusher = Objects.requireNonNull(flusher, "flusher");
   }
 
   /**

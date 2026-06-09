@@ -3,6 +3,7 @@ package dev.haniel.menu.paper.scheduler;
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.scheduler.MenuScheduler;
 import dev.haniel.menu.scheduler.PlayerScheduler;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
@@ -21,7 +22,7 @@ public final class PaperMenuScheduler implements MenuScheduler {
    * @param plugin the owning plugin; never null
    */
   public PaperMenuScheduler(Plugin plugin) {
-    this.plugin = plugin;
+    this.plugin = Objects.requireNonNull(plugin, "plugin");
   }
 
   @Override

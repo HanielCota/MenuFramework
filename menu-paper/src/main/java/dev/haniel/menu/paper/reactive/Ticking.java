@@ -5,6 +5,7 @@ import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.scheduler.ScheduledTask;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Drives a view's {@code @Tick} methods through the player's scheduler.
@@ -30,8 +31,8 @@ public final class Ticking {
    * @param ticks the ticks bound to the per-player instance; never null
    */
   public Ticking(PlayerScheduler scheduler, List<BoundTick> ticks) {
-    this.scheduler = scheduler;
-    this.ticks = List.copyOf(ticks);
+    this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
+    this.ticks = List.copyOf(Objects.requireNonNull(ticks, "ticks"));
   }
 
   /** Schedules every tick on its period; a no-op when the view declares none. */

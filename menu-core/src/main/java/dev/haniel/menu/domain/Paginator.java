@@ -2,6 +2,7 @@ package dev.haniel.menu.domain;
 
 import dev.haniel.menu.item.MenuItem;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A first-class collection over the paginated items, slicing them into pages.
@@ -19,7 +20,7 @@ public final class Paginator {
    * @param items the full, unpaginated list; never null
    */
   public Paginator(List<MenuItem> items) {
-    this.items = List.copyOf(items);
+    this.items = List.copyOf(Objects.requireNonNull(items, "items"));
   }
 
   /**

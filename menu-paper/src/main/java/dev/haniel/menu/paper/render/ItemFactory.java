@@ -10,6 +10,7 @@ import dev.haniel.menu.item.ItemTraits;
 import dev.haniel.menu.template.IconFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +48,7 @@ public final class ItemFactory implements IconFactory<ItemStack> {
    * @param miniMessage the deserializer for names and lore; never null
    */
   public ItemFactory(MiniMessage miniMessage) {
-    this.miniMessage = miniMessage;
+    this.miniMessage = Objects.requireNonNull(miniMessage, "miniMessage");
   }
 
   @Override

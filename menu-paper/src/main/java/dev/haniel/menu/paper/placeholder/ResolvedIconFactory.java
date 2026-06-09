@@ -5,6 +5,7 @@ import dev.haniel.menu.item.Icon;
 import dev.haniel.menu.placeholder.PlaceholderResolver;
 import dev.haniel.menu.template.IconFactory;
 import java.util.List;
+import java.util.Objects;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -30,9 +31,9 @@ public final class ResolvedIconFactory implements IconFactory<ItemStack> {
    */
   public ResolvedIconFactory(
       IconFactory<ItemStack> delegate, PlaceholderResolver placeholders, PlayerId viewer) {
-    this.delegate = delegate;
-    this.placeholders = placeholders;
-    this.viewer = viewer;
+    this.delegate = Objects.requireNonNull(delegate, "delegate");
+    this.placeholders = Objects.requireNonNull(placeholders, "placeholders");
+    this.viewer = Objects.requireNonNull(viewer, "viewer");
   }
 
   @Override

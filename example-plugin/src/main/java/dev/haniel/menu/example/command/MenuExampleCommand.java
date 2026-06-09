@@ -6,7 +6,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-/** Delegates the Bukkit command boundary to {@link MenuCommandService}. */
+/** Bukkit {@link CommandExecutor} that delegates to {@link MenuCommandService}. */
 public final class MenuExampleCommand implements CommandExecutor {
 
   private final MenuCommandService service;

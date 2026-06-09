@@ -5,6 +5,7 @@ import dev.haniel.menu.click.ClickType;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.paper.listener.PaperClickContext;
+import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
@@ -47,8 +48,9 @@ public final class MenuClick {
       MiniMessage miniMessage,
       MenuOpener opener,
       AnvilPromptOpener prompts) {
-    this.context = context;
-    this.services = new ClickServices(miniMessage, opener, prompts);
+    this.context = Objects.requireNonNull(context, "context");
+    this.services =
+        new ClickServices(Objects.requireNonNull(miniMessage, "miniMessage"), opener, prompts);
   }
 
   /**

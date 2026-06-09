@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import org.bukkit.inventory.ItemStack;
@@ -28,7 +29,7 @@ public final class PageCache {
   public PageCache(Logger logger) {
     this.cache =
         Caffeine.newBuilder().maximumSize(64).expireAfterWrite(Duration.ofMinutes(2)).build();
-    this.logger = logger;
+    this.logger = Objects.requireNonNull(logger, "logger");
   }
 
   /**

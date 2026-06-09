@@ -2,6 +2,7 @@ package dev.haniel.menu.compiler.binding;
 
 import dev.haniel.menu.action.MenuActionException;
 import java.lang.invoke.MethodHandle;
+import java.util.Objects;
 
 /**
  * A boot-resolved, instance-free {@code @Tick} handle, bound to an instance per open.
@@ -20,7 +21,7 @@ public final class UnboundTick {
    * @param period the period in ticks; must be {@code >= 1}
    */
   public UnboundTick(MethodHandle handle, long period) {
-    this.handle = handle;
+    this.handle = Objects.requireNonNull(handle, "handle");
     this.period = period;
   }
 

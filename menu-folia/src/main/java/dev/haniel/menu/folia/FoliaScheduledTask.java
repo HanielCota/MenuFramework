@@ -1,6 +1,7 @@
 package dev.haniel.menu.folia;
 
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import java.util.Objects;
 
 /** A {@link ScheduledTask} backed by a Folia region task. */
 public final class FoliaScheduledTask implements dev.haniel.menu.scheduler.ScheduledTask {
@@ -13,7 +14,7 @@ public final class FoliaScheduledTask implements dev.haniel.menu.scheduler.Sched
    * @param task the Folia task; never null
    */
   public FoliaScheduledTask(ScheduledTask task) {
-    this.task = task;
+    this.task = Objects.requireNonNull(task, "task");
   }
 
   @Override

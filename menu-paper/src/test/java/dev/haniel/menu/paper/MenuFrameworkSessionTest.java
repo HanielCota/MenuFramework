@@ -9,7 +9,9 @@ import static org.mockito.Mockito.when;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.paper.api.MenuSession;
+import dev.haniel.menu.paper.discovery.MenuScanner;
 import dev.haniel.menu.paper.holder.OpenMenu;
+import dev.haniel.menu.paper.registry.MenuRegistry;
 import java.util.Optional;
 import java.util.UUID;
 import org.bukkit.Bukkit;
@@ -55,8 +57,10 @@ class MenuFrameworkSessionTest {
   }
 
   private static MenuFramework framework() {
-    // session() reads only the player; the registry, scanner and lifecycle are unused here.
-    return new MenuFramework(null, null, null);
+    // session() reads only the player; the registry, scanner and lifecycle are unused here, so
+    // unconfigured mocks stand in for the now non-null constructor dependencies.
+    return new MenuFramework(
+        mock(MenuRegistry.class), mock(MenuScanner.class), mock(MenuLifecycle.class));
   }
 
   private static Player playerViewing(InventoryHolder holder) {

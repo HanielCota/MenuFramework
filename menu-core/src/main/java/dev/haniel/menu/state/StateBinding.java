@@ -1,6 +1,7 @@
 package dev.haniel.menu.state;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A first-class collection of the states bound to one view.
@@ -18,7 +19,7 @@ public final class StateBinding {
    * @param states the states to manage; never null, copied defensively
    */
   public StateBinding(List<State<?>> states) {
-    this.states = List.copyOf(states);
+    this.states = List.copyOf(Objects.requireNonNull(states, "states"));
   }
 
   /**

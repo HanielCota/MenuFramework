@@ -7,6 +7,7 @@ import dev.haniel.menu.compiler.reader.PagedReader;
 import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.config.MenuLoader;
 import dev.haniel.menu.merge.PagedMerger;
+import java.util.Objects;
 
 /**
  * Compiles a paginated menu: discover structure, load appearance, merge.
@@ -30,9 +31,9 @@ public final class PagedCompiler<V> {
    * @param merger joins structure and appearance; never null
    */
   public PagedCompiler(PagedReader reader, MenuLoader loader, PagedMerger<V> merger) {
-    this.reader = reader;
-    this.loader = loader;
-    this.merger = merger;
+    this.reader = Objects.requireNonNull(reader, "reader");
+    this.loader = Objects.requireNonNull(loader, "loader");
+    this.merger = Objects.requireNonNull(merger, "merger");
   }
 
   /**
