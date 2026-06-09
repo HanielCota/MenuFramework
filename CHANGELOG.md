@@ -4,6 +4,61 @@ All notable changes to MenuFramework are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-09
+
+### Added
+
+- **Menu-authoring DX (Paper).** Six opt-in additions for richer menus, each unit-tested where
+  reachable without a server:
+  - `@Viewer` injects the viewing `PlayerId` into a paginated menu before the first `@Paginated`
+    render, so a provider knows its viewer without a `State<UUID>` workaround.
+  - `MenuClick.open(MenuId | Class)` navigates between menus from a button; the opener is owned by
+    the framework (`DeferredMenuOpener` bridges the boot-time cycle), so no plugin needs a late
+    framework reference. No managed back-stack by design.
+  - `MenuClick.prompt(AnvilPrompt.text() | numeric())` opens an anvil text prompt via the modern
+    Paper `AnvilView` API (no NMS); invalid numeric input re-prompts.
+  - `MenuFramework.session(Player | PlayerId)` returns a transient handle to a player's open menu
+    (`menuId`/`refresh`/`close`), read from the live inventory holder — no view registry.
+  - `Icons.head(OfflinePlayer | UUID)` / `Icons.headTexture(base64)` produce `PLAYER_HEAD` icons;
+    `HeadSkin` lives in `ItemTraits` so the per-page render cache keys on it, and profiles complete
+    from cache only (non-blocking).
+- **Custom action-error handler.** `MenuFrameworkBuilder.onActionError(handler)` overrides the
+  default logging when a button action throws; the listener now logs a failed action with its full
+  stack trace, and a throwing handler is itself contained instead of escaping into Bukkit.
+
+### Changed
+
+- **AI-facing references synced.** `AGENTS.md`, `llms.txt`, `docs/menu.schema.json` and `README.md`
+  now document the current public API — `MenuFramework` facade methods (`register`, `reloadReport`,
+  `close`, `shutdown`), builder methods (`menusDirectory`, `scheduler`, `onActionError`),
+  `AnvilPrompt`, `MenuSession`, `MenuErrorHandler`, the `HIDE_ADDITIONAL_TOOLTIP` flag, and an
+  `onDisable`/`shutdown` teardown example.
+- **menu-core internals.** A clean-code pass removed duplication (shared `ReflectedMembers` and
+  `MergeButtons` helpers, grouped boot-reflection caches) and flattened nested lambdas. Behaviour is
+  unchanged; reader/merger/template suites stay green.
+
+### Fixed
+
+- **Reactive teardown on disable.** `MenuLifecycle.closeOpenMenuNow` tears down an open reactive
+  view explicitly before closing the inventory, and `shutdown()` unregisters the listener right
+  after, so on Folia (or whenever the close event is missed) a view's bound state/ticks no longer
+  leak. `ReactivePagedView.close()` is idempotent, so a quit after a normal close cannot run teardown
+  twice.
+- **`@OnClose` on disconnect.** No-arg `@OnClose` handlers run even when the viewer has disconnected
+  (quit backstop); `Player`-accepting handlers are skipped individually rather than dropping the
+  whole hook.
+- **Shutdown races.** `Flusher.mark()` swallows a scheduler that rejects a task while the plugin is
+  disabling instead of leaking it into the state write (stays retryable), and the sync-apply executor
+  rejects after shutdown so an in-flight async reload cannot build items against a cleared registry.
+- **Reload reporting.** A scheduler rejection when delivering a reload report to a player who has
+  left is no longer surfaced as an "asynchronous menu reload failed" error; the report is dropped and
+  logged at `FINE`.
+- **Boot validation.** Invalid `@Menu`/`@Button` ids and reactive-only annotations on a static menu
+  are rejected at boot with a clear `InvalidMenuException`, discovery aggregates all bad menus, and
+  `@OnOpen`/`@OnClose` accept only an exact `Player` parameter.
+
+[0.2.0]: https://github.com/HanielCota/MenuFramework/releases/tag/v0.2.0
+
 ## [0.1.0] - 2026-06-07
 
 ### Added

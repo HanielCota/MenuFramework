@@ -28,6 +28,6 @@ not invent API that is not listed there.
 ```kotlin
 repositories { maven("https://jitpack.io") }
 dependencies {
-    compileOnly("com.github.HanielCota.MenuFramework:menu-paper:v0.1.0")
+    compileOnly("com.github.HanielCota.MenuFramework:menu-paper:v0.2.0")
 }
 ```

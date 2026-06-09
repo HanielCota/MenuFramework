@@ -24,9 +24,9 @@ repositories {
     maven("https://jitpack.io")
 }
 dependencies {
-    compileOnly("com.github.HanielCota.MenuFramework:menu-paper:v0.1.0")
+    compileOnly("com.github.HanielCota.MenuFramework:menu-paper:v0.2.0")
     // For Folia support also add:
-    // compileOnly("com.github.HanielCota.MenuFramework:menu-folia:v0.1.0")
+    // compileOnly("com.github.HanielCota.MenuFramework:menu-folia:v0.2.0")
 }
 ```
 
