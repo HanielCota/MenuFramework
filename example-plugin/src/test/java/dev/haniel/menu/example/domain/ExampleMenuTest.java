@@ -13,8 +13,11 @@ class ExampleMenuTest {
   }
 
   @Test
-  void exposesItsPermission() {
-    assertEquals("menuexample.open.main", ExampleMenu.MAIN.permission());
+  void exposesMenuPermissionsAsAnnotationConstants() {
+    assertEquals("menuexample.open.main", ExampleMenu.MAIN_PERMISSION);
+    assertEquals("menuexample.open.catalog", ExampleMenu.CATALOG_PERMISSION);
+    assertEquals(ExampleMenu.MAIN_PERMISSION, ExampleMenu.MAIN.permission());
+    assertEquals(ExampleMenu.CATALOG_PERMISSION, ExampleMenu.CATALOG.permission());
   }
 
   @Test

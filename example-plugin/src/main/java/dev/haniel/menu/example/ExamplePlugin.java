@@ -1,16 +1,16 @@
 package dev.haniel.menu.example;
 
 import dev.haniel.menu.example.command.MenuExampleCommand;
+import dev.haniel.menu.example.domain.ExampleMenu;
 import dev.haniel.menu.example.menu.CatalogMenu;
 import dev.haniel.menu.example.menu.MainMenu;
 import dev.haniel.menu.example.repository.CatalogRepository;
 import dev.haniel.menu.example.repository.InMemoryCatalogRepository;
-import dev.haniel.menu.example.service.DefaultMenuResources;
 import dev.haniel.menu.example.service.MenuCommandService;
 import dev.haniel.menu.example.service.MenuMessages;
-import dev.haniel.menu.example.service.MenuNavigator;
 import dev.haniel.menu.example.service.MenuReloader;
 import dev.haniel.menu.paper.MenuFramework;
+import java.util.Arrays;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -27,23 +27,20 @@ public final class ExamplePlugin extends JavaPlugin {
 
   @Override
   public void onEnable() {
-    new DefaultMenuResources(this).saveAll();
+    saveDefaultMenus();
 
     CatalogRepository catalog = InMemoryCatalogRepository.create();
     MenuMessages messages = new MenuMessages();
-    MenuNavigator navigator = new MenuNavigator(messages);
-    MenuReloader reloader = new MenuReloader(messages, getLogger(), this);
+    MenuReloader reloader = new MenuReloader(messages, getLogger(), this, () -> framework);
 
     MenuFramework menus =
         MenuFramework.builder(this)
-            .instantiator(type -> menuInstance(type, catalog, navigator, reloader))
+            .instantiator(type -> menuInstance(type, catalog, reloader))
             .scan("dev.haniel.menu.example.menu")
             .build();
 
-    navigator.attach(menus);
-    reloader.attach(menus);
     framework = menus;
-    bindCommand(new MenuCommandService(navigator, reloader, messages));
+    bindCommand(new MenuCommandService(menus, reloader, messages));
   }
 
   @Override
@@ -55,13 +52,18 @@ public final class ExamplePlugin extends JavaPlugin {
     framework = null;
   }
 
-  private Object menuInstance(
-      Class<?> type, CatalogRepository catalog, MenuNavigator navigator, MenuReloader reloader) {
+  private void saveDefaultMenus() {
+    Arrays.stream(ExampleMenu.values())
+        .map(ExampleMenu::resourcePath)
+        .forEach(path -> saveResource(path, false));
+  }
+
+  private Object menuInstance(Class<?> type, CatalogRepository catalog, MenuReloader reloader) {
     if (type.equals(MainMenu.class)) {
-      return new MainMenu(navigator, reloader);
+      return new MainMenu(reloader);
     }
     if (type.equals(CatalogMenu.class)) {
-      return new CatalogMenu(catalog, navigator);
+      return new CatalogMenu(catalog);
     }
     throw new IllegalArgumentException("Unsupported example menu: " + type.getName());
   }

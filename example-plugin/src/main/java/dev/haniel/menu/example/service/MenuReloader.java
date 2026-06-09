@@ -3,8 +3,12 @@ package dev.haniel.menu.example.service;
 import dev.haniel.menu.paper.MenuFramework;
 import dev.haniel.menu.paper.registry.ReloadFailure;
 import dev.haniel.menu.paper.registry.ReloadReport;
+import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
+import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -14,19 +18,17 @@ public final class MenuReloader {
   private final MenuMessages messages;
   private final Logger logger;
   private final Plugin plugin;
-  private MenuFramework framework;
+  private final Supplier<MenuFramework> framework;
 
-  public MenuReloader(MenuMessages messages, Logger logger) {
-    this(messages, logger, null);
+  public MenuReloader(MenuMessages messages, Logger logger, Supplier<MenuFramework> framework) {
+    this(messages, logger, null, framework);
   }
 
-  public MenuReloader(MenuMessages messages, Logger logger, Plugin plugin) {
+  public MenuReloader(
+      MenuMessages messages, Logger logger, Plugin plugin, Supplier<MenuFramework> framework) {
     this.messages = messages;
     this.logger = logger;
     this.plugin = plugin;
-  }
-
-  public void attach(MenuFramework framework) {
     this.framework = framework;
   }
 
@@ -35,27 +37,40 @@ public final class MenuReloader {
       messages.send(player, "<red>You do not have permission to reload menus.</red>");
       return;
     }
-    if (framework == null) {
+    MenuFramework menus = framework.get();
+    if (menus == null) {
       messages.send(player, "<red>Menu framework is not ready.</red>");
       return;
     }
-    framework
+    if (plugin == null) {
+      menus
+          .reloadAllReportAsync()
+          .thenAccept(report -> reportIfOnline(player, report))
+          .exceptionally(error -> logFailure(error));
+      return;
+    }
+    UUID viewer = player.getUniqueId();
+    EntityScheduler scheduler = player.getScheduler();
+    menus
         .reloadAllReportAsync()
-        .thenAccept(report -> scheduleReport(player, report))
+        .thenAccept(report -> scheduleReport(scheduler, viewer, report))
         .exceptionally(error -> logFailure(error));
   }
 
-  private void scheduleReport(Player player, ReloadReport report) {
-    if (plugin == null) {
-      reportIfOnline(player, report);
-      return;
-    }
+  private void scheduleReport(EntityScheduler scheduler, UUID viewer, ReloadReport report) {
     try {
-      player.getScheduler().run(plugin, ignored -> reportIfOnline(player, report), () -> {});
+      scheduler.run(plugin, ignored -> reportIfOnline(viewer, report), () -> {});
     } catch (RuntimeException unschedulable) {
       // The player left or is no longer schedulable; the reload itself succeeded, so a lost report
       // must not surface as a reload failure through the future's exceptionally handler.
       logger.log(Level.FINE, "Skipped reload report for an unschedulable player", unschedulable);
+    }
+  }
+
+  private void reportIfOnline(UUID viewer, ReloadReport report) {
+    Player player = Bukkit.getPlayer(viewer);
+    if (player != null && player.isOnline()) {
+      report(player, report);
     }
   }
 

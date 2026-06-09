@@ -22,8 +22,4 @@ public record CatalogProduct(
     Objects.requireNonNull(category, "category");
     Objects.requireNonNull(price, "price");
   }
-
-  public boolean matches(CatalogCategory expected) {
-    return category == expected;
-  }
 }

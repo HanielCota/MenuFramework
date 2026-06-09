@@ -14,16 +14,16 @@ class InMemoryCatalogRepositoryTest {
   void seedsEveryCategoryWithProducts() {
     CatalogRepository repository = InMemoryCatalogRepository.create();
 
-    assertEquals(18, repository.products().in(CatalogCategory.TOOLS).size());
-    assertEquals(18, repository.products().in(CatalogCategory.BLOCKS).size());
-    assertEquals(18, repository.products().in(CatalogCategory.FOOD).size());
+    assertEquals(18, repository.productsIn(CatalogCategory.TOOLS).size());
+    assertEquals(18, repository.productsIn(CatalogCategory.BLOCKS).size());
+    assertEquals(18, repository.productsIn(CatalogCategory.FOOD).size());
   }
 
   @Test
   void seedsToolsWithTheirMaterialAndIndexedPrice() {
     CatalogRepository repository = InMemoryCatalogRepository.create();
 
-    CatalogProduct firstTool = repository.products().in(CatalogCategory.TOOLS).get(0);
+    CatalogProduct firstTool = repository.productsIn(CatalogCategory.TOOLS).get(0);
 
     assertEquals("Tool 1", firstTool.name());
     assertEquals(new MaterialName("DIAMOND_PICKAXE"), firstTool.material());
@@ -34,8 +34,8 @@ class InMemoryCatalogRepositoryTest {
   void seedsEachCategoryWithItsOwnMaterial() {
     CatalogRepository repository = InMemoryCatalogRepository.create();
 
-    CatalogProduct firstBlock = repository.products().in(CatalogCategory.BLOCKS).get(0);
-    CatalogProduct firstFood = repository.products().in(CatalogCategory.FOOD).get(0);
+    CatalogProduct firstBlock = repository.productsIn(CatalogCategory.BLOCKS).get(0);
+    CatalogProduct firstFood = repository.productsIn(CatalogCategory.FOOD).get(0);
 
     assertEquals(new MaterialName("BRICKS"), firstBlock.material());
     assertEquals(new MaterialName("COOKED_BEEF"), firstFood.material());
@@ -45,7 +45,7 @@ class InMemoryCatalogRepositoryTest {
   void increasesSeededPriceWithTheProductIndex() {
     CatalogRepository repository = InMemoryCatalogRepository.create();
 
-    CatalogProduct lastTool = repository.products().in(CatalogCategory.TOOLS).get(17);
+    CatalogProduct lastTool = repository.productsIn(CatalogCategory.TOOLS).get(17);
 
     assertEquals(new Price(550), lastTool.price());
   }

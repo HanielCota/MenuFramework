@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -99,8 +100,8 @@ public final class MenuFrameworkBuilder {
     AnvilPrompts prompts = new AnvilPrompts(MiniMessage.miniMessage());
     MenuRegistry registry = registry(menusPath(), selectedScheduler, prompts);
     MenuScanner scanner = new MenuScanner(new ClassGraphMenuDiscovery(), instances);
+    scanConfigured(scanner, registry);
     MenuFramework framework = framework(registry, scanner, selectedScheduler, prompts);
-    scanConfigured(framework);
     logRegistered(registry);
     return framework;
   }
@@ -150,10 +151,10 @@ public final class MenuFrameworkBuilder {
     return new MenuRegistryFactory(plugin, instances).create(menusPath, scheduler, prompts);
   }
 
-  private void scanConfigured(MenuFramework framework) {
+  private void scanConfigured(MenuScanner scanner, MenuRegistry registry) {
     if (basePackages.isEmpty()) {
       return;
     }
-    framework.scan(basePackages.toArray(String[]::new));
+    scanner.scanTypes(Set.copyOf(basePackages), registry::register);
   }
 }

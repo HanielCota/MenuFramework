@@ -53,6 +53,7 @@ public final class PagedMerger<V> {
   public CompiledPagedMenu<V> merge(PagedStructure structure, MenuConfig config) {
     PaginationConfig pagination = requirePagination(structure, config);
     MaskLayout layout = MaskLayout.resolve(pagination.mask(), config.rows());
+    ensureOverlayButtonsMatchActions(structure, config);
     ensureOverlayDoesNotReplaceDynamicSlots(config, layout);
     PagedAppearance<V> appearance = appearance(structure, config, pagination, layout);
     return new CompiledPagedMenu<>(appearance, wiring(structure, config));
@@ -103,7 +104,6 @@ public final class PagedMerger<V> {
   }
 
   private Map<Integer, UnboundAction> overlayActions(PagedStructure structure, MenuConfig config) {
-    ensureButtonsConfigured(structure, config);
     Map<Integer, UnboundAction> actions = new HashMap<>();
     structure.buttons().forEach((id, action) -> addAction(actions, id, config, action));
     return actions;
@@ -117,11 +117,27 @@ public final class PagedMerger<V> {
     }
   }
 
+  private void ensureOverlayButtonsMatchActions(PagedStructure structure, MenuConfig config) {
+    ensureButtonsConfigured(structure, config);
+    ensureNoUnboundOverlayButtons(structure, config);
+  }
+
   private void ensureButtonsConfigured(PagedStructure structure, MenuConfig config) {
     structure.buttons().keySet().stream()
         .filter(id -> !config.buttons().containsKey(id.value()))
         .findFirst()
         .ifPresent(this::failMissingButton);
+  }
+
+  private void ensureNoUnboundOverlayButtons(PagedStructure structure, MenuConfig config) {
+    config.buttons().keySet().stream()
+        .filter(id -> !hasButton(structure, id))
+        .findFirst()
+        .ifPresent(this::failUnboundOverlayButton);
+  }
+
+  private boolean hasButton(PagedStructure structure, String id) {
+    return structure.buttons().keySet().stream().anyMatch(button -> button.value().equals(id));
   }
 
   private void ensureOverlayDoesNotReplaceDynamicSlots(MenuConfig config, MaskLayout layout) {
@@ -147,6 +163,11 @@ public final class PagedMerger<V> {
 
   private void failMissingButton(ButtonId id) {
     throw MergeButtons.missingButton(id.value());
+  }
+
+  private void failUnboundOverlayButton(String id) {
+    throw new InvalidMenuException(
+        "Button '" + id + "' is configured in YAML but has no matching @Button");
   }
 
   private PaginationConfig requirePagination(PagedStructure structure, MenuConfig config) {

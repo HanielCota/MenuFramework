@@ -83,13 +83,17 @@ public final class MenuRegistry implements MenuOpener {
    * @param menuType an annotated menu class; never null
    */
   public void register(Class<?> menuType) {
-    CompiledMenu<ItemStack> compiled = compiler.compile(menuType, instances);
+    register(menuType, instances);
+  }
+
+  private void register(Class<?> menuType, Function<Class<?>, Object> instanceFactory) {
+    CompiledMenu<ItemStack> compiled = compiler.compile(menuType, instanceFactory);
     catalog.put(
         compiled.id(),
         new RegisteredMenu(
             compiled.id(),
             menuType,
-            () -> instances.apply(menuType),
+            () -> instanceFactory.apply(menuType),
             openable(menuType, compiled)));
   }
 
@@ -104,7 +108,7 @@ public final class MenuRegistry implements MenuOpener {
    * @param basePackages the packages to scan; never empty
    */
   public void registerAll(MenuDiscovery discovery, String... basePackages) {
-    new MenuScanner(discovery, instances).scan(Set.of(basePackages), this::register);
+    new MenuScanner(discovery, instances).scanTypes(Set.of(basePackages), this::register);
   }
 
   /**
@@ -116,7 +120,8 @@ public final class MenuRegistry implements MenuOpener {
    */
   public void registerAll(
       MenuDiscovery discovery, Function<Class<?>, Object> instances, String... basePackages) {
-    new MenuScanner(discovery, instances).scan(Set.of(basePackages), this::register);
+    new MenuScanner(discovery, instances)
+        .scanTypes(Set.of(basePackages), type -> register(type, instances));
   }
 
   /**

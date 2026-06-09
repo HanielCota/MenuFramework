@@ -6,12 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.OnOpen;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.MenuCompiler;
@@ -20,6 +23,7 @@ import dev.haniel.menu.compiler.binding.UnboundProvider;
 import dev.haniel.menu.compiler.model.CompiledMenu;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.compiler.model.CompiledStaticMenu;
+import dev.haniel.menu.discovery.DiscoveredMenu;
 import dev.haniel.menu.domain.MaskLayout;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.item.MenuItem;
@@ -32,6 +36,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
@@ -113,6 +118,25 @@ class MenuRegistryEdgeCasesTest {
     assertThrows(InvalidMenuException.class, () -> registry.register(menu));
 
     verify(factory, never()).create(any());
+  }
+
+  @Test
+  void registerAllWithCustomInstantiatorPreservesTheFactory() {
+    MenuId id = new MenuId("needs-dependency");
+    MenuCompiler<ItemStack> compiler = mock();
+    MenuFactory factory = mock();
+    MenuCatalog catalog = new MenuCatalog();
+    MenuRegistry registry = new MenuRegistry(compiler, factory, catalog);
+    Function<Class<?>, Object> instances = type -> new NeedsDependency("ok");
+    when(compiler.compile(eq(NeedsDependency.class), same(instances)))
+        .thenReturn(compiledWithId(id));
+    when(factory.create(any())).thenReturn(mock(PaperMenu.class));
+
+    registry.registerAll(
+        packages -> List.of(DiscoveredMenu.from(NeedsDependency.class)), instances, "ignored");
+
+    verify(compiler).compile(eq(NeedsDependency.class), same(instances));
+    assertEquals("ok", ((NeedsDependency) catalog.find(id).orElseThrow().createSource()).value);
   }
 
   /** The first registration must survive a rejected duplicate (no partial overwrite). */
@@ -262,5 +286,14 @@ class MenuRegistryEdgeCasesTest {
 
     @OnOpen
     void opened(Object player) {}
+  }
+
+  @Menu(id = "needs-dependency")
+  static final class NeedsDependency {
+    private final String value;
+
+    NeedsDependency(String value) {
+      this.value = value;
+    }
   }
 }
