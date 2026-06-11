@@ -116,6 +116,7 @@ YAML files live in `plugins/<PluginName>/menus/<id>.yml`.
 | 📚 | **Pagination** | `@Paginated` provider sliced into pages with a mask layout. |
 | 🏷️ | **Typed open args** | Open a menu *for* a target with `@Arg` and `open(player, id, arg)`. |
 | ⚛️ | **Reactive state** | `@Reactive State<?>` drives coalesced, diff-based re-renders. |
+| 📡 | **Live refresh** | `@RefreshOn(Event.class)` re-renders the open menu when an event fires. |
 | ⏱️ | **Auto-update** | `@Tick` runs on a schedule for countdowns & animations. |
 | 🪝 | **Lifecycle hooks** | `@OnOpen` / `@OnClose` run as the view opens and closes. |
 | 🧮 | **Placeholders** | Per-viewer PlaceholderAPI tokens (soft dependency). |
@@ -269,6 +270,36 @@ Values that change over time refresh on the next re-render. Pair them with `@Tic
 > 🛡️ **Security:** placeholder values are MiniMessage-escaped before parsing, so a player whose name
 > or nickname contains tags like `<click>` or `<hover>` cannot inject live components into another
 > viewer's menu. The author's own template tags are still parsed.
+
+</details>
+
+<details>
+<summary><b>📡 Live refresh on events (<code>@RefreshOn</code>)</b></summary>
+
+<br>
+
+Annotate a paginated menu with `@RefreshOn(...)` and the framework re-renders the open view whenever
+one of the listed Bukkit events fires — re-running the `@Paginated` provider so the menu reflects data
+it *reads but does not own* (a balance changed elsewhere, an admin action). The subscription lives only
+while the view is open, so there is no listener to wire or unregister and nothing to forget.
+
+```java
+@Menu(id = "balance")
+@RefreshOn(BalanceChangedEvent.class)
+public final class BalanceMenu {
+
+  @Paginated
+  public List<MenuItem> items() {
+    return history.recent().stream().map(this::item).toList(); // re-runs when the event fires
+  }
+}
+```
+
+Use `@Reactive` state for data the menu **owns**; use `@RefreshOn` for external changes it only reads.
+The event re-renders every open view of the menu regardless of which entity it concerns, on the
+thread the event fires on — pair it with main-thread domain events. For per-target precision, call
+`framework.session(player).refresh()` from your own handler instead. The annotation lives in the
+Paper layer (`dev.haniel.menu.paper.annotation.RefreshOn`); static menus reject it.
 
 </details>
 

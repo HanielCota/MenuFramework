@@ -2,10 +2,12 @@ package dev.haniel.menu.paper.view;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,8 +23,11 @@ import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.item.Icon;
 import dev.haniel.menu.item.MenuItem;
+import dev.haniel.menu.paper.annotation.RefreshOn;
 import dev.haniel.menu.paper.holder.OpenMenu;
+import dev.haniel.menu.paper.refresh.RefreshSubscriber;
 import dev.haniel.menu.paper.render.InventoryFactory;
+import dev.haniel.menu.placeholder.PlaceholderResolver;
 import dev.haniel.menu.scheduler.MenuScheduler;
 import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.scheduler.ScheduledTask;
@@ -35,18 +40,24 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 /**
  * Per-player isolation and open/recovery probes for {@link ReactivePagedMenu}, driven without a
@@ -149,6 +160,98 @@ class ReactivePagedMenuEdgeCasesTest {
 
     assertThrows(InvalidMenuException.class, () -> menu.open(player, 42));
     verify(player, never()).openInventory(any(Inventory.class));
+  }
+
+  @Test
+  void refreshEventsAreSubscribedOnOpenWithTheDeclaredEventSet() {
+    RecordingRefreshSubscriber subscriber = new RecordingRefreshSubscriber();
+    ReactivePagedMenu menu =
+        refreshAwareMenu(subscriber, new RecordingScheduler(), new AtomicInteger());
+
+    menu.open(player());
+
+    assertEquals(
+        Set.of(PlayerJoinEvent.class),
+        subscriber.events(),
+        "open must subscribe to the menu's @RefreshOn events");
+  }
+
+  @Test
+  void aRefreshEventReRendersTheOpenView() {
+    RecordingRefreshSubscriber subscriber = new RecordingRefreshSubscriber();
+    AtomicInteger renders = new AtomicInteger();
+    ReactivePagedMenu menu = refreshAwareMenu(subscriber, new ImmediateScheduler(), renders);
+    menu.open(player());
+    int afterOpen = renders.get();
+
+    subscriber.fire();
+
+    assertTrue(renders.get() > afterOpen, "a @RefreshOn event must re-run the @Paginated render");
+  }
+
+  @Test
+  void closingTheViewCancelsTheRefreshSubscription() {
+    RecordingRefreshSubscriber subscriber = new RecordingRefreshSubscriber();
+    ReactivePagedMenu menu =
+        refreshAwareMenu(subscriber, new RecordingScheduler(), new AtomicInteger());
+    Player player = player();
+    menu.open(player);
+
+    try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+      ((ReactivePagedView) openedInventory(player).getHolder()).close();
+    }
+
+    assertTrue(
+        subscriber.unsubscribed(), "closing the view must cancel its @RefreshOn subscription");
+  }
+
+  @Test
+  void menusWithoutRefreshOnDoNotSubscribe() {
+    RecordingRefreshSubscriber subscriber = new RecordingRefreshSubscriber();
+    ReactivePagedMenu menu =
+        new ReactivePagedMenu(
+            pagedPlan(countingInstantiator(new AtomicInteger())),
+            refreshRuntime(new RecordingScheduler(), subscriber));
+
+    menu.open(player());
+
+    assertNull(subscriber.events(), "a menu without @RefreshOn must not subscribe to anything");
+  }
+
+  private static ReactivePagedMenu refreshAwareMenu(
+      RefreshSubscriber subscriber, MenuScheduler scheduler, AtomicInteger renders) {
+    PagedWiring wiring =
+        new PagedWiring(
+            new Instantiator(() -> new RefreshProbe(renders)),
+            refreshProvider(),
+            Map.of(),
+            List.of());
+    CompiledPagedMenu<ItemStack> plan = new CompiledPagedMenu<>(appearance(), wiring);
+    return new ReactivePagedMenu(plan, refreshRuntime(scheduler, subscriber));
+  }
+
+  private static MenuRuntime refreshRuntime(MenuScheduler scheduler, RefreshSubscriber subscriber) {
+    MiniMessage miniMessage = mock(MiniMessage.class);
+    when(miniMessage.deserialize(any(String.class))).thenReturn(Component.text("title"));
+    IconFactory<ItemStack> icons = icon -> mock(ItemStack.class);
+    return new MenuRuntime(
+        Logger.getLogger("refresh-test"),
+        icons,
+        miniMessage,
+        scheduler,
+        inventoryFactory(),
+        PlaceholderResolver.none(),
+        subscriber);
+  }
+
+  private static UnboundProvider refreshProvider() {
+    try {
+      Method products = RefreshProbe.class.getDeclaredMethod("products");
+      products.setAccessible(true);
+      return new UnboundProvider(MethodHandles.lookup().unreflect(products));
+    } catch (ReflectiveOperationException error) {
+      throw new IllegalStateException(error);
+    }
   }
 
   private static ReactivePagedMenu argAwareMenu(AtomicReference<String> sink) {
@@ -328,6 +431,84 @@ class ReactivePagedMenuEdgeCasesTest {
     private List<MenuItem> products() {
       sink.set(viewer);
       return List.of(MenuItem.of(Icon.of("STONE")));
+    }
+  }
+
+  /** A paginated menu that re-renders on a {@code @RefreshOn} event, counting each render. */
+  @RefreshOn(PlayerJoinEvent.class)
+  private static final class RefreshProbe {
+    private final AtomicInteger renders;
+
+    RefreshProbe(AtomicInteger renders) {
+      this.renders = renders;
+    }
+
+    @SuppressWarnings("unused") // bound reflectively as the paginated provider
+    private List<MenuItem> products() {
+      renders.incrementAndGet();
+      return List.of(MenuItem.of(Icon.of("STONE")));
+    }
+  }
+
+  /** Captures the subscription so a test can fire it and assert it is cancelled on close. */
+  private static final class RecordingRefreshSubscriber implements RefreshSubscriber {
+    private Set<Class<? extends Event>> events;
+    private Runnable onFire;
+    private boolean unsubscribed;
+
+    @Override
+    public Runnable subscribe(Set<Class<? extends Event>> events, Runnable onFire) {
+      this.events = events;
+      this.onFire = onFire;
+      return () -> unsubscribed = true;
+    }
+
+    void fire() {
+      onFire.run();
+    }
+
+    Set<Class<? extends Event>> events() {
+      return events;
+    }
+
+    boolean unsubscribed() {
+      return unsubscribed;
+    }
+  }
+
+  /** A scheduler that runs scheduled tasks inline, so a refresh flush renders synchronously. */
+  private static final class ImmediateScheduler implements MenuScheduler {
+    @Override
+    public PlayerScheduler forPlayer(PlayerId player) {
+      return new PlayerScheduler() {
+        @Override
+        public ScheduledTask schedule(Runnable task) {
+          task.run();
+          return immediateTask();
+        }
+
+        @Override
+        public ScheduledTask scheduleRepeating(Runnable task, long period) {
+          return immediateTask();
+        }
+      };
+    }
+
+    @Override
+    public Executor global() {
+      return Runnable::run;
+    }
+
+    private static ScheduledTask immediateTask() {
+      return new ScheduledTask() {
+        @Override
+        public void cancel() {}
+
+        @Override
+        public boolean scheduled() {
+          return true;
+        }
+      };
     }
   }
 
