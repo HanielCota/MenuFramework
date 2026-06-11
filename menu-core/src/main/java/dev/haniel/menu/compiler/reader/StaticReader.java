@@ -2,6 +2,7 @@ package dev.haniel.menu.compiler.reader;
 
 import dev.haniel.menu.action.ButtonArguments;
 import dev.haniel.menu.action.MenuAction;
+import dev.haniel.menu.annotation.Arg;
 import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.OnClose;
@@ -141,6 +142,7 @@ public final class StaticReader {
     rejectMethod(type, methods, OnClose.class, "@OnClose");
     rejectField(type, Reactive.class, "@Reactive");
     rejectField(type, Viewer.class, "@Viewer");
+    rejectField(type, Arg.class, "@Arg");
   }
 
   private void rejectField(Class<?> type, Class<? extends Annotation> annotation, String label) {

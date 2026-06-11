@@ -13,10 +13,10 @@ class MenuCatalogTest {
     MenuCatalog catalog = new MenuCatalog();
     MenuId id = new MenuId("same");
 
-    catalog.put(id, new RegisteredMenu(id, new Object(), player -> {}));
+    catalog.put(id, new RegisteredMenu(id, new Object(), (player, argument) -> {}));
 
     assertThrows(
         InvalidMenuException.class,
-        () -> catalog.put(id, new RegisteredMenu(id, new Object(), player -> {})));
+        () -> catalog.put(id, new RegisteredMenu(id, new Object(), (player, argument) -> {})));
   }
 }

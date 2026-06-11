@@ -132,6 +132,7 @@ public void onDisable() {
 | `@Paginated` | method | none | Exactly one per paginated menu. Must take no args and return `List<MenuItem>`. |
 | `@Reactive` | field | none | Field type must be `State<?>`. Paginated menus only. |
 | `@Viewer` | field | none | Field type must be a non-final, non-static `PlayerId`. The viewer is injected before the first render, so `@Paginated`/`@Button` methods can read it. Paginated menus only. |
+| `@Arg` | field | none | Field type must be a non-final, non-static reference type (never a primitive). The open argument passed to `open(player, id, argument)` is injected into every `@Arg` field it is assignable to, before the first render. Paginated menus only. |
 | `@Tick` | method | `period` (ticks, default `20`) | Must take no args and return `void`. `period` must be >= 1. Paginated menus only. |
 | `@OnOpen` | method | none | Takes no args or a single `Player`. Paginated menus only. |
 | `@OnClose` | method | none | Takes no args or a single `Player`. Runs after state and ticks are torn down. Paginated menus only. |
@@ -283,6 +284,32 @@ The framework writes the viewer into every `@Viewer` field of the fresh per-play
 the first render**, so a `@Paginated` provider (and any `@Button`/`@Tick`) can read it directly.
 Prefer this over smuggling the viewer through `@Reactive State<UUID>` — that leaves the viewer unknown
 on the first render and forces a wasted re-render.
+
+### Arg (a typed open argument)
+
+Open a menu *for* a target, amount or any context with `open(player, id, argument)` and receive it in
+an `@Arg` field — no hand-rolled session carrier between menus.
+
+```java
+import dev.haniel.menu.annotation.Arg;
+
+@Arg private ProfileTarget target; // non-final, non-static reference type
+
+@Paginated
+public List<MenuItem> items() {
+  return profiles.of(target).stream().map(this::item).toList(); // target is set before this runs
+}
+```
+
+```java
+// Application code or a @Button handler:
+framework.open(viewer, new MenuId("profile"), new ProfileTarget(otherPlayerId));
+```
+
+The argument is injected into every `@Arg` field whose declared type it is assignable to, **before the
+first render**. A menu may declare several `@Arg` fields of different types. Opening without an argument
+leaves the fields at their defaults; opening with an argument that matches **no** `@Arg` field is a
+runtime error, so a type mismatch fails loudly instead of leaving the field silently null.
 
 ## YAML reference
 

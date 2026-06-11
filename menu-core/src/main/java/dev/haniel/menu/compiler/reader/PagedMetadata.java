@@ -1,5 +1,6 @@
 package dev.haniel.menu.compiler.reader;
 
+import dev.haniel.menu.compiler.binding.ArgField;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.StateField;
 import dev.haniel.menu.compiler.binding.UnboundAction;
@@ -24,9 +25,10 @@ record PagedMetadata(
     Map<ButtonId, UnboundAction> buttons,
     List<StateField> states,
     List<UnboundTick> ticks,
-    List<ViewerField> viewers) {
+    List<ViewerField> viewers,
+    List<ArgField> args) {
 
   PagedStructure structure(Instantiator instantiator) {
-    return new PagedStructure(id, instantiator, provider, buttons, states, ticks, viewers);
+    return new PagedStructure(id, instantiator, provider, buttons, states, ticks, viewers, args);
   }
 }

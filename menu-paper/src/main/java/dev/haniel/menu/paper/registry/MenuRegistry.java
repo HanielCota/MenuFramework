@@ -128,10 +128,25 @@ public final class MenuRegistry implements MenuOpener {
    */
   @Override
   public void open(Player player, MenuId id) {
+    open(player, id, null);
+  }
+
+  /**
+   * Opens the menu with the given id for the player, passing it an open argument, if it is
+   * registered.
+   *
+   * <p>The argument is injected into any {@code @Arg} field of a paginated menu before its first
+   * render. See {@link dev.haniel.menu.annotation.Arg}.
+   *
+   * @param player the viewer; never null
+   * @param id the menu id to open; never null
+   * @param argument the open argument, or {@code null} for none
+   */
+  public void open(Player player, MenuId id, Object argument) {
     catalog
         .find(id)
         .filter(menu -> menu.mayOpen(player))
-        .ifPresent(menu -> menu.current().open(player));
+        .ifPresent(menu -> menu.current().open(player, argument));
   }
 
   /**
@@ -142,10 +157,22 @@ public final class MenuRegistry implements MenuOpener {
    */
   @Override
   public void open(Player player, Class<?> sourceType) {
+    open(player, sourceType, null);
+  }
+
+  /**
+   * Opens the menu registered from the given class for the player, passing it an open argument, if
+   * it is registered.
+   *
+   * @param player the viewer; never null
+   * @param sourceType the annotated menu class; never null
+   * @param argument the open argument, or {@code null} for none
+   */
+  public void open(Player player, Class<?> sourceType, Object argument) {
     catalog
         .find(sourceType)
         .filter(menu -> menu.mayOpen(player))
-        .ifPresent(menu -> menu.current().open(player));
+        .ifPresent(menu -> menu.current().open(player, argument));
   }
 
   /**

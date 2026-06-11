@@ -19,7 +19,7 @@ class MenuCatalogEdgeCasesTest {
   void allReturnsADefensiveCopyThatCannotMutateTheRegistry() {
     MenuCatalog catalog = new MenuCatalog();
     MenuId id = new MenuId("guarded");
-    catalog.put(id, new RegisteredMenu(id, new Object(), player -> {}));
+    catalog.put(id, new RegisteredMenu(id, new Object(), (player, argument) -> {}));
 
     Collection<RegisteredMenu> view = catalog.all();
     try {
@@ -54,7 +54,7 @@ class MenuCatalogEdgeCasesTest {
     MenuCatalog catalog = new MenuCatalog();
     MenuId id = new MenuId("typed");
     SampleSource source = new SampleSource();
-    catalog.put(id, new RegisteredMenu(id, source, player -> {}));
+    catalog.put(id, new RegisteredMenu(id, source, (player, argument) -> {}));
 
     assertTrue(catalog.find(SampleSource.class).isPresent());
     assertEquals(id, catalog.find(SampleSource.class).orElseThrow().id());
@@ -65,8 +65,8 @@ class MenuCatalogEdgeCasesTest {
   void duplicatePutDoesNotOverwriteFirstEntry() {
     MenuCatalog catalog = new MenuCatalog();
     MenuId id = new MenuId("dup");
-    RegisteredMenu original = new RegisteredMenu(id, new Object(), player -> {});
-    RegisteredMenu replacement = new RegisteredMenu(id, new Object(), player -> {});
+    RegisteredMenu original = new RegisteredMenu(id, new Object(), (player, argument) -> {});
+    RegisteredMenu replacement = new RegisteredMenu(id, new Object(), (player, argument) -> {});
     catalog.put(id, original);
 
     assertThrows(RuntimeException.class, () -> catalog.put(id, replacement));

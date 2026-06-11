@@ -3,6 +3,7 @@ package dev.haniel.menu.compiler.reader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import dev.haniel.menu.annotation.Arg;
 import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.OnOpen;
@@ -74,6 +75,11 @@ class StaticReaderTest {
     assertThrows(InvalidMenuException.class, () -> reader.read(new StaticViewerMenu()));
   }
 
+  @Test
+  void rejectsArgFieldOnStaticMenu() {
+    assertThrows(InvalidMenuException.class, () -> reader.read(new StaticArgMenu()));
+  }
+
   @Menu(id = "valid")
   static final class ValidMenu {
 
@@ -141,5 +147,11 @@ class StaticReaderTest {
   static final class StaticViewerMenu {
 
     @Viewer private PlayerId viewer;
+  }
+
+  @Menu(id = "static-arg")
+  static final class StaticArgMenu {
+
+    @Arg private String target;
   }
 }
