@@ -14,6 +14,7 @@ import dev.haniel.menu.paper.api.MenuOpener;
 import dev.haniel.menu.paper.argument.MenuClickArgumentResolver;
 import dev.haniel.menu.paper.argument.PlayerArgumentResolver;
 import dev.haniel.menu.paper.placeholder.PapiPlaceholders;
+import dev.haniel.menu.paper.refresh.BukkitRefreshSubscriber;
 import dev.haniel.menu.paper.registry.MenuCatalog;
 import dev.haniel.menu.paper.registry.MenuRegistry;
 import dev.haniel.menu.paper.render.BukkitInventoryFactory;
@@ -63,7 +64,8 @@ final class MenuRegistryFactory {
             miniMessage,
             scheduler,
             new BukkitInventoryFactory(),
-            new PapiPlaceholders(miniMessage)));
+            new PapiPlaceholders(miniMessage),
+            new BukkitRefreshSubscriber(plugin)));
   }
 
   private MenuCompiler<ItemStack> compiler(
