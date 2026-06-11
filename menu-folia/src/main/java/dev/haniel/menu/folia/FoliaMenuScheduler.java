@@ -34,4 +34,9 @@ public final class FoliaMenuScheduler implements MenuScheduler {
   public Executor global() {
     return command -> Bukkit.getGlobalRegionScheduler().execute(plugin, command);
   }
+
+  @Override
+  public Executor async() {
+    return command -> Bukkit.getAsyncScheduler().runNow(plugin, task -> command.run());
+  }
 }

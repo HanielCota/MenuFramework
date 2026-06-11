@@ -13,6 +13,7 @@ import dev.haniel.menu.annotation.Reactive;
 import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.click.ClickType;
 import dev.haniel.menu.compiler.InvalidMenuException;
+import dev.haniel.menu.compiler.binding.ContentProvider;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.compiler.model.PagedStructure;
@@ -40,7 +41,8 @@ class PagedMergerTest {
     assertEquals(14, compiled.appearance().perPage());
     assertEquals("ARROW", compiled.appearance().decor().previous());
     Object instance = compiled.wiring().instantiator().create();
-    assertEquals(3, compiled.wiring().provider().bind(instance).provide().size());
+    assertEquals(
+        3, ((ContentProvider) compiled.wiring().provider().bind(instance)).provide().size());
   }
 
   @Test
@@ -68,7 +70,12 @@ class PagedMergerTest {
     Object instance = compiled.wiring().instantiator().create();
 
     assertEquals(
-        "ok", compiled.wiring().provider().bind(instance).provide().getFirst().icon().name());
+        "ok",
+        ((ContentProvider) compiled.wiring().provider().bind(instance))
+            .provide()
+            .getFirst()
+            .icon()
+            .name());
   }
 
   @Test
@@ -151,7 +158,8 @@ class PagedMergerTest {
     Object instance = compiled.wiring().instantiator().create();
 
     assertThrows(
-        MenuActionException.class, () -> compiled.wiring().provider().bind(instance).provide());
+        MenuActionException.class,
+        () -> ((ContentProvider) compiled.wiring().provider().bind(instance)).provide());
   }
 
   private static MenuConfig config() {

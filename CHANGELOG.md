@@ -8,6 +8,16 @@ All notable changes to MenuFramework are documented here. The format follows
 
 ### Added
 
+- **Lazy, asynchronous pagination.** A `@Paginated` method may now load one page at a time —
+  `Page<MenuItem> load(int page, int pageSize)` — instead of returning the whole `List<MenuItem>` up
+  front, fitting a real data source (a database cursor, a paged API). The framework runs the
+  (possibly blocking) load on an off-thread executor and applies the rendered page back on the view's
+  thread; `Page` carries `hasNext`, so the next-page button works without knowing the total size.
+  While a page loads the current one stays put (no flicker); rapid navigation and a refresh during a
+  load are handled by a generation guard that applies only the most recently requested page, and a
+  load returning after the view closes is dropped. A failed load is logged and leaves the view in
+  place. The eager `@Paginated List<MenuItem>` path is unchanged. The platform `MenuScheduler` gains
+  an `async()` executor (Paper async pool, Folia async scheduler) for the off-thread load.
 - **Typed open arguments (`@Arg`).** `MenuFramework.open(player, id, argument)` and
   `open(player, type, argument)` open a paginated menu *for* a target, amount or any typed context.
   The argument is injected into every `@Arg` field whose declared type it is assignable to, before the
@@ -20,6 +30,8 @@ All notable changes to MenuFramework are documented here. The format follows
 
 ### Changed
 
+- **`MenuScheduler` contract.** Adds `async()`, an off-main/region executor for blocking page loads.
+  Paper and Folia implement it; the rest of the framework is unaffected.
 - **`PaperMenu.open` signature.** `open(Player)` is now a default that delegates to the new
   `open(Player, Object argument)`. Internal callers and the no-argument facade methods are unaffected.
 

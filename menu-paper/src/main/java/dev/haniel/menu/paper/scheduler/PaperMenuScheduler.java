@@ -34,4 +34,9 @@ public final class PaperMenuScheduler implements MenuScheduler {
   public Executor global() {
     return command -> Bukkit.getScheduler().runTask(plugin, command);
   }
+
+  @Override
+  public Executor async() {
+    return command -> Bukkit.getScheduler().runTaskAsynchronously(plugin, command);
+  }
 }

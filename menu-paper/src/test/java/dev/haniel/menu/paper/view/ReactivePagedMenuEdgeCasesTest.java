@@ -387,6 +387,11 @@ class ReactivePagedMenuEdgeCasesTest {
       return Runnable::run;
     }
 
+    @Override
+    public java.util.concurrent.Executor async() {
+      return Runnable::run;
+    }
+
     List<UUID> resolved() {
       return resolved;
     }

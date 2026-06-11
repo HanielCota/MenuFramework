@@ -3,6 +3,7 @@ package dev.haniel.menu.paper.render;
 import dev.haniel.menu.action.MenuAction;
 import dev.haniel.menu.domain.MaskLayout;
 import dev.haniel.menu.domain.MenuId;
+import dev.haniel.menu.domain.Page;
 import dev.haniel.menu.domain.PageNumber;
 import dev.haniel.menu.domain.Paginator;
 import dev.haniel.menu.item.Icon;
@@ -98,24 +99,41 @@ public final class PageRenderer {
     Paginator paginator = new Paginator(scene.content().items());
     PageNumber page = clamp(requested, paginator);
     List<MenuItem> items = paginator.page(page, scene.perPage());
-    ItemStack[] visuals = cache.get(key(page, items), () -> renderVisuals(items));
-    return assemble(page, items, visuals, paginator);
+    return renderFrom(
+        page, items, paginator.hasPrevious(page), paginator.hasNext(page, scene.perPage()));
   }
 
-  private RenderedPage assemble(
-      PageNumber page, List<MenuItem> items, ItemStack[] visuals, Paginator paginator) {
+  /**
+   * Renders an already-loaded lazy page into slots, taking its navigation flags from the page.
+   *
+   * <p>Builds Bukkit visuals, so it must run on the view's owning thread, never on the executor
+   * that loaded the page.
+   *
+   * @param requested the page that was loaded; clamped to be non-negative
+   * @param loaded the page's items and whether a further page exists
+   * @return the assembled, ready-to-write page
+   */
+  public RenderedPage renderPage(PageNumber requested, Page<MenuItem> loaded) {
+    PageNumber page = new PageNumber(Math.max(0, requested.value()));
+    List<MenuItem> items = capacity(loaded.items());
+    return renderFrom(page, items, page.value() > 0, loaded.hasNext());
+  }
+
+  private RenderedPage renderFrom(
+      PageNumber page, List<MenuItem> items, boolean hasPrevious, boolean hasNext) {
+    ItemStack[] visuals = cache.get(key(page, items), () -> renderVisuals(items));
     ItemStack[] slots = new ItemStack[scene.size()];
     MenuAction[] actions = new MenuAction[scene.size()];
     fillBorder(slots);
     fillContent(slots, actions, items, visuals);
-    placeNavigation(slots, page, paginator);
+    placeNavigation(slots, hasPrevious, hasNext);
     placeOverlay(slots, actions);
-    return new RenderedPage(
-        page,
-        slots,
-        actions,
-        paginator.hasPrevious(page),
-        paginator.hasNext(page, scene.perPage()));
+    return new RenderedPage(page, slots, actions, hasPrevious, hasNext);
+  }
+
+  private List<MenuItem> capacity(List<MenuItem> items) {
+    int max = scene.perPage();
+    return items.size() <= max ? items : items.subList(0, max);
   }
 
   private void fillBorder(ItemStack[] slots) {
@@ -137,22 +155,22 @@ public final class PageRenderer {
     actions[slot] = item.action();
   }
 
-  private void placeNavigation(ItemStack[] slots, PageNumber page, Paginator paginator) {
-    placePrevious(slots, page, paginator);
-    placeNext(slots, page, paginator);
+  private void placeNavigation(ItemStack[] slots, boolean hasPrevious, boolean hasNext) {
+    placePrevious(slots, hasPrevious);
+    placeNext(slots, hasNext);
   }
 
-  private void placePrevious(ItemStack[] slots, PageNumber page, Paginator paginator) {
+  private void placePrevious(ItemStack[] slots, boolean hasPrevious) {
     int slot = layout().previousSlot();
-    if (slot < 0 || !paginator.hasPrevious(page)) {
+    if (slot < 0 || !hasPrevious) {
       return;
     }
     slots[slot] = scene.decor().previous();
   }
 
-  private void placeNext(ItemStack[] slots, PageNumber page, Paginator paginator) {
+  private void placeNext(ItemStack[] slots, boolean hasNext) {
     int slot = layout().nextSlot();
-    if (slot < 0 || !paginator.hasNext(page, scene.perPage())) {
+    if (slot < 0 || !hasNext) {
       return;
     }
     slots[slot] = scene.decor().next();

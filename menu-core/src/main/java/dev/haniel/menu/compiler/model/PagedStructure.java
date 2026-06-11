@@ -4,7 +4,7 @@ import dev.haniel.menu.compiler.binding.ArgField;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.StateField;
 import dev.haniel.menu.compiler.binding.UnboundAction;
-import dev.haniel.menu.compiler.binding.UnboundProvider;
+import dev.haniel.menu.compiler.binding.UnboundContent;
 import dev.haniel.menu.compiler.binding.UnboundTick;
 import dev.haniel.menu.compiler.binding.ViewerField;
 import dev.haniel.menu.domain.ButtonId;
@@ -19,7 +19,7 @@ import java.util.Map;
  *
  * @param id the menu id from {@code @Menu}
  * @param instantiator builds a per-player instance
- * @param provider the unbound {@code @Paginated} content handle
+ * @param provider the unbound {@code @Paginated} content source (eager list or lazy page)
  * @param buttons the unbound {@code @Button} actions by logical id
  * @param states the {@code @Reactive} field getters
  * @param ticks the unbound {@code @Tick} handles
@@ -29,7 +29,7 @@ import java.util.Map;
 public record PagedStructure(
     MenuId id,
     Instantiator instantiator,
-    UnboundProvider provider,
+    UnboundContent provider,
     Map<ButtonId, UnboundAction> buttons,
     List<StateField> states,
     List<UnboundTick> ticks,
@@ -49,14 +49,14 @@ public record PagedStructure(
    *
    * @param id the menu id
    * @param instantiator builds a per-player instance
-   * @param provider the unbound paginated content handle
+   * @param provider the unbound paginated content source (eager list or lazy page)
    * @param buttons the unbound button actions by id
    * @param states the reactive field getters
    */
   public PagedStructure(
       MenuId id,
       Instantiator instantiator,
-      UnboundProvider provider,
+      UnboundContent provider,
       Map<ButtonId, UnboundAction> buttons,
       List<StateField> states) {
     this(id, instantiator, provider, buttons, states, List.of(), List.of(), List.of());

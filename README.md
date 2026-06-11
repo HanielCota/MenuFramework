@@ -114,6 +114,7 @@ YAML files live in `plugins/<PluginName>/menus/<id>.yml`.
 |---|---|---|
 | 🧾 | **Static menus** | `@Menu` + `@Button` classes, appearance in YAML. |
 | 📚 | **Pagination** | `@Paginated` provider sliced into pages with a mask layout. |
+| 🗄️ | **Lazy pagination** | Load one page at a time off-thread with `Page<MenuItem> load(int, int)`. |
 | 🏷️ | **Typed open args** | Open a menu *for* a target with `@Arg` and `open(player, id, arg)`. |
 | ⚛️ | **Reactive state** | `@Reactive State<?>` drives coalesced, diff-based re-renders. |
 | ⏱️ | **Auto-update** | `@Tick` runs on a schedule for countdowns & animations. |
@@ -175,6 +176,40 @@ pagination:
   previous-button: { material: ARROW, name: "<yellow>Previous</yellow>" }
   next-button: { material: ARROW, name: "<yellow>Next</yellow>" }
 ```
+
+</details>
+
+<details>
+<summary><b>🗄️ Lazy &amp; asynchronous pagination</b></summary>
+
+<br>
+
+When the data does not fit in memory — a database table, a paged API — return **one page at a time**
+instead of a full `List<MenuItem>`. The `@Paginated` method takes the page index and page size and
+returns a `Page<MenuItem>` (its items plus whether a next page exists). The framework calls it
+**off-thread** (so the query never blocks the main thread) and applies the rendered page back on the
+view's thread; the next-page button is driven by the page's `hasNext`, with no total-count query.
+
+```java
+@Menu(id = "history")
+public final class HistoryMenu {
+
+  @Paginated
+  public Page<MenuItem> load(int page, int pageSize) {
+    // Called off the main thread — a blocking query here is fine.
+    List<Transaction> rows = repository.page(page, pageSize + 1); // ask for one extra
+    boolean hasNext = rows.size() > pageSize;
+    List<MenuItem> items =
+        rows.stream().limit(pageSize).map(this::item).toList();
+    return Page.of(items, hasNext);
+  }
+}
+```
+
+While a page loads the current one stays put (no flicker). Rapid clicks and a refresh mid-load apply
+only the most recently requested page, a load that returns after the menu closes is dropped, and a
+failed load is logged and leaves the view in place. The eager `@Paginated List<MenuItem>` form is
+unchanged — use it for in-memory content, and the lazy form for a real data source.
 
 </details>
 

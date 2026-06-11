@@ -129,7 +129,7 @@ public void onDisable() {
 |-----------|--------|----------------------------|-------|
 | `@Menu` | class | `id` (required), `permission` (default `""`) | `id` must match `[a-z0-9_-]+`, max 64 chars, and equal the YAML file name. |
 | `@Button` | method | `id` (required), `permission` (default `""`), `cooldownMillis` (default `0`) | `id` must match a key under `buttons` in the YAML. Takes 0 or 1 parameter (see below). |
-| `@Paginated` | method | none | Exactly one per paginated menu. Must take no args and return `List<MenuItem>`. |
+| `@Paginated` | method | none | Exactly one per paginated menu. Either eager — no args, returns `List<MenuItem>` — or lazy — `(int page, int pageSize)`, returns `Page<MenuItem>` (loaded off-thread, one page at a time). |
 | `@Reactive` | field | none | Field type must be `State<?>`. Paginated menus only. |
 | `@Viewer` | field | none | Field type must be a non-final, non-static `PlayerId`. The viewer is injected before the first render, so `@Paginated`/`@Button` methods can read it. Paginated menus only. |
 | `@Arg` | field | none | Field type must be a non-final, non-static reference type (never a primitive). The open argument passed to `open(player, id, argument)` is injected into every `@Arg` field it is assignable to, before the first render. Paginated menus only. |
@@ -310,6 +310,31 @@ The argument is injected into every `@Arg` field whose declared type it is assig
 first render**. A menu may declare several `@Arg` fields of different types. Opening without an argument
 leaves the fields at their defaults; opening with an argument that matches **no** `@Arg` field is a
 runtime error, so a type mismatch fails loudly instead of leaving the field silently null.
+
+### Lazy pagination (load one page at a time)
+
+For a data source too large to hold in memory, give the `@Paginated` method the signature
+`Page<MenuItem> load(int page, int pageSize)` instead of `List<MenuItem> ...()`. The framework calls
+it **off the main thread** (a blocking query is fine), one page at a time, and applies the result on
+the view's thread. `Page` carries `hasNext`, so the next-page button works without a total-count query.
+
+```java
+import dev.haniel.menu.domain.Page;
+
+@Paginated
+public Page<MenuItem> load(int page, int pageSize) {
+  // Off-thread: a blocking query here does not touch the main thread.
+  List<Transaction> rows = repository.page(page, pageSize + 1); // ask for one extra to detect a next
+  boolean hasNext = rows.size() > pageSize;
+  return Page.of(rows.stream().limit(pageSize).map(this::item).toList(), hasNext);
+}
+```
+
+The method takes exactly two `int` parameters (page index, page size) and returns `Page<MenuItem>`; a
+one-argument or `List`-returning shape is a boot error. While a page loads the current one stays put;
+rapid navigation and a refresh mid-load apply only the most recently requested page, a load returning
+after the view closes is dropped, and a failed load is logged and leaves the view in place. The eager
+`List<MenuItem>` form is unchanged — use it for in-memory content, the lazy form for a real source.
 
 ## YAML reference
 

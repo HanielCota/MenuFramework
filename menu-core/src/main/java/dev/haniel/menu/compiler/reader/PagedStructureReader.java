@@ -14,6 +14,8 @@ import dev.haniel.menu.compiler.binding.ButtonGuards;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.StateField;
 import dev.haniel.menu.compiler.binding.UnboundAction;
+import dev.haniel.menu.compiler.binding.UnboundContent;
+import dev.haniel.menu.compiler.binding.UnboundPageProvider;
 import dev.haniel.menu.compiler.binding.UnboundProvider;
 import dev.haniel.menu.compiler.binding.UnboundTick;
 import dev.haniel.menu.compiler.binding.ViewerField;
@@ -101,7 +103,7 @@ final class PagedStructureReader {
     return null;
   }
 
-  private UnboundProvider provider(Class<?> type) {
+  private UnboundContent provider(Class<?> type) {
     List<Method> providers =
         ReflectedMembers.methods(type).stream()
             .filter(candidate -> candidate.isAnnotationPresent(Paginated.class))
@@ -112,8 +114,14 @@ final class PagedStructureReader {
     if (providers.size() > 1) {
       throw new InvalidMenuException(type.getName() + " has more than one @Paginated method");
     }
-    Method method = providers.getFirst();
+    return toProvider(providers.getFirst());
+  }
+
+  private UnboundContent toProvider(Method method) {
     validateProvider(method);
+    if (validator.isLazyProvider(method)) {
+      return new UnboundPageProvider(unreflect(method));
+    }
     return new UnboundProvider(unreflect(method));
   }
 

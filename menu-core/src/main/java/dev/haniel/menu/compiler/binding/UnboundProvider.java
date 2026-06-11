@@ -8,7 +8,7 @@ import java.util.Objects;
  *
  * @see #bind(Object)
  */
-public final class UnboundProvider {
+public final class UnboundProvider implements UnboundContent {
 
   private final MethodHandle handle;
 
@@ -27,6 +27,7 @@ public final class UnboundProvider {
    * @param instance the per-player menu instance; never null
    * @return the bound content provider
    */
+  @Override
   public ContentProvider bind(Object instance) {
     return new ContentProvider(handle.bindTo(instance));
   }
