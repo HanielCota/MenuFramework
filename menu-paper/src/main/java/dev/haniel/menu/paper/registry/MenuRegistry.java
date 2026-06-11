@@ -1,10 +1,12 @@
 package dev.haniel.menu.paper.registry;
 
+import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.MenuCompiler;
 import dev.haniel.menu.compiler.model.CompiledMenu;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.discovery.MenuDiscovery;
 import dev.haniel.menu.domain.MenuId;
+import dev.haniel.menu.paper.annotation.RefreshOn;
 import dev.haniel.menu.paper.api.MenuOpener;
 import dev.haniel.menu.paper.discovery.MenuInstantiator;
 import dev.haniel.menu.paper.discovery.MenuScanner;
@@ -245,7 +247,16 @@ public final class MenuRegistry implements MenuOpener {
   private PaperMenu openable(Class<?> sourceType, CompiledMenu<ItemStack> compiled) {
     if (compiled instanceof CompiledPagedMenu<?>) {
       HookDefinitions.of(sourceType);
+      return factory.create(compiled);
     }
+    rejectRefreshOnStaticMenu(sourceType);
     return factory.create(compiled);
+  }
+
+  private void rejectRefreshOnStaticMenu(Class<?> sourceType) {
+    if (sourceType.isAnnotationPresent(RefreshOn.class)) {
+      throw new InvalidMenuException(
+          "@RefreshOn on static menu " + sourceType.getName() + " requires a @Paginated menu");
+    }
   }
 }

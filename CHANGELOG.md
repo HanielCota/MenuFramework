@@ -18,6 +18,15 @@ All notable changes to MenuFramework are documented here. The format follows
   load returning after the view closes is dropped. A failed load is logged and leaves the view in
   place. The eager `@Paginated List<MenuItem>` path is unchanged. The platform `MenuScheduler` gains
   an `async()` executor (Paper async pool, Folia async scheduler) for the off-thread load.
+- **Declarative live refresh (`@RefreshOn`).** Annotate a paginated menu with
+  `@RefreshOn(SomeEvent.class)` and the framework re-renders the open view whenever that Bukkit event
+  fires — re-running the `@Paginated` provider so the menu reflects data it reads but does not own (a
+  balance changed elsewhere, an admin action). The subscription is registered while the view is open
+  and removed on close, so there is no listener to wire or unregister and nothing to forget. This is
+  the declarative counterpart to calling `session(player).refresh()` from a hand-written listener. The
+  annotation lives in the Paper layer (`dev.haniel.menu.paper.annotation.RefreshOn`) because it
+  references Bukkit event types; event registration is abstracted behind `RefreshSubscriber` (Bukkit
+  binding isolated, lifecycle testable without a server). Static menus reject it at boot.
 - **Typed open arguments (`@Arg`).** `MenuFramework.open(player, id, argument)` and
   `open(player, type, argument)` open a paginated menu *for* a target, amount or any typed context.
   The argument is injected into every `@Arg` field whose declared type it is assignable to, before the

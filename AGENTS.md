@@ -136,6 +136,7 @@ public void onDisable() {
 | `@Tick` | method | `period` (ticks, default `20`) | Must take no args and return `void`. `period` must be >= 1. Paginated menus only. |
 | `@OnOpen` | method | none | Takes no args or a single `Player`. Paginated menus only. |
 | `@OnClose` | method | none | Takes no args or a single `Player`. Runs after state and ticks are torn down. Paginated menus only. |
+| `@RefreshOn` | class | `value` (one or more `Class<? extends Event>`, required) | Re-renders the open view when any listed Bukkit event fires. Paper-layer annotation (`dev.haniel.menu.paper.annotation.RefreshOn`). Paginated menus only. |
 
 ### `@Button` method parameters
 
@@ -335,6 +336,32 @@ one-argument or `List`-returning shape is a boot error. While a page loads the c
 rapid navigation and a refresh mid-load apply only the most recently requested page, a load returning
 after the view closes is dropped, and a failed load is logged and leaves the view in place. The eager
 `List<MenuItem>` form is unchanged — use it for in-memory content, the lazy form for a real source.
+
+### RefreshOn (re-render on a Bukkit event)
+
+Re-render the open menu whenever a Bukkit event fires, so it reflects data it reads but does not own
+(a balance changed elsewhere, an admin action) without a hand-written listener that calls `refresh()`.
+
+```java
+import dev.haniel.menu.paper.annotation.RefreshOn;
+
+@Menu(id = "balance")
+@RefreshOn(BalanceChangedEvent.class) // one or more event classes
+public final class BalanceMenu {
+
+  @Paginated
+  public List<MenuItem> items() {
+    return history.recent().stream().map(this::item).toList(); // re-runs when the event fires
+  }
+}
+```
+
+The subscription is registered while the view is open and removed on close, so there is nothing to
+unregister by hand. It re-renders every open view of the menu regardless of which entity the event
+concerns, on the thread the event fires on — pair it with main-thread domain events. For per-target
+precision, call `framework.session(player).refresh()` from your own handler instead. Use `@Reactive`
+for state the menu **owns**; use `@RefreshOn` for external changes it only **reads**. This is a
+Paper-layer annotation (`dev.haniel.menu.paper.annotation.RefreshOn`); static menus reject it at boot.
 
 ## YAML reference
 

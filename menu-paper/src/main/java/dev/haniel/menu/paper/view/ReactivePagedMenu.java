@@ -13,6 +13,7 @@ import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.paper.hook.HookDefinitions;
 import dev.haniel.menu.paper.hook.MenuHooks;
 import dev.haniel.menu.paper.placeholder.ResolvedIconFactory;
+import dev.haniel.menu.paper.refresh.RefreshEvents;
 import dev.haniel.menu.paper.render.PageRenderer;
 import dev.haniel.menu.paper.render.cache.DataVersion;
 import dev.haniel.menu.paper.render.cache.PageCache;
@@ -27,9 +28,12 @@ import dev.haniel.menu.template.PagedContent;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -61,12 +65,15 @@ public final class ReactivePagedMenu implements PaperMenu {
     injectViewer(instance, viewer);
     injectArgs(instance, argument);
     MenuHooks hooks = HookDefinitions.of(instance.getClass()).bind(instance);
+    AtomicReference<Runnable> unsubscribe = new AtomicReference<>(() -> {});
     BoundContent content = plan.wiring().provider().bind(instance);
-    ReactivePagedView view = buildView(instance, viewer, content, hooks, player.getUniqueId());
+    ReactivePagedView view =
+        buildView(instance, viewer, content, hooks, player.getUniqueId(), unsubscribe);
     try {
       view.show(PageNumber.first());
       player.openInventory(view.getInventory());
       view.bind();
+      unsubscribe.set(subscribeRefresh(instance, view));
       hooks.fireOpen(player);
     } catch (RuntimeException exception) {
       view.close();
@@ -75,7 +82,12 @@ public final class ReactivePagedMenu implements PaperMenu {
   }
 
   private ReactivePagedView buildView(
-      Object instance, PlayerId viewer, BoundContent content, MenuHooks hooks, UUID uuid) {
+      Object instance,
+      PlayerId viewer,
+      BoundContent content,
+      MenuHooks hooks,
+      UUID uuid,
+      AtomicReference<Runnable> unsubscribe) {
     PlayerScheduler scheduler = runtime.scheduler().forPlayer(viewer);
     PageRenderer renderer =
         new PageRenderer(
@@ -87,7 +99,7 @@ public final class ReactivePagedMenu implements PaperMenu {
         renderer,
         states(instance),
         ticks(instance),
-        closeHook(hooks, uuid),
+        closeHook(hooks, uuid, unsubscribe),
         scheduler,
         runtime.logger(),
         lazyLoad(content, scheduler));
@@ -107,6 +119,14 @@ public final class ReactivePagedMenu implements PaperMenu {
     plan.wiring().viewers().forEach(field -> field.inject(instance, viewer));
   }
 
+  private Runnable subscribeRefresh(Object instance, ReactivePagedView view) {
+    Set<Class<? extends Event>> events = RefreshEvents.of(instance.getClass());
+    if (events.isEmpty()) {
+      return () -> {};
+    }
+    return runtime.refreshSubscriber().subscribe(events, view::refresh);
+  }
+
   private void injectArgs(Object instance, Object argument) {
     if (argument == null) {
       return;
@@ -124,10 +144,15 @@ public final class ReactivePagedMenu implements PaperMenu {
     matching.forEach(field -> field.inject(instance, argument));
   }
 
-  private Runnable closeHook(MenuHooks hooks, java.util.UUID viewer) {
-    // Pass the viewer even when offline (a close fired by the quit backstop): no-arg @OnClose
-    // handlers still run their cleanup, while Player-accepting ones are skipped by MenuHooks.
-    return () -> hooks.fireClose(org.bukkit.Bukkit.getPlayer(viewer));
+  private Runnable closeHook(MenuHooks hooks, UUID viewer, AtomicReference<Runnable> unsubscribe) {
+    // Cancel the @RefreshOn subscription first (anti-leak), then fire @OnClose. Pass the viewer
+    // even
+    // when offline (a close fired by the quit backstop): no-arg @OnClose handlers still run their
+    // cleanup, while Player-accepting ones are skipped by MenuHooks.
+    return () -> {
+      unsubscribe.get().run();
+      hooks.fireClose(org.bukkit.Bukkit.getPlayer(viewer));
+    };
   }
 
   private PageScene scene(Object instance, PlayerId viewer, BoundContent content) {
