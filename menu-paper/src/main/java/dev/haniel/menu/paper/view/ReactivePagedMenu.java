@@ -1,6 +1,8 @@
 package dev.haniel.menu.paper.view;
 
 import dev.haniel.menu.action.MenuAction;
+import dev.haniel.menu.compiler.InvalidMenuException;
+import dev.haniel.menu.compiler.binding.ArgField;
 import dev.haniel.menu.compiler.binding.BoundTick;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.domain.PageNumber;
@@ -48,10 +50,11 @@ public final class ReactivePagedMenu implements PaperMenu {
   }
 
   @Override
-  public void open(Player player) {
+  public void open(Player player, Object argument) {
     Object instance = plan.wiring().instantiator().create();
     PlayerId viewer = new PlayerId(player.getUniqueId());
     injectViewer(instance, viewer);
+    injectArgs(instance, argument);
     MenuHooks hooks = HookDefinitions.of(instance.getClass()).bind(instance);
     PageRenderer renderer =
         new PageRenderer(
@@ -80,6 +83,23 @@ public final class ReactivePagedMenu implements PaperMenu {
 
   private void injectViewer(Object instance, PlayerId viewer) {
     plan.wiring().viewers().forEach(field -> field.inject(instance, viewer));
+  }
+
+  private void injectArgs(Object instance, Object argument) {
+    if (argument == null) {
+      return;
+    }
+    List<ArgField> matching =
+        plan.wiring().args().stream().filter(field -> field.accepts(argument)).toList();
+    if (matching.isEmpty()) {
+      throw new InvalidMenuException(
+          "Menu '"
+              + plan.appearance().id().value()
+              + "' was opened with an argument of type "
+              + argument.getClass().getName()
+              + " but declares no matching @Arg field");
+    }
+    matching.forEach(field -> field.inject(instance, argument));
   }
 
   private Runnable closeHook(MenuHooks hooks, java.util.UUID viewer) {

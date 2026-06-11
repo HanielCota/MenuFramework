@@ -78,6 +78,21 @@ public final class MenuFramework {
   }
 
   /**
+   * Opens a registered menu by id, passing it a typed open argument.
+   *
+   * <p>The argument is injected into any {@code @Arg} field of a paginated menu before its first
+   * render, so the menu can be opened "for" a target, an amount or any context without a
+   * hand-rolled session carrier. See {@link dev.haniel.menu.annotation.Arg}.
+   *
+   * @param player the viewer; never null
+   * @param id the menu id; never null
+   * @param argument the open argument, or {@code null} for none
+   */
+  public void open(Player player, MenuId id, Object argument) {
+    registry.open(player, id, argument);
+  }
+
+  /**
    * Opens a registered menu by its annotated class.
    *
    * @param player the viewer; never null
@@ -85,6 +100,17 @@ public final class MenuFramework {
    */
   public void open(Player player, Class<?> menuType) {
     registry.open(player, menuType);
+  }
+
+  /**
+   * Opens a registered menu by its annotated class, passing it a typed open argument.
+   *
+   * @param player the viewer; never null
+   * @param menuType the registered menu class; never null
+   * @param argument the open argument, or {@code null} for none
+   */
+  public void open(Player player, Class<?> menuType, Object argument) {
+    registry.open(player, menuType, argument);
   }
 
   /**

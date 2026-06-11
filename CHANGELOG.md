@@ -4,6 +4,25 @@ All notable changes to MenuFramework are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Typed open arguments (`@Arg`).** `MenuFramework.open(player, id, argument)` and
+  `open(player, type, argument)` open a paginated menu *for* a target, amount or any typed context.
+  The argument is injected into every `@Arg` field whose declared type it is assignable to, before the
+  first `@Paginated` render (mirroring `@Viewer`), so a menu can be opened with context without a
+  hand-rolled session carrier between menus. A `@Arg` field must be a non-final, non-static reference
+  type; static menus reject the annotation. Opening with an argument that matches no `@Arg` field is a
+  loud `InvalidMenuException`, so a type mismatch fails fast instead of leaving the field silently
+  null. The `MenuOpener` navigation interface is unchanged; the argument overloads live on the
+  `MenuFramework` facade and `MenuRegistry`.
+
+### Changed
+
+- **`PaperMenu.open` signature.** `open(Player)` is now a default that delegates to the new
+  `open(Player, Object argument)`. Internal callers and the no-argument facade methods are unaffected.
+
 ## [0.2.0] - 2026-06-09
 
 ### Added
@@ -57,6 +76,7 @@ All notable changes to MenuFramework are documented here. The format follows
   are rejected at boot with a clear `InvalidMenuException`, discovery aggregates all bad menus, and
   `@OnOpen`/`@OnClose` accept only an exact `Player` parameter.
 
+[Unreleased]: https://github.com/HanielCota/MenuFramework/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/HanielCota/MenuFramework/releases/tag/v0.2.0
 
 ## [0.1.0] - 2026-06-07

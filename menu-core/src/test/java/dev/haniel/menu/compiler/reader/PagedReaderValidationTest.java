@@ -1,8 +1,10 @@
 package dev.haniel.menu.compiler.reader;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import dev.haniel.menu.annotation.Arg;
 import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.Paginated;
@@ -106,6 +108,39 @@ class PagedReaderValidationTest {
     reader.read(ViewerMenu.class).viewers().forEach(field -> field.inject(instance, injected));
 
     assertTrue(((ViewerMenu) instance).viewer == injected, "viewer must be written into the field");
+  }
+
+  @Test
+  void acceptsArgField() {
+    String passed = "target-player";
+    Object instance = reader.read(ArgMenu.class).instantiator().create();
+    reader.read(ArgMenu.class).args().forEach(field -> field.inject(instance, passed));
+
+    assertTrue(
+        ((ArgMenu) instance).target == passed, "the open argument must be written into @Arg");
+  }
+
+  @Test
+  void argFieldAcceptsOnlyAssignableNonNullValues() {
+    var field = reader.read(ArgMenu.class).args().getFirst();
+
+    assertTrue(field.accepts("text"));
+    assertFalse(field.accepts(42), "a value of the wrong type must not be accepted");
+    assertFalse(field.accepts(null), "a missing value must not be accepted");
+  }
+
+  @Test
+  void rejectsPrimitiveArgField() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(PrimitiveArgMenu.class));
+    assertTrue(error.getMessage().contains("reference type"));
+  }
+
+  @Test
+  void rejectsFinalArgField() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(FinalArgMenu.class));
+    assertTrue(error.getMessage().contains("non-final"));
   }
 
   @Test
@@ -258,6 +293,39 @@ class PagedReaderValidationTest {
   static final class ViewerMenu {
 
     @Viewer PlayerId viewer;
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+  }
+
+  @Menu(id = "arg")
+  static final class ArgMenu {
+
+    @Arg String target;
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+  }
+
+  @Menu(id = "primitive-arg")
+  static final class PrimitiveArgMenu {
+
+    @Arg int amount;
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+  }
+
+  @Menu(id = "final-arg")
+  static final class FinalArgMenu {
+
+    @Arg final String target = null;
 
     @Paginated
     List<MenuItem> items() {

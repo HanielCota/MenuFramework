@@ -1,6 +1,7 @@
 package dev.haniel.menu.compiler.reader;
 
 import dev.haniel.menu.action.ButtonArguments;
+import dev.haniel.menu.annotation.Arg;
 import dev.haniel.menu.annotation.Button;
 import dev.haniel.menu.annotation.Menu;
 import dev.haniel.menu.annotation.Paginated;
@@ -8,6 +9,7 @@ import dev.haniel.menu.annotation.Reactive;
 import dev.haniel.menu.annotation.Tick;
 import dev.haniel.menu.annotation.Viewer;
 import dev.haniel.menu.compiler.InvalidMenuException;
+import dev.haniel.menu.compiler.binding.ArgField;
 import dev.haniel.menu.compiler.binding.ButtonGuards;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.StateField;
@@ -54,7 +56,13 @@ final class PagedStructureReader {
 
   PagedMetadata readMetadata(Class<?> type) {
     return new PagedMetadata(
-        readId(type), provider(type), buttons(type), states(type), ticks(type), viewers(type));
+        readId(type),
+        provider(type),
+        buttons(type),
+        states(type),
+        ticks(type),
+        viewers(type),
+        args(type));
   }
 
   @SuppressWarnings("java:S3011") // Menu annotations intentionally support private constructors.
@@ -157,6 +165,13 @@ final class PagedStructureReader {
         .toList();
   }
 
+  private List<ArgField> args(Class<?> type) {
+    return ReflectedMembers.fields(type).stream()
+        .filter(field -> field.isAnnotationPresent(Arg.class))
+        .map(this::argField)
+        .toList();
+  }
+
   private List<UnboundTick> ticks(Class<?> type) {
     return ReflectedMembers.methods(type).stream()
         .filter(method -> method.isAnnotationPresent(Tick.class))
@@ -195,6 +210,18 @@ final class PagedStructureReader {
     }
   }
 
+  @SuppressWarnings("java:S3011") // Arg fields may be private implementation details.
+  private ArgField argField(Field field) {
+    validateArgField(field);
+    try {
+      field.setAccessible(true);
+      MethodHandle setter = MethodHandles.lookup().unreflectSetter(field);
+      return new ArgField(field.getName(), field.getType(), setter);
+    } catch (IllegalAccessException exception) {
+      throw new InvalidMenuException("Cannot access @Arg field " + field.getName(), exception);
+    }
+  }
+
   private void validateProvider(Method method) {
     validator.requirePaginatedProvider(method);
   }
@@ -212,6 +239,17 @@ final class PagedStructureReader {
     if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
       throw new InvalidMenuException(
           "@Viewer field " + field.getName() + " must be non-final and non-static");
+    }
+  }
+
+  private void validateArgField(Field field) {
+    if (field.getType().isPrimitive()) {
+      throw new InvalidMenuException(
+          "@Arg field " + field.getName() + " must be a reference type, not a primitive");
+    }
+    if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+      throw new InvalidMenuException(
+          "@Arg field " + field.getName() + " must be non-final and non-static");
     }
   }
 

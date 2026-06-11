@@ -10,7 +10,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.haniel.menu.annotation.Arg;
 import dev.haniel.menu.annotation.Viewer;
+import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.UnboundProvider;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
@@ -127,6 +129,64 @@ class ReactivePagedMenuEdgeCasesTest {
         "the @Paginated provider must already know the viewer on the first render");
   }
 
+  @Test
+  void argumentIsInjectedBeforeTheFirstPaginatedRender() {
+    AtomicReference<String> seenAtRender = new AtomicReference<>();
+    ReactivePagedMenu menu = argAwareMenu(seenAtRender);
+
+    menu.open(player(), "target-player");
+
+    assertEquals(
+        "target-player",
+        seenAtRender.get(),
+        "the @Paginated provider must already see the open argument on the first render");
+  }
+
+  @Test
+  void openingWithAnArgumentNoFieldAcceptsFailsLoudlyAndOpensNothing() {
+    ReactivePagedMenu menu = menu(countingInstantiator(new AtomicInteger()), inventoryFactory());
+    Player player = player();
+
+    assertThrows(InvalidMenuException.class, () -> menu.open(player, 42));
+    verify(player, never()).openInventory(any(Inventory.class));
+  }
+
+  private static ReactivePagedMenu argAwareMenu(AtomicReference<String> sink) {
+    PagedWiring wiring =
+        new PagedWiring(
+            new Instantiator(() -> new ArgProbe(sink)),
+            argProvider(),
+            Map.of(),
+            List.of(),
+            List.of(),
+            List.of(),
+            argFields());
+    CompiledPagedMenu<ItemStack> plan = new CompiledPagedMenu<>(appearance(), wiring);
+    return new ReactivePagedMenu(plan, runtime(new RecordingScheduler(), inventoryFactory()));
+  }
+
+  private static UnboundProvider argProvider() {
+    try {
+      Method products = ArgProbe.class.getDeclaredMethod("products");
+      products.setAccessible(true);
+      return new UnboundProvider(MethodHandles.lookup().unreflect(products));
+    } catch (ReflectiveOperationException error) {
+      throw new IllegalStateException(error);
+    }
+  }
+
+  private static List<dev.haniel.menu.compiler.binding.ArgField> argFields() {
+    try {
+      java.lang.reflect.Field field = ArgProbe.class.getDeclaredField("target");
+      field.setAccessible(true);
+      return List.of(
+          new dev.haniel.menu.compiler.binding.ArgField(
+              "target", String.class, MethodHandles.lookup().unreflectSetter(field)));
+    } catch (ReflectiveOperationException error) {
+      throw new IllegalStateException(error);
+    }
+  }
+
   private static ReactivePagedMenu viewerAwareMenu(AtomicReference<PlayerId> sink) {
     PagedWiring wiring =
         new PagedWiring(
@@ -135,7 +195,8 @@ class ReactivePagedMenuEdgeCasesTest {
             Map.of(),
             List.of(),
             List.of(),
-            viewerFields());
+            viewerFields(),
+            List.of());
     CompiledPagedMenu<ItemStack> plan = new CompiledPagedMenu<>(appearance(), wiring);
     return new ReactivePagedMenu(plan, runtime(new RecordingScheduler(), inventoryFactory()));
   }
@@ -266,6 +327,22 @@ class ReactivePagedMenuEdgeCasesTest {
     @SuppressWarnings("unused") // bound reflectively as the paginated provider
     private List<MenuItem> products() {
       sink.set(viewer);
+      return List.of(MenuItem.of(Icon.of("STONE")));
+    }
+  }
+
+  /** A paginated menu that captures its injected {@code @Arg} the moment it renders. */
+  private static final class ArgProbe {
+    @Arg private String target;
+    private final AtomicReference<String> sink;
+
+    ArgProbe(AtomicReference<String> sink) {
+      this.sink = sink;
+    }
+
+    @SuppressWarnings("unused") // bound reflectively as the paginated provider
+    private List<MenuItem> products() {
+      sink.set(target);
       return List.of(MenuItem.of(Icon.of("STONE")));
     }
   }

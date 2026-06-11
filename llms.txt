@@ -1,9 +1,9 @@
 # MenuFramework
 
 > Annotation-driven inventory menu framework for Paper and Folia Minecraft plugins. Menu behaviour
-> lives in annotated Java classes (`@Menu`, `@Button`, `@Paginated`, `@Reactive`, `@Viewer`, `@Tick`,
-> `@OnOpen`, `@OnClose`); menu appearance lives in YAML files. The framework compiles both at boot,
-> renders by diff, supports per-player reactive state, and hot-reloads YAML at runtime.
+> lives in annotated Java classes (`@Menu`, `@Button`, `@Paginated`, `@Reactive`, `@Viewer`, `@Arg`,
+> `@Tick`, `@OnOpen`, `@OnClose`); menu appearance lives in YAML files. The framework compiles both at
+> boot, renders by diff, supports per-player reactive state, and hot-reloads YAML at runtime.
 
 When generating a plugin that uses MenuFramework, read AGENTS.md first. It is the complete and
 verified API reference: every annotation and its parameters, every YAML key and default, method

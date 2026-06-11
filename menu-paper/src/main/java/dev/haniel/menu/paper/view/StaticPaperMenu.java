@@ -23,7 +23,7 @@ public final class StaticPaperMenu implements PaperMenu {
   }
 
   @Override
-  public void open(Player player) {
+  public void open(Player player, Object argument) {
     MenuHolder holder = new MenuHolder(menuId, view.template(), view.title());
     player.openInventory(holder.getInventory());
   }

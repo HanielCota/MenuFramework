@@ -114,6 +114,7 @@ YAML files live in `plugins/<PluginName>/menus/<id>.yml`.
 |---|---|---|
 | 🧾 | **Static menus** | `@Menu` + `@Button` classes, appearance in YAML. |
 | 📚 | **Pagination** | `@Paginated` provider sliced into pages with a mask layout. |
+| 🏷️ | **Typed open args** | Open a menu *for* a target with `@Arg` and `open(player, id, arg)`. |
 | ⚛️ | **Reactive state** | `@Reactive State<?>` drives coalesced, diff-based re-renders. |
 | ⏱️ | **Auto-update** | `@Tick` runs on a schedule for countdowns & animations. |
 | 🪝 | **Lifecycle hooks** | `@OnOpen` / `@OnClose` run as the view opens and closes. |
@@ -174,6 +175,39 @@ pagination:
   previous-button: { material: ARROW, name: "<yellow>Previous</yellow>" }
   next-button: { material: ARROW, name: "<yellow>Next</yellow>" }
 ```
+
+</details>
+
+<details>
+<summary><b>🏷️ Typed open arguments</b></summary>
+
+<br>
+
+Open a paginated menu *for* a target, an amount or any typed context with `open(player, id, argument)`
+and receive it in an `@Arg` field — no hand-rolled session carrier between menus. The argument is
+injected before the first `@Paginated` render, so the provider already sees it.
+
+```java
+@Menu(id = "profile")
+public final class ProfileMenu {
+
+  @Arg private ProfileTarget target; // non-final, non-static reference type
+
+  @Paginated
+  public List<MenuItem> items() {
+    return profiles.of(target).stream().map(this::item).toList(); // target is set before this runs
+  }
+}
+```
+
+```java
+// Application code or a @Button handler:
+framework.open(viewer, new MenuId("profile"), new ProfileTarget(otherPlayerId));
+```
+
+A menu may declare several `@Arg` fields of different types. Opening without an argument leaves the
+fields at their defaults; an argument that matches no `@Arg` field is a loud error, so a type mismatch
+never leaves a field silently null.
 
 </details>
 
