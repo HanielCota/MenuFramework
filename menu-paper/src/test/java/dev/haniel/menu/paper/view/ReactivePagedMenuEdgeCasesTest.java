@@ -499,6 +499,11 @@ class ReactivePagedMenuEdgeCasesTest {
       return Runnable::run;
     }
 
+    @Override
+    public Executor async() {
+      return Runnable::run;
+    }
+
     private static ScheduledTask immediateTask() {
       return new ScheduledTask() {
         @Override
@@ -565,6 +570,11 @@ class ReactivePagedMenuEdgeCasesTest {
 
     @Override
     public java.util.concurrent.Executor global() {
+      return Runnable::run;
+    }
+
+    @Override
+    public java.util.concurrent.Executor async() {
       return Runnable::run;
     }
 

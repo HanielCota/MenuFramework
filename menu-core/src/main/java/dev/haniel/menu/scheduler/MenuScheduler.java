@@ -29,4 +29,13 @@ public interface MenuScheduler {
    * @return the global executor; never null
    */
   Executor global();
+
+  /**
+   * Returns an executor that runs tasks off the server's main/region threads, for blocking work
+   * such as loading a lazily paginated page from a database. Tasks here must never touch the Bukkit
+   * API; hop back to {@link #forPlayer(PlayerId)} or {@link #global()} to apply their result.
+   *
+   * @return the asynchronous executor; never null
+   */
+  Executor async();
 }

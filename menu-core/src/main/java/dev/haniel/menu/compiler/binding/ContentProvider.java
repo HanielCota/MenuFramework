@@ -3,6 +3,7 @@ package dev.haniel.menu.compiler.binding;
 import dev.haniel.menu.action.MenuActionException;
 import dev.haniel.menu.item.MenuItem;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Objects;
 
@@ -16,7 +17,7 @@ import java.util.Objects;
  * {@code @Paginated} method performs expensive work (database queries, filtering, sorting), cache
  * the result in your menu class and invalidate it when the underlying data changes.
  */
-public final class ContentProvider {
+public final class ContentProvider implements BoundContent {
 
   private final MethodHandle handle;
 
@@ -27,6 +28,19 @@ public final class ContentProvider {
    */
   public ContentProvider(MethodHandle handle) {
     this.handle = Objects.requireNonNull(handle, "handle");
+  }
+
+  /**
+   * Returns a provider that always yields no items.
+   *
+   * <p>Used as the eager source of a lazy ({@link PageProvider}-backed) menu, whose visuals still
+   * flow through the shared rendering path but whose items come from the page provider, so this
+   * provider's {@link #provide()} is never invoked.
+   *
+   * @return an empty content provider
+   */
+  public static ContentProvider empty() {
+    return new ContentProvider(MethodHandles.constant(List.class, List.of()));
   }
 
   /**

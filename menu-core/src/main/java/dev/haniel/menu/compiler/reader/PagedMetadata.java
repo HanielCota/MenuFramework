@@ -4,7 +4,7 @@ import dev.haniel.menu.compiler.binding.ArgField;
 import dev.haniel.menu.compiler.binding.Instantiator;
 import dev.haniel.menu.compiler.binding.StateField;
 import dev.haniel.menu.compiler.binding.UnboundAction;
-import dev.haniel.menu.compiler.binding.UnboundProvider;
+import dev.haniel.menu.compiler.binding.UnboundContent;
 import dev.haniel.menu.compiler.binding.UnboundTick;
 import dev.haniel.menu.compiler.binding.ViewerField;
 import dev.haniel.menu.compiler.model.PagedStructure;
@@ -21,7 +21,7 @@ import java.util.Map;
  */
 record PagedMetadata(
     MenuId id,
-    UnboundProvider provider,
+    UnboundContent provider,
     Map<ButtonId, UnboundAction> buttons,
     List<StateField> states,
     List<UnboundTick> ticks,

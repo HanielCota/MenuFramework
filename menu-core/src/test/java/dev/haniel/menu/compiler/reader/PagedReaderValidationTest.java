@@ -1,6 +1,7 @@
 package dev.haniel.menu.compiler.reader;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +13,9 @@ import dev.haniel.menu.annotation.Reactive;
 import dev.haniel.menu.annotation.Tick;
 import dev.haniel.menu.annotation.Viewer;
 import dev.haniel.menu.compiler.InvalidMenuException;
+import dev.haniel.menu.compiler.binding.UnboundPageProvider;
+import dev.haniel.menu.compiler.binding.UnboundProvider;
+import dev.haniel.menu.domain.Page;
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.item.MenuItem;
 import java.util.List;
@@ -57,6 +61,23 @@ class PagedReaderValidationTest {
   @Test
   void rejectsProviderWithWrongListElement() {
     assertThrows(InvalidMenuException.class, () -> reader.read(ProviderWrongElementMenu.class));
+  }
+
+  @Test
+  void detectsLazyPageProvider() {
+    assertInstanceOf(UnboundPageProvider.class, reader.read(LazyPageMenu.class).provider());
+  }
+
+  @Test
+  void detectsEagerListProvider() {
+    assertInstanceOf(UnboundProvider.class, reader.read(EagerListMenu.class).provider());
+  }
+
+  @Test
+  void rejectsLazyProviderMissingThePageSizeParameter() {
+    InvalidMenuException error =
+        assertThrows(InvalidMenuException.class, () -> reader.read(OneIntLazyMenu.class));
+    assertTrue(error.getMessage().contains("Page<MenuItem>"));
   }
 
   @Test
@@ -217,6 +238,33 @@ class PagedReaderValidationTest {
     @Paginated
     List<String> items() {
       return List.of();
+    }
+  }
+
+  @Menu(id = "lazy")
+  static final class LazyPageMenu {
+
+    @Paginated
+    Page<MenuItem> load(int page, int pageSize) {
+      return Page.of(List.of(), false);
+    }
+  }
+
+  @Menu(id = "eager-list")
+  static final class EagerListMenu {
+
+    @Paginated
+    List<MenuItem> items() {
+      return List.of();
+    }
+  }
+
+  @Menu(id = "one-int-lazy")
+  static final class OneIntLazyMenu {
+
+    @Paginated
+    Page<MenuItem> load(int page) {
+      return Page.of(List.of(), false);
     }
   }
 

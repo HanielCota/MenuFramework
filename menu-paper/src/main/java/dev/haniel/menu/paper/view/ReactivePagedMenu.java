@@ -3,7 +3,10 @@ package dev.haniel.menu.paper.view;
 import dev.haniel.menu.action.MenuAction;
 import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.compiler.binding.ArgField;
+import dev.haniel.menu.compiler.binding.BoundContent;
 import dev.haniel.menu.compiler.binding.BoundTick;
+import dev.haniel.menu.compiler.binding.ContentProvider;
+import dev.haniel.menu.compiler.binding.PageProvider;
 import dev.haniel.menu.compiler.model.CompiledPagedMenu;
 import dev.haniel.menu.domain.PageNumber;
 import dev.haniel.menu.domain.PlayerId;
@@ -16,6 +19,7 @@ import dev.haniel.menu.paper.render.cache.DataVersion;
 import dev.haniel.menu.paper.render.cache.PageCache;
 import dev.haniel.menu.paper.render.model.Overlay;
 import dev.haniel.menu.paper.render.model.PageScene;
+import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.state.State;
 import dev.haniel.menu.state.StateBinding;
 import dev.haniel.menu.template.IconFactory;
@@ -62,20 +66,9 @@ public final class ReactivePagedMenu implements PaperMenu {
     injectArgs(instance, argument);
     MenuHooks hooks = HookDefinitions.of(instance.getClass()).bind(instance);
     AtomicReference<Runnable> unsubscribe = new AtomicReference<>(() -> {});
-    PageRenderer renderer =
-        new PageRenderer(
-            scene(instance, viewer),
-            new PageCache(runtime.logger()),
-            new DataVersion(),
-            runtime.inventories());
+    BoundContent content = plan.wiring().provider().bind(instance);
     ReactivePagedView view =
-        new ReactivePagedView(
-            renderer,
-            states(instance),
-            ticks(instance),
-            closeHook(hooks, player.getUniqueId(), unsubscribe),
-            runtime.scheduler().forPlayer(viewer),
-            runtime.logger());
+        buildView(instance, viewer, content, hooks, player.getUniqueId(), unsubscribe);
     try {
       view.show(PageNumber.first());
       player.openInventory(view.getInventory());
@@ -86,6 +79,40 @@ public final class ReactivePagedMenu implements PaperMenu {
       view.close();
       throw exception;
     }
+  }
+
+  private ReactivePagedView buildView(
+      Object instance,
+      PlayerId viewer,
+      BoundContent content,
+      MenuHooks hooks,
+      UUID uuid,
+      AtomicReference<Runnable> unsubscribe) {
+    PlayerScheduler scheduler = runtime.scheduler().forPlayer(viewer);
+    PageRenderer renderer =
+        new PageRenderer(
+            scene(instance, viewer, content),
+            new PageCache(runtime.logger()),
+            new DataVersion(),
+            runtime.inventories());
+    return new ReactivePagedView(
+        renderer,
+        states(instance),
+        ticks(instance),
+        closeHook(hooks, uuid, unsubscribe),
+        scheduler,
+        runtime.logger(),
+        lazyLoad(content, scheduler));
+  }
+
+  private LazyPageLoad lazyLoad(BoundContent content, PlayerScheduler scheduler) {
+    if (!(content instanceof PageProvider pageProvider)) {
+      return null;
+    }
+    int pageSize = plan.appearance().layout().contentSlotCount();
+    LazyLoadContext context =
+        new LazyLoadContext(runtime.scheduler().async(), scheduler, runtime.logger());
+    return new LazyPageLoad(pageProvider, pageSize, context);
   }
 
   private void injectViewer(Object instance, PlayerId viewer) {
@@ -128,7 +155,7 @@ public final class ReactivePagedMenu implements PaperMenu {
     };
   }
 
-  private PageScene scene(Object instance, PlayerId viewer) {
+  private PageScene scene(Object instance, PlayerId viewer, BoundContent content) {
     PagedAppearance<ItemStack> appearance = plan.appearance();
     String title = runtime.placeholders().resolve(viewer, appearance.title());
     return new PageScene(
@@ -137,14 +164,16 @@ public final class ReactivePagedMenu implements PaperMenu {
         appearance.size(),
         appearance.layout(),
         appearance.decor(),
-        content(instance, viewer),
+        content(content, viewer),
         overlay(instance));
   }
 
-  private PagedContent<ItemStack> content(Object instance, PlayerId viewer) {
+  private PagedContent<ItemStack> content(BoundContent content, PlayerId viewer) {
     IconFactory<ItemStack> icons =
         new ResolvedIconFactory(runtime.icons(), runtime.placeholders(), viewer);
-    return new PagedContent<>(plan.wiring().provider().bind(instance), icons);
+    ContentProvider provider =
+        content instanceof ContentProvider eager ? eager : ContentProvider.empty();
+    return new PagedContent<>(provider, icons);
   }
 
   private Overlay overlay(Object instance) {
