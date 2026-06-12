@@ -2,14 +2,17 @@ package dev.haniel.menu.paper.registry;
 
 import dev.haniel.menu.compiler.MenuCompiler;
 import dev.haniel.menu.compiler.model.CompiledMenu;
-import dev.haniel.menu.compiler.model.CompiledPagedMenu;
+import dev.haniel.menu.compiler.model.CompiledStaticMenu;
 import dev.haniel.menu.config.MenuConfig;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.hook.HookDefinitions;
 import dev.haniel.menu.paper.view.MenuFactory;
 import dev.haniel.menu.paper.view.PaperMenu;
+import dev.haniel.menu.paper.view.StaticPaperMenu;
+import dev.haniel.menu.paper.visibility.StaticVisibility;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -76,7 +79,7 @@ final class MenuReloader {
   private void reloadInto(
       RegisteredMenu menu, List<MenuId> reloaded, List<ReloadFailure> failures) {
     try {
-      menu.swap(openable(menu.sourceType(), compile(menu)));
+      menu.swap(openable(menu, compile(menu)));
       reloaded.add(menu.id());
     } catch (RuntimeException exception) {
       logger.log(Level.WARNING, "Failed to reload menu '" + menu.id().value() + "'", exception);
@@ -112,7 +115,7 @@ final class MenuReloader {
       PreparedReload reload, List<MenuId> reloaded, List<ReloadFailure> failures) {
     try {
       RegisteredMenu menu = reload.menu();
-      menu.swap(openable(menu.sourceType(), compile(menu, reload.config())));
+      menu.swap(openable(menu, compile(menu, reload.config())));
       reloaded.add(menu.id());
     } catch (RuntimeException exception) {
       MenuId id = reload.menu().id();
@@ -121,11 +124,21 @@ final class MenuReloader {
     }
   }
 
-  private PaperMenu openable(Class<?> sourceType, CompiledMenu<ItemStack> compiled) {
-    if (compiled instanceof CompiledPagedMenu<?>) {
-      HookDefinitions.of(sourceType);
+  private PaperMenu openable(RegisteredMenu menu, CompiledMenu<ItemStack> compiled) {
+    if (compiled instanceof CompiledStaticMenu<ItemStack> staticMenu) {
+      return withVisibility(factory.create(compiled), menu, staticMenu.buttonSlots());
     }
+    HookDefinitions.of(menu.sourceType());
     return factory.create(compiled);
+  }
+
+  private PaperMenu withVisibility(
+      PaperMenu openable, RegisteredMenu menu, Map<String, Integer> buttonSlots) {
+    if (openable instanceof StaticPaperMenu staticView) {
+      return staticView.withVisibility(
+          StaticVisibility.of(menu.sourceType(), menu.createSource(), buttonSlots));
+    }
+    return openable;
   }
 
   private CompiledMenu<ItemStack> compile(RegisteredMenu menu) {

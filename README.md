@@ -76,7 +76,36 @@ dependencies {
 }
 ```
 
-### 2. Bootstrap it in `onEnable`
+### 2. Create a menu
+
+A menu is a class (behaviour) plus a YAML file (appearance) that share one id:
+
+```java
+@Menu(id = "main")
+public final class MainMenu {
+
+  @Button(id = "play")
+  public void play(MenuClick click) {
+    click.player().performCommand("spawn");
+    click.close();
+  }
+}
+```
+
+```yaml
+# src/main/resources/menus/main.yml
+title: "<gradient:#37e8a5:#4f8cff>Main Menu</gradient>"
+rows: 3
+buttons:
+  play:
+    slot: 13
+    material: DIAMOND_SWORD
+    name: "<green>Play</green>"
+    lore:
+      - "<gray>Teleport to spawn.</gray>"
+```
+
+### 3. Bootstrap it in `onEnable`
 
 ```java
 MenuFramework framework =
@@ -94,13 +123,16 @@ public void onDisable() {
 }
 ```
 
-### 3. Open a menu
+### 4. Open a menu
 
 ```java
-framework.open(player, new MenuId("main"));
+framework.open(player, MainMenu.class);       // by class — type-safe, preferred
+framework.open(player, new MenuId("main"));    // by id — when the id is dynamic
 ```
 
-YAML files live in `plugins/<PluginName>/menus/<id>.yml`.
+YAML files live in `plugins/<PluginName>/menus/<id>.yml`. Ship them under your plugin's
+`src/main/resources/menus/` and the framework copies any that are missing on first boot — no manual
+`saveResource` calls, no file list to keep in sync. Existing files are never overwritten.
 
 > 🤖 **Using an AI assistant?** Point it at [`AGENTS.md`](AGENTS.md), a complete and verified API
 > reference written for code-generating tools, and [`docs/menu.schema.json`](docs/menu.schema.json)

@@ -1,5 +1,7 @@
 package dev.haniel.menu.paper;
 
+import dev.haniel.menu.annotation.Menu;
+import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.anvil.AnvilPromptListener;
 import dev.haniel.menu.paper.anvil.AnvilPrompts;
 import dev.haniel.menu.paper.api.MenuErrorHandler;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -27,6 +30,7 @@ public final class MenuFrameworkBuilder {
   private Path menusDirectory;
   private MenuScheduler scheduler;
   private MenuErrorHandler errorHandler;
+  private boolean bundleMenus = true;
   private boolean built;
 
   MenuFrameworkBuilder(JavaPlugin plugin) {
@@ -86,6 +90,23 @@ public final class MenuFrameworkBuilder {
    */
   public MenuFrameworkBuilder onActionError(MenuErrorHandler errorHandler) {
     this.errorHandler = Objects.requireNonNull(errorHandler, "errorHandler");
+    return this;
+  }
+
+  /**
+   * Controls whether each registered menu's bundled {@code menus/<id>.yml} resource is copied from
+   * the jar into the data folder at boot.
+   *
+   * <p>Enabled by default, so a plugin that ships its menu YAMLs under {@code resources/menus/} no
+   * longer needs to list them or call {@code saveResource} by hand. Saving never overwrites an
+   * existing file. Ignored when a custom {@link #menusDirectory(Path)} is set, since the bundled
+   * resource layout is only known for the default directory.
+   *
+   * @param bundleMenus {@code true} to auto-save bundled menu YAMLs; {@code false} to disable
+   * @return this builder
+   */
+  public MenuFrameworkBuilder bundleMenus(boolean bundleMenus) {
+    this.bundleMenus = bundleMenus;
     return this;
   }
 
@@ -155,6 +176,21 @@ public final class MenuFrameworkBuilder {
     if (basePackages.isEmpty()) {
       return;
     }
-    scanner.scanTypes(Set.copyOf(basePackages), registry::register);
+    scanner.scanTypes(Set.copyOf(basePackages), registrar(registry));
+  }
+
+  private Consumer<Class<?>> registrar(MenuRegistry registry) {
+    if (!shouldBundleMenus()) {
+      return registry::register;
+    }
+    BundledMenus bundled = new BundledMenus(plugin);
+    return type -> {
+      bundled.saveIfBundled(new MenuId(type.getAnnotation(Menu.class).id()));
+      registry.register(type);
+    };
+  }
+
+  private boolean shouldBundleMenus() {
+    return bundleMenus && menusDirectory == null;
   }
 }

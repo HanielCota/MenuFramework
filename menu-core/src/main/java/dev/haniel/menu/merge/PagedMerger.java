@@ -74,7 +74,14 @@ public final class PagedMerger<V> {
         structure.states(),
         structure.ticks(),
         structure.viewers(),
-        structure.args());
+        structure.args(),
+        buttonSlots(structure, config));
+  }
+
+  private Map<String, Integer> buttonSlots(PagedStructure structure, MenuConfig config) {
+    Map<String, Integer> slots = new HashMap<>();
+    structure.buttons().keySet().forEach(id -> slots.put(id.value(), slotOf(id, config)));
+    return slots;
   }
 
   private PagedDecor<V> decor(MaskLayout layout, PaginationConfig pagination) {

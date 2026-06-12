@@ -38,9 +38,15 @@ MenuFramework framework =
         .scan("com.example.plugin.menu") // package(s) containing @Menu classes
         .build();
 
-framework.open(player, new MenuId("main"));   // by id
-framework.open(player, MainMenu.class);        // by class
+framework.open(player, MainMenu.class);        // by class — preferred when the menu is known at compile time
+framework.open(player, new MenuId("main"));    // by id — when the id is dynamic (e.g. from a command argument)
 ```
+
+Each `@Menu` pairs with a `menus/<id>.yml` file. Ship those YAMLs under `src/main/resources/menus/`
+in your plugin jar and the framework copies any that are missing into the data folder at boot — no
+manual `saveResource` calls and no file list to maintain. Existing files are never overwritten, and a
+menu defined entirely in code (no bundled YAML) is simply skipped. Disable with `.bundleMenus(false)`
+(also skipped automatically when you set a custom `.menusDirectory(...)`).
 
 To act on the menu a player already has open — e.g. to refresh it when a domain event changes data it
 reads — ask the framework for the session (it reads the live open inventory, so there is no view
@@ -119,6 +125,7 @@ public void onDisable() {
 | `scan(String... packages)` | Packages to scan for `@Menu` classes during `build()`. |
 | `instantiator(MenuInstanceFactory)` | Custom construction (e.g. a DI container) for scanned menu classes. |
 | `menusDirectory(Path)` | Override the YAML directory (default `plugins/<PluginName>/menus`). |
+| `bundleMenus(boolean)` | Auto-save each menu's bundled `menus/<id>.yml` from the jar at boot (default `true`; ignored with a custom `menusDirectory`). |
 | `scheduler(MenuScheduler)` | Override platform scheduler auto-detection (Paper vs Folia). |
 | `onActionError(MenuErrorHandler)` | Replace the default logging of a throwing button action. |
 | `build()` | Wire the framework, register listeners once, scan configured packages. Call once. |
@@ -137,6 +144,7 @@ public void onDisable() {
 | `@OnOpen` | method | none | Takes no args or a single `Player`. Paginated menus only. |
 | `@OnClose` | method | none | Takes no args or a single `Player`. Runs after state and ticks are torn down. Paginated menus only. |
 | `@RefreshOn` | class | `value` (one or more `Class<? extends Event>`, required) | Re-renders the open view when any listed Bukkit event fires. Paper-layer annotation (`dev.haniel.menu.paper.annotation.RefreshOn`). Paginated menus only. |
+| `@Visible` | method | `value` (button id, required) | Per-viewer visibility rule for the `@Button` with the matching id. Returns `boolean`, takes no args or a single `Player`. `false` leaves that button's slot empty and non-clickable for that viewer. Works on static and paginated menus. The id must match an existing `@Button`. |
 
 ### `@Button` method parameters
 
@@ -159,11 +167,16 @@ PlayerId playerId();      // their id
 ClickType clickType();    // LEFT, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, MIDDLE, DROP,
                           // DOUBLE_CLICK, NUMBER_KEY, SWAP_OFFHAND, OTHER
 void message(String miniMessageText); // sends a MiniMessage line to the player
+void sound(Sound sound);  // plays an Adventure sound to the player (button-click feedback)
+void sound(String soundKey); // same, by key e.g. "minecraft:ui.button.click" (master, vol 1, pitch 1)
 void open(MenuId id);     // opens another registered menu for the player
 void open(Class<?> menuType); // same, by the menu's class
 void prompt(AnvilPrompt<?> prompt); // opens an anvil text input for the player
 void close();             // closes the player's menu
 ```
+
+For **open/close sounds**, play them from an `@OnOpen`/`@OnClose` hook (both can take the `Player`):
+`player.playSound(...)`. The hooks already run at open and close, so no extra wiring is needed.
 
 ### Anvil text input (`AnvilPrompt`)
 
@@ -192,6 +205,30 @@ public void setAmount(MenuClick click) {
 - Like `open(...)`, `prompt(...)` works on a `@Button`-injected `MenuClick`, not on `MenuClick.of(...)`.
 - **Security:** the confirmed value is the player's raw input. Never pass it to `message(...)` or any
   MiniMessage deserialization without escaping it first (see the `message` warning above).
+
+### Confirmation dialog (`ConfirmPrompt`)
+
+Ask for a yes/no without authoring a whole `@Menu` + YAML for it:
+
+```java
+import dev.haniel.menu.paper.api.ConfirmPrompt;
+
+@Button(id = "delete")
+public void delete(MenuClick click) {
+  click.confirm(
+      ConfirmPrompt.titled("<red>Delete your home?")
+          .onConfirm(() -> { /* delete, then maybe */ click.open(HomesMenu.class); })
+          .onCancel(() -> click.open(HomesMenu.class)));
+}
+```
+
+- Opens a 3-row chest with a confirm and a cancel button (defaults: lime/red wool at slots 11 and
+  15). Override the icons with `.confirm(Icon)` / `.cancel(Icon)` and the title with `.title(String)`.
+- **Exactly one** handler runs: `onConfirm` on the confirm button, `onCancel` on the cancel button or
+  when the dialog is closed. Both default to no-ops.
+- The framework does not reopen the previous menu — navigate from your handler with `click.open(...)`.
+- Unlike `open`/`prompt`, `confirm(...)` also works on a `MenuClick.of(context)` built inside a
+  code-built `MenuItem.onClick` lambda; it needs no navigation wiring.
 
 Use `open(...)` to navigate between menus from a button — no need to inject a reference to the
 framework. Opening a menu the player may not see (missing permission) or that is not registered is a
@@ -266,6 +303,38 @@ count.set(count.get() + 1); // write; schedules a coalesced, diff-based re-rende
 ```
 
 `State.set` is the only thing that triggers a re-render. Mutating a field directly does not.
+
+### Animation (cyclic frames over `@Tick`)
+
+`Animation<T>` is the sugar over a `@Tick`-incremented counter: it holds the frames and does the
+cyclic index arithmetic, so you read the current frame instead of computing a modulo by hand.
+
+```java
+import dev.haniel.menu.domain.Animation;
+
+private static final Animation<Icon> SPINNER =
+    Animation.of(
+        Icon.of("LIME_DYE").named("<green>◐"),
+        Icon.of("LIME_DYE").named("<green>◓"),
+        Icon.of("LIME_DYE").named("<green>◑"),
+        Icon.of("LIME_DYE").named("<green>◒"));
+
+@Reactive private final State<Long> tick = State.of(0L);
+
+@Tick(period = 2)
+public void advance() {
+  tick.set(tick.get() + 1); // each tick advances one frame; the re-render shows it
+}
+
+@Paginated
+public List<MenuItem> content() {
+  return List.of(MenuItem.of(SPINNER.frame(tick.get())));
+}
+```
+
+`frame(long step)` shows one frame per step and wraps after the last (any step, even negative, is
+valid). Slow it below the tick rate by dividing the step (`SPINNER.frame(tick.get() / 2)`); speed it
+up by adding more than one per tick. Paginated menus only, since it relies on `@Tick`/`@Reactive`.
 
 ### Viewer (the opening player)
 
@@ -362,6 +431,38 @@ concerns, on the thread the event fires on — pair it with main-thread domain e
 precision, call `framework.session(player).refresh()` from your own handler instead. Use `@Reactive`
 for state the menu **owns**; use `@RefreshOn` for external changes it only **reads**. This is a
 Paper-layer annotation (`dev.haniel.menu.paper.annotation.RefreshOn`); static menus reject it at boot.
+
+### Visible (per-viewer button visibility)
+
+Hide a button for some viewers with a rule method, instead of showing a button a player cannot use.
+A `@Visible("<button id>")` method returning `false` leaves that button's slot empty and non-clickable
+for that viewer; permission gating, by contrast, leaves the button visible but inert.
+
+```java
+import dev.haniel.menu.annotation.Visible;
+
+@Menu(id = "panel")
+public final class PanelMenu {
+
+  @Button(id = "ban")
+  public void ban(MenuClick click) { /* ... */ }
+
+  @Visible("ban") // matches @Button(id = "ban")
+  public boolean canBan(Player player) {
+    return player.hasPermission("staff.ban"); // false -> the ban button is hidden for this player
+  }
+
+  @Paginated
+  public List<MenuItem> entries() { /* ... */ }
+}
+```
+
+- The method returns `boolean` and takes no args or a single `Player` (the viewer); the id must match
+  an existing `@Button` (an unknown id is an error).
+- Evaluated per open, so the same menu shows different buttons to different players.
+- Works on **static and paginated** menus. Read by the Paper layer via reflection because it may
+  accept a `Player`. The example above is paginated; on a static menu the rule method lives on the
+  same `@Menu` class next to its `@Button` methods.
 
 ## YAML reference
 
@@ -612,6 +713,7 @@ public final class VaultMenu {
 | `@Paginated method ... must take no args and return List<MenuItem>` | Provider has parameters or wrong return type. | Make it `public List<MenuItem> name()`. |
 | `@Tick method ... must take no args and return void` | Tick method has args or a return type. | Make it `public void name()` and read state inside. |
 | `Button '<id>' is annotated but missing in YAML` | A `@Button(id)` has no matching `buttons.<id>` key. | Add the button to the YAML, or remove the annotation. |
+| `Menu '<id>' has no YAML at <path>` | No `<id>.yml` on disk and none bundled in the jar to auto-save. | Create the YAML, or ship `menus/<id>.yml` under `resources/menus/`. |
 | `Unknown material: <name>` | Bad `material` in YAML or `Icon.of`. | Use a valid Bukkit `Material` enum name. |
 | `Slot <n> is outside the menu bounds` / `slot must be >= 0` | `slot` is negative or beyond `rows*9-1`. | Pick a slot within the inventory. |
 | `... is @Paginated but YAML has no 'pagination'` | Paginated class without a `pagination` section. | Add the `pagination` section with a `mask`. |

@@ -56,6 +56,18 @@ class MenuLoaderEdgeCasesTest {
   }
 
   @Test
+  void missingFileFailsWithAnActionableMessage(@TempDir Path dir) {
+    // A menu class with no YAML on disk is the most common boot mistake; the message must point at
+    // the path to create and the bundled-resource shortcut, not a raw NoSuchFileException.
+    InvalidMenuException thrown =
+        assertThrows(
+            InvalidMenuException.class, () -> new MenuLoader(dir).load(new MenuId("ghost")));
+    assertTrue(thrown.getMessage().contains("ghost"));
+    assertTrue(thrown.getMessage().contains("no YAML"));
+    assertTrue(thrown.getMessage().contains("menus/ghost.yml"));
+  }
+
+  @Test
   void rejectsEmptyFile(@TempDir Path dir) throws IOException {
     Files.writeString(dir.resolve("empty.yml"), "");
     assertThrows(InvalidMenuException.class, () -> new MenuLoader(dir).load(new MenuId("empty")));
