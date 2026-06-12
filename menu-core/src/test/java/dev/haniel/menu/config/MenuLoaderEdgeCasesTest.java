@@ -56,6 +56,38 @@ class MenuLoaderEdgeCasesTest {
   }
 
   @Test
+  void deserializationFailureSurfacesTheRootCause(@TempDir Path dir) throws IOException {
+    // SerializationException extends IOException: without the dedicated ConfigurateException
+    // catch, "rows: 0" degrades to a generic "failed to load" with the actual validation message
+    // buried behind an InvocationTargetException whose own message is null.
+    Files.writeString(dir.resolve("zero.yml"), "title: \"Hi\"\nrows: 0\n");
+    InvalidMenuException thrown =
+        assertThrows(
+            InvalidMenuException.class, () -> new MenuLoader(dir).load(new MenuId("zero")));
+    assertTrue(thrown.getMessage().contains("invalid configuration"));
+    assertTrue(thrown.getMessage().contains("rows"), "root cause must reach the server owner");
+  }
+
+  @Test
+  void wrongNodeTypeSurfacesConfiguratePath(@TempDir Path dir) throws IOException {
+    Files.writeString(
+        dir.resolve("badmat.yml"),
+        """
+        title: "Hi"
+        rows: 3
+        buttons:
+          buy:
+            slot: 13
+            material:
+              nested: wrong
+        """);
+    InvalidMenuException thrown =
+        assertThrows(
+            InvalidMenuException.class, () -> new MenuLoader(dir).load(new MenuId("badmat")));
+    assertTrue(thrown.getMessage().contains("invalid configuration"));
+  }
+
+  @Test
   void missingFileFailsWithAnActionableMessage(@TempDir Path dir) {
     // A menu class with no YAML on disk is the most common boot mistake; the message must point at
     // the path to create and the bundled-resource shortcut, not a raw NoSuchFileException.

@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A short-lived cache of rendered pages, keyed by {@link PageKey}.
@@ -55,7 +56,7 @@ public final class PageCache {
     return Arrays.stream(source).map(this::copy).toArray(ItemStack[]::new);
   }
 
-  private ItemStack copy(ItemStack item) {
+  private @Nullable ItemStack copy(@Nullable ItemStack item) {
     return item == null ? null : item.clone();
   }
 }

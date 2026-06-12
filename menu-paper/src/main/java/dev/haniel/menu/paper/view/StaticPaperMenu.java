@@ -6,6 +6,7 @@ import dev.haniel.menu.paper.visibility.StaticVisibility;
 import java.util.Objects;
 import java.util.Set;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 /** A static menu: every open reuses the same pre-rendered template. */
 public final class StaticPaperMenu implements PaperMenu {
@@ -41,7 +42,7 @@ public final class StaticPaperMenu implements PaperMenu {
   }
 
   @Override
-  public void open(Player player, Object argument) {
+  public void open(Player player, @Nullable Object argument) {
     Set<Integer> hidden = visibility.hiddenSlots(player);
     MenuHolder holder = new MenuHolder(menuId, view.template(), view.title(), hidden);
     player.openInventory(holder.getInventory());

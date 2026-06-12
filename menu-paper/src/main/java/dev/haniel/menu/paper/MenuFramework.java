@@ -189,6 +189,9 @@ public final class MenuFramework {
    * <p>Only file IO and YAML parsing run asynchronously. The compiled menu swap runs on the plugin
    * scheduler because rendering creates Bukkit {@code ItemStack}s.
    *
+   * <p>Never block the server thread on the returned future ({@code join()}/{@code get()}): the
+   * apply stage needs that same thread, so blocking it deadlocks. Attach a callback instead.
+   *
    * @return a future completed with the reload report
    */
   public CompletableFuture<ReloadReport> reloadAllReportAsync() {

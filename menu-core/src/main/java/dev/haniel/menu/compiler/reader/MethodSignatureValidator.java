@@ -4,12 +4,24 @@ import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.domain.Page;
 import dev.haniel.menu.item.MenuItem;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 
 /** Centralizes annotation method signature validation for static and paginated readers. */
 final class MethodSignatureValidator {
+
+  /**
+   * Rejects a {@code static} annotated method at read time; a static handle cannot be bound to the
+   * per-open menu instance and would otherwise crash on every open instead of failing the boot.
+   */
+  static void requireInstanceMethod(Method method, String annotation) {
+    if (Modifier.isStatic(method.getModifiers())) {
+      throw new InvalidMenuException(
+          annotation + " method " + method.getName() + " must not be static");
+    }
+  }
 
   void requirePaginatedProvider(Method method) {
     if (!isEagerProvider(method) && !isLazyProvider(method)) {

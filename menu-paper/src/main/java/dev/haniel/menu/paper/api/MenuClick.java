@@ -12,6 +12,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The click handed to a {@code @Button} method that asks for it.
@@ -49,8 +50,8 @@ public final class MenuClick {
   public MenuClick(
       PaperClickContext context,
       MiniMessage miniMessage,
-      MenuOpener opener,
-      AnvilPromptOpener prompts) {
+      @Nullable MenuOpener opener,
+      @Nullable AnvilPromptOpener prompts) {
     this.context = Objects.requireNonNull(context, "context");
     this.services =
         new ClickServices(Objects.requireNonNull(miniMessage, "miniMessage"), opener, prompts);
@@ -197,7 +198,7 @@ public final class MenuClick {
 
   /** The serializer, opener and prompt opener a click acts through, grouped to keep two fields. */
   private record ClickServices(
-      MiniMessage miniMessage, MenuOpener opener, AnvilPromptOpener prompts) {
+      MiniMessage miniMessage, @Nullable MenuOpener opener, @Nullable AnvilPromptOpener prompts) {
 
     Component render(String miniMessageText) {
       return miniMessage.deserialize(miniMessageText);

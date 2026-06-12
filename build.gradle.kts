@@ -1,3 +1,5 @@
+import net.ltgt.gradle.errorprone.CheckSeverity
+import net.ltgt.gradle.errorprone.errorprone
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -5,6 +7,7 @@ import org.gradle.api.publish.maven.MavenPublication
 plugins {
     base
     id("com.diffplug.spotless") version "7.2.1" apply false
+    id("net.ltgt.errorprone") version "5.1.0" apply false
 }
 
 val targetJavaVersion = 25
@@ -21,6 +24,7 @@ subprojects {
     apply(plugin = "java-library")
     apply(plugin = "jacoco")
     apply(plugin = "com.diffplug.spotless")
+    apply(plugin = "net.ltgt.errorprone")
 
     extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension>("spotless") {
         // The formatter is the source of truth: spotlessCheck runs as part of `check`/`build`.
@@ -78,6 +82,14 @@ subprojects {
     }
 
     dependencies {
+        // JSpecify supplies the @Nullable/@NullMarked vocabulary NullAway reads. CLASS-retained, so
+        // compileOnly keeps it off the runtime classpath of every shipped artifact.
+        "compileOnly"("org.jspecify:jspecify:1.0.0")
+
+        // Error Prone hosts NullAway as a check; both are compiler-only and never shipped.
+        "errorprone"("com.google.errorprone:error_prone_core:2.50.0")
+        "errorprone"("com.uber.nullaway:nullaway:0.13.6")
+
         "testImplementation"(platform("org.junit:junit-bom:6.1.0"))
         "testImplementation"("org.junit.jupiter:junit-jupiter")
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
@@ -100,6 +112,21 @@ subprojects {
         options.encoding = "UTF-8"
         options.release.set(targetJavaVersion)
         options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
+        // Only NullAway runs: the request is null-safety, not the full Error Prone suite. Every
+        // dev.haniel.menu.* type is treated as @NullMarked; unannotated libraries (Bukkit,
+        // Configurate) stay null-permissive, so violations point only at our own code.
+        options.errorprone {
+            disableAllChecks.set(true)
+            check("NullAway", CheckSeverity.ERROR)
+            option("NullAway:AnnotatedPackages", "dev.haniel.menu")
+        }
+    }
+
+    // Test sources use Mockito, whose stubs legitimately return null; NullAway there is pure noise.
+    // Set `enabled` on the ErrorProneOptions directly: an `errorprone { enabled = false }` block
+    // would resolve `enabled` against the JavaCompile receiver and disable test compilation.
+    tasks.named<JavaCompile>("compileTestJava") {
+        options.errorprone.enabled.set(false)
     }
 
     tasks.withType<Test>().configureEach {

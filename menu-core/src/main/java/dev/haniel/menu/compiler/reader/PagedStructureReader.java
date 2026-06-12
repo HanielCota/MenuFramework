@@ -27,12 +27,14 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The reflection behind the paginated path: reads {@code @Paginated}, {@code @Button},
@@ -69,11 +71,17 @@ final class PagedStructureReader {
 
   @SuppressWarnings("java:S3011") // Menu annotations intentionally support private constructors.
   Instantiator createInstantiator(Class<?> type) {
+    if (Modifier.isAbstract(type.getModifiers())) {
+      throw new InvalidMenuException(
+          type.getName() + " must be a concrete class to open as a menu");
+    }
     try {
       Constructor<?> constructor = type.getDeclaredConstructor();
       constructor.setAccessible(true);
       return new Instantiator(MethodHandles.lookup().unreflectConstructor(constructor));
-    } catch (NoSuchMethodException | IllegalAccessException exception) {
+    } catch (NoSuchMethodException
+        | IllegalAccessException
+        | InaccessibleObjectException exception) {
       throw new InvalidMenuException(type.getName() + " needs a no-arg constructor", exception);
     }
   }
@@ -91,7 +99,7 @@ final class PagedStructureReader {
     }
   }
 
-  private Menu findMenu(Class<?> type) {
+  private @Nullable Menu findMenu(Class<?> type) {
     Class<?> current = type;
     while (current != null && current != Object.class) {
       Menu menu = current.getAnnotation(Menu.class);
@@ -118,6 +126,7 @@ final class PagedStructureReader {
   }
 
   private UnboundContent toProvider(Method method) {
+    MethodSignatureValidator.requireInstanceMethod(method, "@Paginated");
     validateProvider(method);
     if (validator.isLazyProvider(method)) {
       return new UnboundPageProvider(unreflect(method));
@@ -134,6 +143,7 @@ final class PagedStructureReader {
   }
 
   private void addButton(Map<ButtonId, UnboundAction> buttons, Method method) {
+    MethodSignatureValidator.requireInstanceMethod(method, "@Button");
     ButtonArguments arguments = clickArguments.bindingFor(method);
     Button button = method.getAnnotation(Button.class);
     ButtonId id = buttonId(method, button);
@@ -188,6 +198,7 @@ final class PagedStructureReader {
   }
 
   private UnboundTick tick(Method method) {
+    MethodSignatureValidator.requireInstanceMethod(method, "@Tick");
     validator.requireTick(method);
     int period = method.getAnnotation(Tick.class).period();
     if (period < 1) {
@@ -202,7 +213,7 @@ final class PagedStructureReader {
     try {
       field.setAccessible(true);
       return new StateField(field.getName(), MethodHandles.lookup().unreflectGetter(field));
-    } catch (IllegalAccessException exception) {
+    } catch (IllegalAccessException | InaccessibleObjectException exception) {
       throw new InvalidMenuException("Cannot access @Reactive field " + field.getName(), exception);
     }
   }
@@ -213,7 +224,7 @@ final class PagedStructureReader {
     try {
       field.setAccessible(true);
       return new ViewerField(field.getName(), MethodHandles.lookup().unreflectSetter(field));
-    } catch (IllegalAccessException exception) {
+    } catch (IllegalAccessException | InaccessibleObjectException exception) {
       throw new InvalidMenuException("Cannot access @Viewer field " + field.getName(), exception);
     }
   }
@@ -225,7 +236,7 @@ final class PagedStructureReader {
       field.setAccessible(true);
       MethodHandle setter = MethodHandles.lookup().unreflectSetter(field);
       return new ArgField(field.getName(), field.getType(), setter);
-    } catch (IllegalAccessException exception) {
+    } catch (IllegalAccessException | InaccessibleObjectException exception) {
       throw new InvalidMenuException("Cannot access @Arg field " + field.getName(), exception);
     }
   }
@@ -237,6 +248,13 @@ final class PagedStructureReader {
   private void validateStateField(Field field) {
     if (!State.class.isAssignableFrom(field.getType())) {
       throw new InvalidMenuException("@Reactive field " + field.getName() + " must be State<?>");
+    }
+    if (Modifier.isStatic(field.getModifiers())) {
+      throw new InvalidMenuException(
+          "@Reactive field "
+              + field.getName()
+              + " must be non-static; a static State would be"
+              + " shared across every viewer's open view");
     }
   }
 
@@ -266,7 +284,7 @@ final class PagedStructureReader {
     try {
       method.setAccessible(true);
       return MethodHandles.lookup().unreflect(method);
-    } catch (IllegalAccessException exception) {
+    } catch (IllegalAccessException | InaccessibleObjectException exception) {
       throw new InvalidMenuException("Cannot access method " + method.getName(), exception);
     }
   }

@@ -20,6 +20,7 @@ import dev.haniel.menu.domain.MenuId;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Reads a static menu's behaviour from an annotated class into a {@link MenuBlueprint}.
@@ -81,7 +83,7 @@ public final class StaticReader {
     }
   }
 
-  private Menu findMenu(Class<?> type) {
+  private @Nullable Menu findMenu(Class<?> type) {
     Class<?> current = type;
     while (current != null && current != Object.class) {
       Menu menu = current.getAnnotation(Menu.class);
@@ -109,6 +111,7 @@ public final class StaticReader {
   }
 
   private ButtonBehavior behavior(Object instance, Method method, Set<ButtonId> ids) {
+    MethodSignatureValidator.requireInstanceMethod(method, "@Button");
     ButtonArguments arguments = clickArguments.bindingFor(method);
     Button button = method.getAnnotation(Button.class);
     ButtonId id = buttonId(method, button);
@@ -175,7 +178,7 @@ public final class StaticReader {
     try {
       method.setAccessible(true);
       return MethodHandles.lookup().unreflect(method).bindTo(instance);
-    } catch (IllegalAccessException exception) {
+    } catch (IllegalAccessException | InaccessibleObjectException exception) {
       throw new InvalidMenuException(
           "Cannot access annotated method " + method.getName(), exception);
     }

@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Adversarial edge cases for the State -> listener notification contract: equal-value suppression
- * by value (not identity), null rejection, rebinding/aliasing of the single listener field, and the
- * StateBinding aliasing hazard when a state is shared across two views.
+ * by value (not identity), null rejection, and the loud rejection of aliasing a single State across
+ * two open views (a silently replaced listener would freeze the first view's UI).
  */
 class StateNotificationEdgeCasesTest {
 
@@ -50,39 +50,51 @@ class StateNotificationEdgeCasesTest {
   }
 
   @Test
-  void rebindReplacesTheListenerSoOnlyTheLatestIsNotified() {
+  void rebindingToADifferentListenerFailsLoudly() {
+    // Silently replacing the listener would freeze the first view's UI with no log; the second
+    // bind must fail at bind time instead.
     State<String> state = State.of("a");
-    int[] first = {0};
+    state.bind(() -> {});
+
+    assertThrows(IllegalStateException.class, () -> state.bind(() -> {}));
+  }
+
+  @Test
+  void rebindingTheSameListenerIsIdempotent() {
+    State<String> state = State.of("a");
+    int[] notifications = {0};
+    StateListener listener = () -> notifications[0]++;
+    state.bind(listener);
+    state.bind(listener);
+
+    state.set("b");
+
+    assertEquals(1, notifications[0]);
+  }
+
+  @Test
+  void rebindingAfterUnbindSupportsReopen() {
+    State<String> state = State.of("a");
+    state.bind(() -> {});
+    state.unbind();
     int[] second = {0};
-    state.bind(() -> first[0]++);
     state.bind(() -> second[0]++);
 
     state.set("b");
 
-    assertEquals(0, first[0], "an overwritten listener must no longer fire");
-    assertEquals(1, second[0], "the most recently bound listener fires");
+    assertEquals(1, second[0], "a closed view's state can bind to the next open view");
   }
 
   @Test
-  void unbindOnSharedStateClearsWhicheverListenerIsCurrentlyBound() {
-    // A single State shared by two StateBindings (two views). Binding view B aliases over view A.
+  void bindingASharedStateIntoASecondOpenViewFailsLoudly() {
+    // A single State shared by two StateBindings (two views). Binding view B while A is still
+    // bound used to silently sever A; it must now fail loudly at view B's bind.
     State<String> shared = State.of("a");
     StateBinding viewA = new StateBinding(List.of(shared));
     StateBinding viewB = new StateBinding(List.of(shared));
-    int[] aCount = {0};
-    int[] bCount = {0};
+    viewA.bind(() -> {});
 
-    viewA.bind(() -> aCount[0]++);
-    viewB.bind(() -> bCount[0]++);
-
-    // viewA closes; it calls State::unbind, dropping view B's listener even though B is still open.
-    viewA.unbind();
-    shared.set("b");
-
-    // Documents the aliasing hazard: after A unbinds, the still-open B receives nothing.
-    assertEquals(0, aCount[0]);
-    assertEquals(
-        0, bCount[0], "view A's unbind silently severs the still-open view B (aliasing leak)");
+    assertThrows(IllegalStateException.class, () -> viewB.bind(() -> {}));
   }
 
   @Test

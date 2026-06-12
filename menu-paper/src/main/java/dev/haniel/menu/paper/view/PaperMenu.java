@@ -1,6 +1,7 @@
 package dev.haniel.menu.paper.view;
 
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 /** An openable menu, either static or paginated, registered under a {@code MenuId}. */
 public interface PaperMenu {
@@ -24,5 +25,5 @@ public interface PaperMenu {
    * @param player the viewer; never null
    * @param argument the open argument, or {@code null} for none
    */
-  void open(Player player, Object argument);
+  void open(Player player, @Nullable Object argument);
 }

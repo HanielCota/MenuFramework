@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * One player's open view of a reactive paginated menu.
@@ -37,7 +38,7 @@ public final class ReactivePagedView
   private final PageRenderer renderer;
   private final PageCursor cursor;
   private final ReactiveLifecycle lifecycle;
-  private final LazyPageLoad lazy;
+  private final @Nullable LazyPageLoad lazy;
   private boolean closed;
   private long generation;
 
@@ -59,7 +60,7 @@ public final class ReactivePagedView
       Runnable onClose,
       PlayerScheduler scheduler,
       Logger logger,
-      LazyPageLoad lazy) {
+      @Nullable LazyPageLoad lazy) {
     this.renderer = Objects.requireNonNull(renderer, "renderer");
     this.cursor = new PageCursor(renderer.newInventory(this));
     this.lazy = lazy;
@@ -109,6 +110,7 @@ public final class ReactivePagedView
    * @param page the page to show; clamped by the renderer
    */
   public void show(PageNumber page) {
+    cursor.request(page);
     long requested = ++generation;
     if (lazy == null) {
       apply(requested, () -> renderer.render(page));
@@ -150,12 +152,19 @@ public final class ReactivePagedView
       return;
     }
     closed = true;
-    lifecycle.close();
-    cursor.clear();
+    try {
+      lifecycle.close();
+    } finally {
+      // A throwing @OnClose hook must not keep the inventory reference alive.
+      cursor.clear();
+    }
   }
 
   @Override
   public void click(int rawSlot, ClickContext context) {
+    if (closed) {
+      return;
+    }
     if (isNavigationSlot(rawSlot)) {
       navigate(rawSlot);
       return;
@@ -183,6 +192,8 @@ public final class ReactivePagedView
     if (closed) {
       return;
     }
-    show(cursor.page());
+    // Re-request the page the player last asked for, not the applied one: a flush racing an
+    // in-flight lazy navigation would otherwise supersede it and silently cancel the page turn.
+    show(cursor.requested());
   }
 }

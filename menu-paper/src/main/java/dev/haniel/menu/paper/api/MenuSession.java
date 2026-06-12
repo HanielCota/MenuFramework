@@ -12,7 +12,8 @@ import org.bukkit.entity.Player;
  * re-render it, close it, or read which menu it is. It is a transient snapshot of what is open now
  * — query it again rather than caching it, since the player may close or switch menus at any time.
  *
- * <p>Call these on the main server thread, as they touch the Bukkit API.
+ * <p>Call these on the viewer's owning thread, as they touch the Bukkit API: the main server thread
+ * on Paper, the player's region thread on Folia.
  */
 public final class MenuSession {
 

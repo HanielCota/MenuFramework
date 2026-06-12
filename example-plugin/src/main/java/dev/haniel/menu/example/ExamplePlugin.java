@@ -5,10 +5,11 @@ import dev.haniel.menu.example.service.MenuCommandService;
 import dev.haniel.menu.paper.MenuFramework;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jspecify.annotations.Nullable;
 
 public final class ExamplePlugin extends JavaPlugin {
 
-  private MenuFramework framework;
+  private @Nullable MenuFramework framework;
 
   @Override
   public void onEnable() {

@@ -17,6 +17,7 @@ public final class PageCursor {
 
   private final DiffWriter writer;
   private PageNumber page;
+  private PageNumber requested;
   private MenuAction[] actions;
   private boolean hasPrevious;
   private boolean hasNext;
@@ -29,6 +30,7 @@ public final class PageCursor {
   public PageCursor(Inventory inventory) {
     this.writer = new DiffWriter(inventory);
     this.page = PageNumber.first();
+    this.requested = PageNumber.first();
     this.actions = new MenuAction[inventory.getSize()];
   }
 
@@ -48,6 +50,27 @@ public final class PageCursor {
    */
   public PageNumber page() {
     return page;
+  }
+
+  /**
+   * Records the page most recently asked for, which a pending lazy load may not have applied yet.
+   *
+   * @param page the requested page; never null
+   */
+  public void request(PageNumber page) {
+    this.requested = page;
+  }
+
+  /**
+   * Returns the page most recently requested.
+   *
+   * <p>While a lazy load is in flight this differs from {@link #page()}; a re-render triggered
+   * mid-load must target this page, or it would silently cancel the player's navigation.
+   *
+   * @return the requested page number
+   */
+  public PageNumber requested() {
+    return requested;
   }
 
   /**

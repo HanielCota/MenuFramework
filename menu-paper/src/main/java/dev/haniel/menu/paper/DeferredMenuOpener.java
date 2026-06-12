@@ -4,6 +4,7 @@ import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.paper.api.MenuOpener;
 import java.util.Objects;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link MenuOpener} whose target is set once, after the registry exists.
@@ -16,7 +17,7 @@ import org.bukkit.entity.Player;
  */
 final class DeferredMenuOpener implements MenuOpener {
 
-  private MenuOpener target;
+  private @Nullable MenuOpener target;
 
   void delegateTo(MenuOpener opener) {
     this.target = Objects.requireNonNull(opener, "opener");

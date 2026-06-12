@@ -52,6 +52,16 @@ final class LazyPageLoad {
       context.logger().log(Level.WARNING, "Lazy page load failed", failure);
       return;
     }
-    context.viewThread().schedule(() -> onLoaded.accept(loaded));
+    deliver(loaded, onLoaded);
+  }
+
+  private void deliver(Page<MenuItem> loaded, Consumer<Page<MenuItem>> onLoaded) {
+    try {
+      context.viewThread().schedule(() -> onLoaded.accept(loaded));
+    } catch (RuntimeException rejected) {
+      // The plugin is disabling mid-load; the view is being torn down anyway, so drop the page
+      // quietly instead of throwing into the async executor.
+      context.logger().log(Level.FINE, "Lazy page delivery rejected", rejected);
+    }
   }
 }

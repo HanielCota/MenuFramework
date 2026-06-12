@@ -19,9 +19,10 @@ import org.bukkit.event.Event;
  * framework cannot forget to refresh, and there is no bridge to wire. Use {@code @Reactive} state
  * for data the menu <em>owns</em>; use {@code @RefreshOn} for external changes the menu only reads.
  *
- * <p>The refresh fires for every occurrence of the event regardless of which entity it concerns, on
- * the thread the event fires on; pair it with main-thread domain events. For per-target precision,
- * call {@code session(player).refresh()} from your own handler instead.
+ * <p>The refresh fires for every occurrence of the event regardless of which entity it concerns.
+ * The event may fire on any thread (async events on Paper, region threads on Folia); the framework
+ * hops to the viewer's scheduler before re-rendering, so any event type is safe to list. For
+ * per-target precision, call {@code session(player).refresh()} from your own handler instead.
  *
  * <p>This annotation lives in the Paper layer because it references Bukkit event types. Valid only
  * on {@code @Paginated} menus; static menus reject it at boot.

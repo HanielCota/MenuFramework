@@ -66,7 +66,16 @@ final class MenuReloader {
   CompletableFuture<ReloadReport> reloadAllReportAsync(
       Executor asyncExecutor, Executor syncExecutor) {
     return CompletableFuture.supplyAsync(this::prepareAll, asyncExecutor)
-        .thenApplyAsync(this::applyPrepared, syncExecutor);
+        .thenApplyAsync(this::applyPrepared, syncExecutor)
+        .whenComplete(this::logPipelineFailure);
+  }
+
+  // Per-menu failures land in the report; a pipeline-level failure (executor rejected after
+  // shutdown, unexpected throwable) would otherwise vanish unless every caller attaches a handler.
+  private void logPipelineFailure(ReloadReport report, Throwable failure) {
+    if (failure != null) {
+      logger.log(Level.WARNING, "Async menu reload did not complete", failure);
+    }
   }
 
   private ReloadReport reloadOne(RegisteredMenu menu) {
@@ -142,15 +151,17 @@ final class MenuReloader {
   }
 
   private CompiledMenu<ItemStack> compile(RegisteredMenu menu) {
-    if (menu.source() != null) {
-      return compiler.compile(menu.source());
+    Object source = menu.source();
+    if (source != null) {
+      return compiler.compile(source);
     }
     return compiler.compile(menu.sourceType(), ignored -> menu.createSource());
   }
 
   private CompiledMenu<ItemStack> compile(RegisteredMenu menu, MenuConfig config) {
-    if (menu.source() != null) {
-      return compiler.compile(menu.source(), config);
+    Object source = menu.source();
+    if (source != null) {
+      return compiler.compile(source, config);
     }
     return compiler.compile(menu.sourceType(), ignored -> menu.createSource(), config);
   }

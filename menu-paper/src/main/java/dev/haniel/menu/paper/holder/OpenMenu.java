@@ -23,7 +23,8 @@ public interface OpenMenu extends InventoryHolder {
    * Re-renders this view's dynamic content. A no-op for static menus, which have none.
    *
    * <p>Re-runs the {@code @Paginated} provider and re-renders by diff, like a reactive state
-   * change. Must be called from the view's owning thread (the main thread on Paper).
+   * change. Must be called from the view's owning thread: the main thread on Paper, the player's
+   * region thread on Folia.
    */
   void refresh();
 }

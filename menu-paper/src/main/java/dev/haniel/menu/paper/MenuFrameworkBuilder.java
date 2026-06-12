@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jspecify.annotations.Nullable;
 
 /** Boot-time configuration for {@link MenuFramework}. */
 public final class MenuFrameworkBuilder {
@@ -27,9 +28,9 @@ public final class MenuFrameworkBuilder {
   private final JavaPlugin plugin;
   private final List<String> basePackages = new ArrayList<>();
   private MenuInstanceFactory instances = new MenuInstantiator();
-  private Path menusDirectory;
-  private MenuScheduler scheduler;
-  private MenuErrorHandler errorHandler;
+  private @Nullable Path menusDirectory;
+  private @Nullable MenuScheduler scheduler;
+  private @Nullable MenuErrorHandler errorHandler;
   private boolean bundleMenus = true;
   private boolean built;
 

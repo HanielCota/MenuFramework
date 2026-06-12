@@ -5,6 +5,7 @@ import dev.haniel.menu.scheduler.ScheduledTask;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Coalesces re-renders: many marks before the next tick schedule a single flush.
@@ -23,7 +24,7 @@ public final class Flusher {
   private final PlayerScheduler scheduler;
   private final Runnable flush;
   private final Logger logger;
-  private volatile ScheduledTask task;
+  private volatile @Nullable ScheduledTask task;
 
   /**
    * Creates a flusher that runs the given action on the player's context.
@@ -52,7 +53,7 @@ public final class Flusher {
     task = trySchedule();
   }
 
-  private ScheduledTask trySchedule() {
+  private @Nullable ScheduledTask trySchedule() {
     try {
       ScheduledTask scheduled = scheduler.schedule(this::run);
       if (scheduled.scheduled()) {

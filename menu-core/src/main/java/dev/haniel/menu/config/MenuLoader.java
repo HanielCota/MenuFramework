@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.zip.CRC32;
+import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
@@ -82,6 +83,17 @@ public final class MenuLoader {
               + id.value()
               + ".yml in your jar so the framework can save it",
           missing);
+    } catch (ConfigurateException malformed) {
+      // ConfigurateException extends IOException: catch it first, or every deserialization error
+      // (bad rows, wrong node type, record validation) degrades to a generic "failed to load".
+      throw new InvalidMenuException(
+          "Menu '"
+              + id.value()
+              + "' has invalid configuration in "
+              + file
+              + ": "
+              + rootCauseMessage(malformed),
+          malformed);
     } catch (IOException exception) {
       throw new InvalidMenuException(
           "Failed to load menu '" + id.value() + "' from " + file, exception);
@@ -97,6 +109,18 @@ public final class MenuLoader {
               + malformed.getMessage(),
           malformed);
     }
+  }
+
+  // The actionable message (a record's validation text, Configurate's node path) sits at the
+  // bottom of the chain, often behind an InvocationTargetException whose own message is null.
+  private String rootCauseMessage(Throwable failure) {
+    String deepest = failure.getClass().getSimpleName();
+    for (Throwable current = failure; current != null; current = current.getCause()) {
+      if (current.getMessage() != null) {
+        deepest = current.getMessage();
+      }
+    }
+    return deepest;
   }
 
   private FileStamp stamp(Path file) throws IOException {

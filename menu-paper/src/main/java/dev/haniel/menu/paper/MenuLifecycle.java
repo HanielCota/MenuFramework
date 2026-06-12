@@ -22,7 +22,8 @@ final class MenuLifecycle {
   private final Plugin plugin;
   private final List<Listener> listeners;
   private final Executor syncExecutor;
-  private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
+  private final ExecutorService ioExecutor =
+      Executors.newSingleThreadExecutor(MenuLifecycle::ioThread);
   private volatile boolean shutdown;
 
   MenuLifecycle(Plugin plugin, List<Listener> listeners, Executor syncExecutor) {
@@ -37,7 +38,7 @@ final class MenuLifecycle {
 
   // An in-flight async reload applies its compiled menus here, on the main thread. After shutdown
   // the registry is cleared and Bukkit item-building is no longer safe, so a late apply is rejected
-  // instead of run; the reload future then completes via its exceptionally handler.
+  // instead of run; the reload future then completes exceptionally and logs the failure.
   Executor syncExecutor() {
     return command -> {
       if (shutdown) {
@@ -73,8 +74,24 @@ final class MenuLifecycle {
   private void closeOpenMenuOnPlayerThread(Player player) {
     try {
       player.getScheduler().run(plugin, ignored -> closeOpenMenuNow(player), () -> {});
-    } catch (RuntimeException unavailable) {
-      // The player or plugin is no longer schedulable; Bukkit will discard the view on disconnect.
+    } catch (RuntimeException rejected) {
+      // Folia refuses new tasks once the plugin is disabling (isEnabled flips before onDisable
+      // runs), which is exactly when shutdown() executes — so fall back to inline teardown.
+      closeOpenMenuInline(player);
+    }
+  }
+
+  // Cross-thread fallback for disable on Folia: task cancellation inside close() is thread-safe,
+  // and stripping the virtual inventory leaves nothing lootable in the still-open GUI once the
+  // click-cancelling listener is unregistered. @OnClose hooks run off the owning thread here; that
+  // is the lesser evil against leaking ticks and lootable menu items.
+  private void closeOpenMenuInline(Player player) {
+    InventoryHolder holder = player.getOpenInventory().getTopInventory().getHolder();
+    if (holder instanceof ReactiveView view) {
+      view.close();
+    }
+    if (holder instanceof ClickableHolder) {
+      player.getOpenInventory().getTopInventory().clear();
     }
   }
 
@@ -97,6 +114,13 @@ final class MenuLifecycle {
       // Some test or hybrid environments expose Folia-like scheduler behavior without the
       // detection marker. Close teardown already ran before this best-effort cleanup.
     }
+  }
+
+  private static Thread ioThread(Runnable work) {
+    Thread thread = new Thread(work, "menuframework-io");
+    // Daemon: a consumer that forgets shutdown() must not block JVM exit on a leftover IO thread.
+    thread.setDaemon(true);
+    return thread;
   }
 
   private static boolean detectFolia() {

@@ -1,6 +1,7 @@
 package dev.haniel.menu.compiler.binding;
 
 import dev.haniel.menu.action.MenuAction;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The boot-resolved access rules of a {@code @Button}: an optional permission and cooldown.
@@ -18,7 +19,7 @@ public final class ButtonGuards {
   private static final ButtonGuards NONE = new ButtonGuards("", 0);
 
   private final String permission;
-  private final Cooldown cooldown;
+  private final @Nullable Cooldown cooldown;
 
   /**
    * Resolves the guards for a button.

@@ -12,6 +12,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
@@ -73,6 +74,27 @@ public final class AnvilPromptListener implements Listener {
     if (event.getRawSlot() == RESULT_SLOT && event.getWhoClicked() instanceof Player player) {
       confirm(view, pending.get(), player);
     }
+  }
+
+  /**
+   * Cancels drags that touch a pending anvil's slots, so no item can be deposited into the inputs
+   * and destroyed by the confirm/close clears.
+   *
+   * @param event the drag event
+   */
+  @EventHandler(priority = EventPriority.HIGHEST)
+  public void onDrag(InventoryDragEvent event) {
+    if (!(event.getView() instanceof AnvilView)) {
+      return;
+    }
+    boolean pending = prompts.pendingFor(event.getWhoClicked().getUniqueId()).isPresent();
+    if (pending && touchesAnvilSlots(event)) {
+      event.setCancelled(true);
+    }
+  }
+
+  private boolean touchesAnvilSlots(InventoryDragEvent event) {
+    return event.getRawSlots().stream().anyMatch(slot -> slot <= RESULT_SLOT);
   }
 
   /**

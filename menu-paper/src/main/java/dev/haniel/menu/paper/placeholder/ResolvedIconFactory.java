@@ -38,7 +38,7 @@ public final class ResolvedIconFactory implements IconFactory<ItemStack> {
 
   @Override
   public ItemStack create(Icon icon) {
-    return delegate.create(hasPlaceholder(icon) ? resolved(icon) : icon);
+    return delegate.create(icon.hasPlaceholder() ? resolved(icon) : icon);
   }
 
   private Icon resolved(Icon icon) {
@@ -46,10 +46,5 @@ public final class ResolvedIconFactory implements IconFactory<ItemStack> {
     List<String> lore =
         icon.lore().stream().map(line -> placeholders.resolve(viewer, line)).toList();
     return new Icon(icon.material(), name, lore, icon.traits());
-  }
-
-  private boolean hasPlaceholder(Icon icon) {
-    return icon.name().indexOf('%') >= 0
-        || icon.lore().stream().anyMatch(line -> line.contains("%"));
   }
 }

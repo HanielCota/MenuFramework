@@ -1,6 +1,7 @@
 package dev.haniel.menu.state;
 
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An explicit, observable holder of a value.
@@ -21,7 +22,7 @@ import java.util.Objects;
 public final class State<T> {
 
   private T value;
-  private StateListener listener;
+  private @Nullable StateListener listener;
 
   private State(T value) {
     this.value = value;
@@ -62,6 +63,11 @@ public final class State<T> {
   }
 
   void bind(StateListener listener) {
+    if (this.listener != null && this.listener != listener) {
+      throw new IllegalStateException(
+          "State is already bound to another open view; initialize @Reactive fields in the menu"
+              + " instance instead of sharing a State through a static or injected object");
+    }
     this.listener = listener;
   }
 

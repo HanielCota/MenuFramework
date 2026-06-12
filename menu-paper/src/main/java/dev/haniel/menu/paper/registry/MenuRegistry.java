@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Compiles annotated menus at boot and opens or reloads them at runtime.
@@ -148,7 +149,7 @@ public final class MenuRegistry implements MenuOpener {
    * @param id the menu id to open; never null
    * @param argument the open argument, or {@code null} for none
    */
-  public void open(Player player, MenuId id, Object argument) {
+  public void open(Player player, MenuId id, @Nullable Object argument) {
     catalog
         .find(id)
         .filter(menu -> menu.mayOpen(player))
@@ -174,7 +175,7 @@ public final class MenuRegistry implements MenuOpener {
    * @param sourceType the annotated menu class; never null
    * @param argument the open argument, or {@code null} for none
    */
-  public void open(Player player, Class<?> sourceType, Object argument) {
+  public void open(Player player, Class<?> sourceType, @Nullable Object argument) {
     catalog
         .find(sourceType)
         .filter(menu -> menu.mayOpen(player))

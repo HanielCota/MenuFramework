@@ -121,7 +121,7 @@ public final class PageRenderer {
 
   private RenderedPage renderFrom(
       PageNumber page, List<MenuItem> items, boolean hasPrevious, boolean hasNext) {
-    ItemStack[] visuals = cache.get(key(page, items), () -> renderVisuals(items));
+    ItemStack[] visuals = visuals(page, items);
     ItemStack[] slots = new ItemStack[scene.size()];
     MenuAction[] actions = new MenuAction[scene.size()];
     fillBorder(slots);
@@ -179,6 +179,20 @@ public final class PageRenderer {
   private void placeOverlay(ItemStack[] slots, MenuAction[] actions) {
     scene.overlay().visuals().forEach((slot, item) -> slots[slot] = item);
     scene.overlay().actions().forEach((slot, action) -> actions[slot] = action);
+  }
+
+  // Placeholder text resolves per viewer and per moment: serving it from the cache would replay
+  // stale values on a pure-navigation revisit (no state change, no version bump), so those pages
+  // always rebuild. Placeholder-free pages keep the cached fast path.
+  private ItemStack[] visuals(PageNumber page, List<MenuItem> items) {
+    if (hasPlaceholders(items)) {
+      return renderVisuals(items);
+    }
+    return cache.get(key(page, items), () -> renderVisuals(items));
+  }
+
+  private boolean hasPlaceholders(List<MenuItem> items) {
+    return items.stream().map(MenuItem::icon).anyMatch(Icon::hasPlaceholder);
   }
 
   private ItemStack[] renderVisuals(List<MenuItem> items) {

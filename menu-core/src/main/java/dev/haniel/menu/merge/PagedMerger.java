@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Joins a paginated {@link PagedStructure} with its {@link MenuConfig} appearance.
@@ -92,7 +93,7 @@ public final class PagedMerger<V> {
     return new PagedDecor<>(previous, next, icons.create(BORDER));
   }
 
-  private V navigation(int slot, ButtonConfig button) {
+  private @Nullable V navigation(int slot, ButtonConfig button) {
     if (slot < 0) {
       return null;
     }
@@ -198,6 +199,10 @@ public final class PagedMerger<V> {
   }
 
   private int slotOf(ButtonId id, MenuConfig config) {
-    return MergeButtons.slot(config.buttons().get(id.value()), config);
+    // Presence is guaranteed by ensureButtonsConfigured, which runs before any slot resolution.
+    ButtonConfig button =
+        Objects.requireNonNull(
+            config.buttons().get(id.value()), () -> "no button for " + id.value());
+    return MergeButtons.slot(button, config);
   }
 }

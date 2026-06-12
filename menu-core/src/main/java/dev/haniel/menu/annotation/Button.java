@@ -36,8 +36,8 @@ public @interface Button {
    * Returns the minimum delay between two accepted clicks of this button, per player.
    *
    * <p>{@code 0} disables the cooldown. While the cooldown is active a click is silently ignored.
-   * The window is per player and per button; for a shared static menu it persists across reopens,
-   * for a per-player paginated menu it resets when the view is reopened.
+   * The window is per player and per button, and persists across reopens on both static and
+   * paginated menus — closing and reopening the view does not bypass an active cooldown.
    *
    * @return the cooldown in milliseconds, or {@code 0} for none
    */

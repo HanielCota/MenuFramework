@@ -6,9 +6,9 @@ import java.util.function.LongSupplier;
 /**
  * Wraps a {@link MenuAction} so it runs at most once per cooldown window, per player.
  *
- * <p>Each wrapped action owns its own {@link Cooldown} state, so a shared static action keeps a
- * per-player window across reopens while a per-open paginated action resets. A click made while
- * cooling down is silently dropped.
+ * <p>The {@link Cooldown} state is created once per button at boot (see {@code ButtonGuards}) and
+ * shared by every binding, so the per-player window survives menu reopens on static and paginated
+ * menus alike. A click made while cooling down is silently dropped.
  */
 public final class CooldownGuard {
 

@@ -1,5 +1,7 @@
 package dev.haniel.menu.template;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * The pre-rendered, static visuals of a paginated menu: navigation and border.
  *
@@ -10,4 +12,4 @@ package dev.haniel.menu.template;
  * @param border the static border filler visual
  * @param <V> the platform visual type
  */
-public record PagedDecor<V>(V previous, V next, V border) {}
+public record PagedDecor<V>(@Nullable V previous, @Nullable V next, V border) {}

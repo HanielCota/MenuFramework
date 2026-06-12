@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A reactive paginated menu, shared across players.
@@ -60,7 +61,7 @@ public final class ReactivePagedMenu implements PaperMenu {
   }
 
   @Override
-  public void open(Player player, Object argument) {
+  public void open(Player player, @Nullable Object argument) {
     Object instance = plan.wiring().instantiator().create();
     PlayerId viewer = new PlayerId(player.getUniqueId());
     injectViewer(instance, viewer);
@@ -73,13 +74,27 @@ public final class ReactivePagedMenu implements PaperMenu {
         buildView(instance, viewer, content, hooks, player.getUniqueId(), unsubscribe, hidden);
     try {
       view.show(PageNumber.first());
-      player.openInventory(view.getInventory());
+      if (player.openInventory(view.getInventory()) == null) {
+        // Another plugin cancelled InventoryOpenEvent: no close event will ever fire for this
+        // view, so arming it (ticks, refresh subscription) would leak it until plugin disable.
+        view.close();
+        return;
+      }
       view.bind();
-      unsubscribe.set(subscribeRefresh(instance, view));
+      unsubscribe.set(subscribeRefresh(instance, view, viewer));
       hooks.fireOpen(player);
     } catch (RuntimeException exception) {
-      view.close();
+      abort(player, view);
       throw exception;
+    }
+  }
+
+  private void abort(Player player, ReactivePagedView view) {
+    view.close();
+    if (player.getOpenInventory().getTopInventory().getHolder() == view) {
+      // The dead view is already on screen (e.g. @OnOpen threw after a successful open); close
+      // it so the player is not left staring at an inventory whose lifecycle has ended.
+      player.closeInventory();
     }
   }
 
@@ -108,7 +123,7 @@ public final class ReactivePagedMenu implements PaperMenu {
         lazyLoad(content, scheduler));
   }
 
-  private LazyPageLoad lazyLoad(BoundContent content, PlayerScheduler scheduler) {
+  private @Nullable LazyPageLoad lazyLoad(BoundContent content, PlayerScheduler scheduler) {
     if (!(content instanceof PageProvider pageProvider)) {
       return null;
     }
@@ -122,15 +137,18 @@ public final class ReactivePagedMenu implements PaperMenu {
     plan.wiring().viewers().forEach(field -> field.inject(instance, viewer));
   }
 
-  private Runnable subscribeRefresh(Object instance, ReactivePagedView view) {
+  private Runnable subscribeRefresh(Object instance, ReactivePagedView view, PlayerId viewer) {
     Set<Class<? extends Event>> events = RefreshEvents.of(instance.getClass());
     if (events.isEmpty()) {
       return () -> {};
     }
-    return runtime.refreshSubscriber().subscribe(events, view::refresh);
+    // Events fire on arbitrary threads (async events on Paper, region threads on Folia). Hop to
+    // the player's scheduler before touching the view so Flusher's single-thread contract holds.
+    PlayerScheduler scheduler = runtime.scheduler().forPlayer(viewer);
+    return runtime.refreshSubscriber().subscribe(events, () -> scheduler.schedule(view::refresh));
   }
 
-  private void injectArgs(Object instance, Object argument) {
+  private void injectArgs(Object instance, @Nullable Object argument) {
     if (argument == null) {
       return;
     }
@@ -153,7 +171,7 @@ public final class ReactivePagedMenu implements PaperMenu {
     // when offline (a close fired by the quit backstop): no-arg @OnClose handlers still run their
     // cleanup, while Player-accepting ones are skipped by MenuHooks.
     return () -> {
-      unsubscribe.get().run();
+      Objects.requireNonNull(unsubscribe.get()).run();
       hooks.fireClose(org.bukkit.Bukkit.getPlayer(viewer));
     };
   }

@@ -10,6 +10,9 @@ import java.lang.annotation.Target;
  *
  * <p>The id is the only metadata carried here: appearance (title, size, slots) is resolved later
  * from configuration. Annotated classes are read once at boot by the compiler.
+ *
+ * <p>Discovery walks the class and its superclasses only: {@code @Menu} on an implemented
+ * interface, and framework annotations on interface {@code default} methods, are not seen.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

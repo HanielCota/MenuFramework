@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A registered menu: the annotated source kept for reloads and the current openable menu.
@@ -17,7 +18,7 @@ import org.bukkit.entity.Player;
 public final class RegisteredMenu {
 
   private final MenuId id;
-  private final Object source;
+  private final @Nullable Object source;
   private final Class<?> sourceType;
   private final Supplier<Object> sourceFactory;
   private final AtomicReference<PaperMenu> current;
@@ -71,7 +72,7 @@ public final class RegisteredMenu {
    *
    * @return the source used to recompile this menu
    */
-  public Object source() {
+  public @Nullable Object source() {
     return source;
   }
 
@@ -109,7 +110,8 @@ public final class RegisteredMenu {
    * @return the latest compiled menu
    */
   public PaperMenu current() {
-    return current.get();
+    // current is constructed non-null and swap() rejects null, so the reference never holds null.
+    return Objects.requireNonNull(current.get());
   }
 
   /**

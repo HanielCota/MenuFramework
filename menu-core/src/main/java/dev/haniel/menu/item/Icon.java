@@ -52,6 +52,18 @@ public record Icon(String material, String name, List<String> lore, ItemTraits t
   }
 
   /**
+   * Tells whether the name or any lore line carries a {@code %token%}-style placeholder.
+   *
+   * <p>Placeholder text resolves per viewer and per moment, so callers (renderers, caches) must
+   * treat such icons as non-cacheable.
+   *
+   * @return {@code true} when a placeholder token may be present
+   */
+  public boolean hasPlaceholder() {
+    return name.indexOf('%') >= 0 || lore.stream().anyMatch(line -> line.indexOf('%') >= 0);
+  }
+
+  /**
    * Returns a copy of this icon with the given display name.
    *
    * @param name the MiniMessage name
