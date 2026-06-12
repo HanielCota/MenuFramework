@@ -4,6 +4,7 @@ import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.domain.PlayerId;
 import dev.haniel.menu.paper.api.MenuErrorHandler;
 import dev.haniel.menu.paper.holder.ClickableHolder;
+import dev.haniel.menu.paper.holder.ConfirmHolder;
 import dev.haniel.menu.paper.reactive.ReactiveView;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -19,6 +20,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 
 /**
  * The single listener that drives every menu.
@@ -136,10 +138,14 @@ public final class MenuListener implements Listener {
    */
   @EventHandler
   public void onClose(InventoryCloseEvent event) {
-    if (!(event.getInventory().getHolder() instanceof ReactiveView view)) {
+    InventoryHolder holder = event.getInventory().getHolder();
+    if (holder instanceof ConfirmHolder confirm) {
+      confirm.dismissed();
       return;
     }
-    view.close();
+    if (holder instanceof ReactiveView view) {
+      view.close();
+    }
   }
 
   /**

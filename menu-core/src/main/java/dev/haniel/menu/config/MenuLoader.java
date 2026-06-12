@@ -4,6 +4,7 @@ import dev.haniel.menu.compiler.InvalidMenuException;
 import dev.haniel.menu.domain.MenuId;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -71,6 +72,16 @@ public final class MenuLoader {
       MenuConfig config = require(id, file, parse(id, file));
       cache.put(id, new CachedConfig(stamp, config));
       return config;
+    } catch (NoSuchFileException missing) {
+      throw new InvalidMenuException(
+          "Menu '"
+              + id.value()
+              + "' has no YAML at "
+              + file
+              + "; create it, or ship menus/"
+              + id.value()
+              + ".yml in your jar so the framework can save it",
+          missing);
     } catch (IOException exception) {
       throw new InvalidMenuException(
           "Failed to load menu '" + id.value() + "' from " + file, exception);

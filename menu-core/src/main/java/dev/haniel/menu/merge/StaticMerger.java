@@ -11,6 +11,8 @@ import dev.haniel.menu.domain.ButtonId;
 import dev.haniel.menu.template.IconFactory;
 import dev.haniel.menu.template.MenuTemplate;
 import dev.haniel.menu.template.SlotBinding;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -45,7 +47,20 @@ public final class StaticMerger<V> {
    */
   public CompiledMenu<V> merge(MenuBlueprint blueprint, MenuConfig config) {
     MenuTemplate<V> template = new MenuTemplate<>(visuals(config), bindings(blueprint, config));
-    return new CompiledStaticMenu<>(blueprint.id(), config.title(), template);
+    return new CompiledStaticMenu<>(
+        blueprint.id(), config.title(), template, buttonSlots(blueprint, config));
+  }
+
+  private Map<String, Integer> buttonSlots(MenuBlueprint blueprint, MenuConfig config) {
+    Map<String, Integer> slots = new HashMap<>();
+    blueprint
+        .behaviors()
+        .forEach(
+            behavior ->
+                slots.put(
+                    behavior.id().value(),
+                    MergeButtons.slot(require(behavior.id(), config), config)));
+    return slots;
   }
 
   private Object[] visuals(MenuConfig config) {

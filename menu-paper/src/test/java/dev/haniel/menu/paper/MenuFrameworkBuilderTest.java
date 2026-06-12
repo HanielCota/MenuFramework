@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -14,7 +15,9 @@ import static org.mockito.Mockito.when;
 
 import dev.haniel.menu.paper.discovery.MenuDiscoveryException;
 import dev.haniel.menu.paper.facade.ManualFacadeMenu;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -54,6 +57,30 @@ class MenuFrameworkBuilderTest {
     // The click listener and the anvil-prompt listener, each registered exactly once.
     verify(pluginManager, times(2)).registerEvents(any(Listener.class), any(JavaPlugin.class));
     assertEquals(2, framework.reloadAll());
+  }
+
+  @Test
+  void autoSavesBundledMenusOnTheDefaultDirectory(@TempDir Path dir) {
+    JavaPlugin plugin = bundlingPlugin(dir, "alpha", "bravo");
+
+    MenuFramework framework =
+        MenuFramework.builder(plugin).scan("dev.haniel.menu.paper.samples").build();
+
+    verify(plugin).saveResource("menus/alpha.yml", false);
+    verify(plugin).saveResource("menus/bravo.yml", false);
+    assertEquals(2, framework.reloadAll());
+  }
+
+  @Test
+  void bundleMenusFalseSkipsResourceSaving(@TempDir Path dir) throws IOException {
+    Files.createDirectories(dir.resolve("menus"));
+    Files.writeString(dir.resolve("menus/alpha.yml"), MENU_YAML);
+    Files.writeString(dir.resolve("menus/bravo.yml"), MENU_YAML);
+    JavaPlugin plugin = plugin(dir, mock(PluginManager.class));
+
+    MenuFramework.builder(plugin).bundleMenus(false).scan("dev.haniel.menu.paper.samples").build();
+
+    verify(plugin, never()).saveResource(any(), any(Boolean.class));
   }
 
   @Test
@@ -205,6 +232,26 @@ class MenuFrameworkBuilderTest {
         MenuFramework.builder(plugin(dir, mock(PluginManager.class))).menusDirectory(dir);
 
     assertThrows(IllegalArgumentException.class, () -> builder.scan((String[]) null));
+  }
+
+  private JavaPlugin bundlingPlugin(Path dataFolder, String... ids) {
+    JavaPlugin plugin = plugin(dataFolder, mock(PluginManager.class));
+    for (String id : ids) {
+      String resourcePath = "menus/" + id + ".yml";
+      when(plugin.getResource(resourcePath))
+          .thenReturn(new ByteArrayInputStream(MENU_YAML.getBytes(StandardCharsets.UTF_8)));
+      doAnswer(invocation -> writeBundled(dataFolder, id))
+          .when(plugin)
+          .saveResource(resourcePath, false);
+    }
+    return plugin;
+  }
+
+  private Object writeBundled(Path dataFolder, String id) throws IOException {
+    Path file = dataFolder.resolve("menus").resolve(id + ".yml");
+    Files.createDirectories(file.getParent());
+    Files.writeString(file, MENU_YAML);
+    return null;
   }
 
   private JavaPlugin plugin(Path dataFolder, PluginManager pluginManager) {

@@ -76,6 +76,35 @@ Wire a button to `click.prompt(...)` and check:
       double open).
 - [ ] Disconnecting with an anvil open leaves no pending entry (reconnect and prompt again works).
 
+## 9. Confirmation dialog (`ConfirmPrompt`)
+The dialog inventory build (`ItemFactory`) and the open/click/close event flow are server-only; the
+unit suite covers only `ConfirmPrompt`'s value-object behaviour. Wire a button to `click.confirm(...)`
+and check:
+- [ ] `ConfirmPrompt.titled(...)` opens a 3-row chest with confirm (slot 11) and cancel (slot 15)
+      buttons; neither item can be taken.
+- [ ] Clicking confirm fires `onConfirm` **once** and closes the dialog; cancel fires `onCancel`
+      **once** and closes.
+- [ ] Closing the dialog (Esc) without choosing fires `onCancel` **once** — and a preceding
+      confirm/cancel click does **not** also fire `onCancel` on the close that follows it.
+- [ ] `onConfirm`/`onCancel` calling `click.open(...)` reopens the target menu cleanly.
+
+## 10. Sounds (`click.sound`)
+- [ ] A `@Button` calling `click.sound("minecraft:ui.button.click")` plays the sound to the clicker.
+- [ ] An `@OnOpen`/`@OnClose` hook calling `player.playSound(...)` plays on open/close.
+
+## 11. Animation (`Animation` + `@Tick`)
+- [ ] A paginated menu with a `@Tick`-incremented `@Reactive` counter and `Animation.frame(counter)`
+      cycles its icon smoothly while open and stops (no leak) on close.
+
+## 12. Per-viewer visibility (`@Visible`, static + paginated)
+The overlay/inventory filtering is wired in the per-open build; the unit suite covers `VisibilityRules`
+and the static `MenuHolder` skip/gate. Verify on a real server for both menu kinds:
+- [ ] A menu with a `@Visible("x")` rule shows button `x` to a player the rule passes and leaves the
+      slot **empty** for one it fails — test once on a static menu and once on a paginated menu.
+- [ ] The hidden button is **not clickable** (clicking its empty slot does nothing).
+- [ ] Two players opening the same menu can see different buttons at once.
+- [ ] `/reload` (or the example reload) keeps the rules working on a static menu.
+
 > Anything that fails here is a regression in code paths the unit suite cannot reach
-> (`ItemFactory`, `PaperPlayerScheduler`/`FoliaPlayerScheduler`, inventory open/click, anvil
-> events). File a bug with the menu id, YAML and steps.
+> (`ItemFactory`, `PaperPlayerScheduler`/`FoliaPlayerScheduler`, inventory open/click, anvil and
+> confirm events). File a bug with the menu id, YAML and steps.

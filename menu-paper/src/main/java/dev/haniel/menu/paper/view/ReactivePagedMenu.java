@@ -19,6 +19,7 @@ import dev.haniel.menu.paper.render.cache.DataVersion;
 import dev.haniel.menu.paper.render.cache.PageCache;
 import dev.haniel.menu.paper.render.model.Overlay;
 import dev.haniel.menu.paper.render.model.PageScene;
+import dev.haniel.menu.paper.visibility.VisibilityRules;
 import dev.haniel.menu.scheduler.PlayerScheduler;
 import dev.haniel.menu.state.State;
 import dev.haniel.menu.state.StateBinding;
@@ -65,10 +66,11 @@ public final class ReactivePagedMenu implements PaperMenu {
     injectViewer(instance, viewer);
     injectArgs(instance, argument);
     MenuHooks hooks = HookDefinitions.of(instance.getClass()).bind(instance);
+    Set<Integer> hidden = hiddenSlots(instance, player);
     AtomicReference<Runnable> unsubscribe = new AtomicReference<>(() -> {});
     BoundContent content = plan.wiring().provider().bind(instance);
     ReactivePagedView view =
-        buildView(instance, viewer, content, hooks, player.getUniqueId(), unsubscribe);
+        buildView(instance, viewer, content, hooks, player.getUniqueId(), unsubscribe, hidden);
     try {
       view.show(PageNumber.first());
       player.openInventory(view.getInventory());
@@ -87,11 +89,12 @@ public final class ReactivePagedMenu implements PaperMenu {
       BoundContent content,
       MenuHooks hooks,
       UUID uuid,
-      AtomicReference<Runnable> unsubscribe) {
+      AtomicReference<Runnable> unsubscribe,
+      Set<Integer> hidden) {
     PlayerScheduler scheduler = runtime.scheduler().forPlayer(viewer);
     PageRenderer renderer =
         new PageRenderer(
-            scene(instance, viewer, content),
+            scene(instance, viewer, content, hidden),
             new PageCache(runtime.logger()),
             new DataVersion(),
             runtime.inventories());
@@ -155,7 +158,8 @@ public final class ReactivePagedMenu implements PaperMenu {
     };
   }
 
-  private PageScene scene(Object instance, PlayerId viewer, BoundContent content) {
+  private PageScene scene(
+      Object instance, PlayerId viewer, BoundContent content, Set<Integer> hidden) {
     PagedAppearance<ItemStack> appearance = plan.appearance();
     String title = runtime.placeholders().resolve(viewer, appearance.title());
     return new PageScene(
@@ -165,7 +169,7 @@ public final class ReactivePagedMenu implements PaperMenu {
         appearance.layout(),
         appearance.decor(),
         content(content, viewer),
-        overlay(instance));
+        overlay(instance, hidden));
   }
 
   private PagedContent<ItemStack> content(BoundContent content, PlayerId viewer) {
@@ -176,8 +180,23 @@ public final class ReactivePagedMenu implements PaperMenu {
     return new PagedContent<>(provider, icons);
   }
 
-  private Overlay overlay(Object instance) {
-    return new Overlay(plan.appearance().overlayVisuals(), boundActions(instance));
+  private Overlay overlay(Object instance, Set<Integer> hidden) {
+    return new Overlay(
+        shown(plan.appearance().overlayVisuals(), hidden), shown(boundActions(instance), hidden));
+  }
+
+  private static <T> Map<Integer, T> shown(Map<Integer, T> all, Set<Integer> hidden) {
+    if (hidden.isEmpty()) {
+      return all;
+    }
+    return all.entrySet().stream()
+        .filter(entry -> !hidden.contains(entry.getKey()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private Set<Integer> hiddenSlots(Object instance, Player player) {
+    return VisibilityRules.of(instance.getClass())
+        .hiddenSlots(instance, player, plan.wiring().buttonSlots());
   }
 
   private Map<Integer, MenuAction> boundActions(Object instance) {

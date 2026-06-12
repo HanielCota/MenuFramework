@@ -8,6 +8,38 @@ All notable changes to MenuFramework are documented here. The format follows
 
 ### Added
 
+- **Per-viewer button visibility (`@Visible`).** A `@Visible("<button id>")` method returning
+  `boolean` (no args or a single `Player`) decides, per open, whether that `@Button` is shown:
+  `false` leaves its slot empty and non-clickable for that viewer, where a permission check would
+  leave the button visible but inert. The rule is read by the Paper layer via reflection (it may
+  accept a `Player`) and its id must match a real `@Button`. Works on both static and paginated
+  menus: paginated menus filter the hidden overlay slots out of the per-open render, while static
+  menus bind the rules to their shared instance and skip the hidden slots when building each viewer's
+  inventory (and gate clicks on the empty slot). The renderers are untouched in both cases.
+- **Confirmation dialog (`ConfirmPrompt`).** `click.confirm(ConfirmPrompt.titled("<red>Delete?")
+  .onConfirm(...).onCancel(...))` opens a ready-made yes/no chest dialog from a button — no `@Menu`
+  class or YAML for a one-off "are you sure?". Exactly one handler runs (confirm on the confirm
+  button, cancel on the cancel button or on closing the dialog); icons and title are overridable and
+  default to lime/red wool. It reuses the single menu listener (the dialog is a `ClickableHolder`), so
+  it adds no new event wiring, and unlike `open`/`prompt` it also works on a code-built
+  `MenuClick.of(...)`. Navigation after a choice stays explicit via `click.open(...)`.
+- **Click sounds (`click.sound`).** `click.sound(Sound)` and `click.sound("minecraft:ui.button.click")`
+  play an Adventure sound to the clicking player as button feedback, without resolving the player by
+  hand. Open/close sounds need no new API — play them from an `@OnOpen`/`@OnClose` hook with
+  `player.playSound(...)`.
+- **Animation primitive (`Animation`).** `Animation.of(frame1, frame2, ...)` plus `frame(long step)`
+  is the sugar over a `@Tick`-incremented `@Reactive` counter: it holds the frames and does the cyclic
+  index arithmetic (correct for negative and ever-growing steps), so a paginated menu animates an icon
+  or lore by reading `animation.frame(tick)` in `@Paginated` instead of hand-rolling a modulo.
+- **Auto-bundled menu YAML.** A plugin that ships its menu files under `resources/menus/` no longer
+  needs to list them or call `saveResource` by hand: at boot the framework copies each registered
+  menu's bundled `menus/<id>.yml` from the jar into the data folder if it is missing. Existing files
+  are never overwritten, and a menu defined entirely in code (no bundled YAML) is skipped. Enabled by
+  default; opt out with `MenuFramework.builder(plugin).bundleMenus(false)`, and it is ignored when a
+  custom `menusDirectory(...)` is set. The example plugin's `onEnable` drops its manual file list as a
+  result. As a companion, a `@Menu` with no YAML now fails at boot with `Menu '<id>' has no YAML at
+  <path>; create it, or ship menus/<id>.yml in your jar so the framework can save it` instead of the
+  generic `Failed to load menu`, pointing straight at the fix.
 - **Lazy, asynchronous pagination.** A `@Paginated` method may now load one page at a time —
   `Page<MenuItem> load(int page, int pageSize)` — instead of returning the whole `List<MenuItem>` up
   front, fitting a real data source (a database cursor, a paged API). The framework runs the

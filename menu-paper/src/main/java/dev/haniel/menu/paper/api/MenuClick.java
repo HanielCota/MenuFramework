@@ -4,8 +4,11 @@ import dev.haniel.menu.click.ClickContext;
 import dev.haniel.menu.click.ClickType;
 import dev.haniel.menu.domain.MenuId;
 import dev.haniel.menu.domain.PlayerId;
+import dev.haniel.menu.paper.holder.ConfirmHolder;
 import dev.haniel.menu.paper.listener.PaperClickContext;
 import java.util.Objects;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
@@ -118,6 +121,30 @@ public final class MenuClick {
   }
 
   /**
+   * Plays a sound to the player who clicked, at their own location.
+   *
+   * <p>The usual button-feedback sugar: call it from a {@code @Button} method to give a click an
+   * audible response without resolving the player yourself.
+   *
+   * @param sound the Adventure sound to play; never null
+   */
+  public void sound(Sound sound) {
+    player().playSound(Objects.requireNonNull(sound, "sound"));
+  }
+
+  /**
+   * Plays the sound with the given key to the player who clicked, at full volume and normal pitch.
+   *
+   * <p>Convenience over {@link #sound(Sound)} for the common case; for example {@code
+   * click.sound("minecraft:ui.button.click")}.
+   *
+   * @param soundKey the namespaced sound key, e.g. {@code "minecraft:ui.button.click"}; never null
+   */
+  public void sound(String soundKey) {
+    sound(Sound.sound(Key.key(soundKey), Sound.Source.MASTER, 1f, 1f));
+  }
+
+  /**
    * Opens the registered menu with the given id for the player who clicked.
    *
    * @param id the menu id to open; never null
@@ -148,6 +175,19 @@ public final class MenuClick {
    */
   public void prompt(AnvilPrompt<?> prompt) {
     services.requirePrompts().open(player(), prompt);
+  }
+
+  /**
+   * Opens a yes/no confirmation dialog for the player who clicked.
+   *
+   * <p>Available on every click, including code-built {@link dev.haniel.menu.item.MenuItem}
+   * actions: the dialog needs no navigation wiring. Exactly one of the prompt's handlers runs —
+   * confirm on the confirm button, cancel on the cancel button or on closing the dialog.
+   *
+   * @param prompt the confirmation dialog to open; never null
+   */
+  public void confirm(ConfirmPrompt prompt) {
+    ConfirmHolder.open(player(), Objects.requireNonNull(prompt, "prompt"), services.miniMessage());
   }
 
   /** Closes the menu for the player who clicked. */

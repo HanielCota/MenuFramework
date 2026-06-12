@@ -20,6 +20,7 @@ import java.util.Map;
  * @param ticks the unbound {@code @Tick} handles
  * @param viewers the {@code @Viewer} field setters
  * @param args the {@code @Arg} field setters
+ * @param buttonSlots the overlay button id to slot map, for per-viewer {@code @Visible} rules
  */
 public record PagedWiring(
     Instantiator instantiator,
@@ -28,7 +29,8 @@ public record PagedWiring(
     List<StateField> states,
     List<UnboundTick> ticks,
     List<ViewerField> viewers,
-    List<ArgField> args) {
+    List<ArgField> args,
+    Map<String, Integer> buttonSlots) {
 
   public PagedWiring {
     overlayActions = Map.copyOf(overlayActions);
@@ -36,6 +38,7 @@ public record PagedWiring(
     ticks = List.copyOf(ticks);
     viewers = List.copyOf(viewers);
     args = List.copyOf(args);
+    buttonSlots = Map.copyOf(buttonSlots);
   }
 
   /**
@@ -52,5 +55,27 @@ public record PagedWiring(
       Map<Integer, UnboundAction> overlayActions,
       List<StateField> states) {
     this(instantiator, provider, overlayActions, states, List.of(), List.of(), List.of());
+  }
+
+  /**
+   * Creates wiring with no button-to-slot map (no {@code @Visible} rules).
+   *
+   * @param instantiator builds the per-player instance
+   * @param provider the unbound paginated content source
+   * @param overlayActions the unbound static button actions, by slot
+   * @param states the reactive field getters
+   * @param ticks the unbound tick handles
+   * @param viewers the viewer field setters
+   * @param args the argument field setters
+   */
+  public PagedWiring(
+      Instantiator instantiator,
+      UnboundContent provider,
+      Map<Integer, UnboundAction> overlayActions,
+      List<StateField> states,
+      List<UnboundTick> ticks,
+      List<ViewerField> viewers,
+      List<ArgField> args) {
+    this(instantiator, provider, overlayActions, states, ticks, viewers, args, Map.of());
   }
 }
