@@ -2,9 +2,9 @@ package com.hanielfialho.menuframework.example.menu;
 
 import com.hanielfialho.menuframework.api.Menu;
 import com.hanielfialho.menuframework.api.MenuCanvas;
-import com.hanielfialho.menuframework.api.MenuInteraction;
 import com.hanielfialho.menuframework.api.MenuLayout;
 import com.hanielfialho.menuframework.api.MenuRenderContext;
+import com.hanielfialho.menuframework.api.component.MenuComponents;
 import com.hanielfialho.menuframework.api.pagination.PageCursor;
 import com.hanielfialho.menuframework.api.pagination.PageSlice;
 import com.hanielfialho.menuframework.api.pagination.PaginationLayout;
@@ -15,11 +15,18 @@ import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
+import org.jspecify.annotations.NonNull;
 
 /** Exemplo completo de paginação síncrona. */
 public final class SynchronousProductMenu implements Menu<SynchronousProductMenu.State> {
 
-  private static final MenuLayout LAYOUT = MenuLayout.chest(6);
+  private static final MenuLayout LAYOUT =
+      MenuLayout.chestBuilder(6)
+          .slot("previous", 5, 0)
+          .slot("close", 5, 3)
+          .slot("indicator", 5, 4)
+          .slot("next", 5, 8)
+          .build();
 
   private static final PaginationLayout PAGINATION =
       PaginationLayout.builder(LAYOUT)
@@ -28,8 +35,6 @@ public final class SynchronousProductMenu implements Menu<SynchronousProductMenu
           .indicatorSlot(5, 4)
           .nextSlot(5, 8)
           .build();
-
-  private static final int CLOSE_SLOT = LAYOUT.slot(5, 3);
 
   private final Paginator<Product> products;
 
@@ -43,7 +48,7 @@ public final class SynchronousProductMenu implements Menu<SynchronousProductMenu
   }
 
   @Override
-  public Component title(MenuRenderContext<State> context) {
+  public Component title(@NonNull MenuRenderContext<State> context) {
     return Component.text("Produtos", NamedTextColor.GOLD);
   }
 
@@ -51,7 +56,7 @@ public final class SynchronousProductMenu implements Menu<SynchronousProductMenu
   public void render(MenuRenderContext<State> context, MenuCanvas<State> canvas) {
     PageSlice<Product> page = this.products.page(PAGINATION.request(context.state().cursor()));
 
-    canvas.background(ItemStacks.named(Material.GRAY_STAINED_GLASS_PANE, Component.empty()));
+    canvas.component(context, MenuComponents.background());
 
     PAGINATION.forEachEntry(
         page,
@@ -74,38 +79,23 @@ public final class SynchronousProductMenu implements Menu<SynchronousProductMenu
 
     PAGINATION.forEachUnusedSlot(page, canvas::empty);
 
-    if (!page.hasPrevious()) {
-      canvas.item(
-          PAGINATION.previousSlot(),
-          ItemStacks.named(
-              Material.GRAY_DYE, Component.text("Primeira página", NamedTextColor.DARK_GRAY)));
-    }
-
-    if (page.hasPrevious()) {
-      canvas.button(
-          PAGINATION.previousSlot(),
-          ItemStacks.named(
-              Material.ARROW, Component.text("Página anterior", NamedTextColor.YELLOW)),
-          interaction ->
-              interaction.updateState(state -> state.withCursor(page.cursor().previous())));
-    }
-
-    if (!page.hasNext()) {
-      canvas.item(
-          PAGINATION.nextSlot(),
-          ItemStacks.named(
-              Material.GRAY_DYE, Component.text("Última página", NamedTextColor.DARK_GRAY)));
-    }
-
-    if (page.hasNext()) {
-      canvas.button(
-          PAGINATION.nextSlot(),
-          ItemStacks.named(Material.ARROW, Component.text("Próxima página", NamedTextColor.YELLOW)),
-          interaction -> interaction.updateState(state -> state.withCursor(page.cursor().next())));
-    }
+    canvas.component(
+        context,
+        MenuComponents.previousPageButton(
+            "previous",
+            ignored -> page.hasPrevious(),
+            interaction ->
+                interaction.updateState(state -> state.withCursor(page.cursor().previous()))));
+    canvas.component(
+        context,
+        MenuComponents.nextPageButton(
+            "next",
+            ignored -> page.hasNext(),
+            interaction ->
+                interaction.updateState(state -> state.withCursor(page.cursor().next()))));
 
     canvas.item(
-        PAGINATION.indicatorSlot().orElseThrow(),
+        "indicator",
         ItemStacks.named(
             Material.PAPER,
             Component.text(
@@ -115,10 +105,7 @@ public final class SynchronousProductMenu implements Menu<SynchronousProductMenu
                 Component.text(
                     "Itens: " + page.totalElements().orElseThrow(), NamedTextColor.GRAY))));
 
-    canvas.button(
-        CLOSE_SLOT,
-        ItemStacks.named(Material.BARRIER, Component.text("Fechar", NamedTextColor.RED)),
-        MenuInteraction::close);
+    canvas.component(context, MenuComponents.closeButton("close"));
   }
 
   public record State(PageCursor cursor) {

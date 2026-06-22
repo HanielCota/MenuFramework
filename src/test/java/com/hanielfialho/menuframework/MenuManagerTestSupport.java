@@ -14,6 +14,7 @@ import com.hanielfialho.menuframework.api.MenuLayout;
 import com.hanielfialho.menuframework.api.MenuOpenContext;
 import com.hanielfialho.menuframework.api.MenuRenderContext;
 import com.hanielfialho.menuframework.internal.inventory.MenuHolder;
+import com.hanielfialho.menuframework.internal.inventory.MenuViewAccess;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -26,6 +27,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockbukkit.mockbukkit.MockBukkit;
@@ -71,10 +73,15 @@ abstract class MenuManagerTestSupport {
     this.server.getScheduler().performTicks(ticks);
   }
 
-  UUID currentSessionId() {
-    Object holder = this.player.getOpenInventory().getTopInventory().getHolder(false);
+  void waitAsyncTasks() {
+    this.server.getScheduler().waitAsyncTasksFinished();
+  }
 
-    MenuHolder menuHolder = assertInstanceOf(MenuHolder.class, holder);
+  UUID currentSessionId() {
+    MenuHolder menuHolder =
+        assertInstanceOf(
+            MenuHolder.class,
+            MenuViewAccess.holderOf(this.player.getOpenInventory().getTopInventory()));
 
     return menuHolder.sessionId();
   }
@@ -181,7 +188,7 @@ abstract class MenuManagerTestSupport {
     }
 
     @Override
-    public Component title(MenuRenderContext<MenuState> context) {
+    public Component title(@NonNull MenuRenderContext<MenuState> context) {
       return Component.text(this.name);
     }
 
@@ -189,7 +196,10 @@ abstract class MenuManagerTestSupport {
     public void render(MenuRenderContext<MenuState> context, MenuCanvas<MenuState> canvas) {
       Material material = context.state().value() == 0 ? Material.STONE : Material.DIAMOND;
 
-      canvas.button(PRIMARY_SLOT, new ItemStack(material), this.primaryHandler);
+      canvas.button(
+          PRIMARY_SLOT,
+          new ItemStack(material),
+          interaction -> this.primaryHandler.handle(interaction));
 
       canvas.button(
           CLOSE_SLOT, new ItemStack(Material.BARRIER), interaction -> interaction.close());

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.hanielfialho.menuframework.api.MenuCloseReason;
 import com.hanielfialho.menuframework.internal.inventory.MenuHolder;
+import com.hanielfialho.menuframework.internal.inventory.MenuViewAccess;
 import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -165,8 +166,8 @@ final class MenuManagerLifecycleTest extends MenuManagerTestSupport {
     RecordingMenu menu = new RecordingMenu("Isolated runtime");
     this.open(menu, MenuState.initial());
 
-    MenuHolder holder =
-        (MenuHolder) this.player.getOpenInventory().getTopInventory().getHolder(false);
+    MenuHolder holder = MenuViewAccess.holderOf(this.player.getOpenInventory().getTopInventory());
+    assertNotNull(holder);
 
     MenuFramework secondary = MenuFramework.create(this.plugin);
 

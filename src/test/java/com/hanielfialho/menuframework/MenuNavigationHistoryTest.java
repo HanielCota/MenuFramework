@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -322,7 +323,7 @@ final class MenuNavigationHistoryTest extends MenuManagerTestSupport {
     }
 
     @Override
-    public Component title(MenuRenderContext<MenuState> context) {
+    public Component title(@NonNull MenuRenderContext<MenuState> context) {
       return Component.text(this.title);
     }
 
@@ -348,7 +349,7 @@ final class MenuNavigationHistoryTest extends MenuManagerTestSupport {
     }
 
     @Override
-    public Component title(MenuRenderContext<MenuState> context) {
+    public Component title(@NonNull MenuRenderContext<MenuState> context) {
       return Component.text("Failing");
     }
 

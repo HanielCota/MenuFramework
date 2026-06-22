@@ -1,5 +1,6 @@
 package com.hanielfialho.menuframework.api;
 
+import com.hanielfialho.menuframework.api.feedback.MenuFeedbackSignal;
 import com.hanielfialho.menuframework.api.task.MenuAsyncActions;
 import com.hanielfialho.menuframework.api.task.MenuTaskActions;
 import java.util.Objects;
@@ -60,6 +61,21 @@ public interface MenuInteraction<S>
   void refresh();
 
   /**
+   * Buffers a feedback signal for emission after this interaction completes successfully.
+   *
+   * <p>Feedback is transactional: signals are discarded when the click handler or its primary
+   * synchronous state transition fails. Signals may be combined with terminal, state and task
+   * commands.
+   *
+   * @param signal non-null signal
+   * @throws NullPointerException if {@code signal} is {@code null}
+   * @throws IllegalStateException if the interaction is no longer active
+   */
+  default void feedback(MenuFeedbackSignal signal) {
+    Objects.requireNonNull(signal, "signal");
+  }
+
+  /**
    * Requests safe termination of the current session.
    *
    * @throws IllegalStateException if another terminal command or a non-terminal command was already
@@ -99,10 +115,10 @@ public interface MenuInteraction<S>
    * Restores the previous menu, or closes the current root session when no history entry exists.
    */
   default void backOrClose() {
-    if (!this.canGoBack()) {
+    if (this.canGoBack()) {
+      this.back();
+    } else {
       this.close();
-      return;
     }
-    this.back();
   }
 }

@@ -3,7 +3,9 @@ package com.hanielfialho.menuframework.internal.session;
 import com.hanielfialho.menuframework.api.Menu;
 import com.hanielfialho.menuframework.api.MenuContext;
 import com.hanielfialho.menuframework.api.MenuLayout;
+import com.hanielfialho.menuframework.api.feedback.MenuFeedback;
 import com.hanielfialho.menuframework.api.task.MenuTaskKey;
+import com.hanielfialho.menuframework.api.theme.MenuTheme;
 import com.hanielfialho.menuframework.internal.inventory.MenuHolder;
 import com.hanielfialho.menuframework.internal.inventory.MenuViewAccess;
 import com.hanielfialho.menuframework.internal.render.MenuFrame;
@@ -15,7 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
@@ -35,6 +36,8 @@ public final class MenuSession<S> {
   private final MenuLayout layout;
   private final MenuHolder holder;
   private final int historyDepth;
+  private final MenuTheme theme;
+  private final MenuFeedback feedback;
 
   private final AtomicBoolean opened;
   private final AtomicBoolean lifecycleStarted;
@@ -45,7 +48,7 @@ public final class MenuSession<S> {
   private final Map<MenuTaskKey, Long> taskGenerations;
   private final Map<MenuTaskKey, MenuTaskHandle> activeTasks;
 
-  private final AtomicReference<Snapshot<S>> snapshot;
+  private volatile Snapshot<S> snapshot;
 
   public MenuSession(
       UUID id,
@@ -54,7 +57,9 @@ public final class MenuSession<S> {
       MenuHolder holder,
       S initialState,
       MenuFrame<S> initialFrame,
-      int historyDepth) {
+      int historyDepth,
+      MenuTheme theme,
+      MenuFeedback feedback) {
     this.id = Objects.requireNonNull(id, "id");
     this.viewerId = Objects.requireNonNull(viewerId, "viewerId");
     this.menu = Objects.requireNonNull(menu, "menu");
@@ -65,13 +70,14 @@ public final class MenuSession<S> {
     }
 
     this.historyDepth = historyDepth;
+    this.theme = Objects.requireNonNull(theme, "theme");
+    this.feedback = Objects.requireNonNull(feedback, "feedback");
 
     S checkedInitialState = Objects.requireNonNull(initialState, "initialState");
     MenuFrame<S> checkedInitialFrame = Objects.requireNonNull(initialFrame, "initialFrame");
 
     this.layout = checkedInitialFrame.layout();
-    this.snapshot =
-        new AtomicReference<>(new Snapshot<>(checkedInitialState, checkedInitialFrame, 1L));
+    this.snapshot = new Snapshot<>(checkedInitialState, checkedInitialFrame, 1L);
 
     this.opened = new AtomicBoolean();
     this.lifecycleStarted = new AtomicBoolean();
@@ -97,8 +103,37 @@ public final class MenuSession<S> {
       Menu<S> menu,
       MenuHolder holder,
       S initialState,
+      MenuFrame<S> initialFrame,
+      int historyDepth) {
+    this(
+        id,
+        viewerId,
+        menu,
+        holder,
+        initialState,
+        initialFrame,
+        historyDepth,
+        MenuTheme.defaults(),
+        MenuFeedback.none());
+  }
+
+  public MenuSession(
+      UUID id,
+      UUID viewerId,
+      Menu<S> menu,
+      MenuHolder holder,
+      S initialState,
       MenuFrame<S> initialFrame) {
-    this(id, viewerId, menu, holder, initialState, initialFrame, 0);
+    this(
+        id,
+        viewerId,
+        menu,
+        holder,
+        initialState,
+        initialFrame,
+        0,
+        MenuTheme.defaults(),
+        MenuFeedback.none());
   }
 
   public UUID id() {
@@ -121,20 +156,28 @@ public final class MenuSession<S> {
     return this.historyDepth;
   }
 
+  public MenuTheme theme() {
+    return this.theme;
+  }
+
+  public MenuFeedback feedback() {
+    return this.feedback;
+  }
+
   public Inventory inventory() {
     return this.holder.getInventory();
   }
 
   public S state() {
-    return this.snapshot.get().state();
+    return this.snapshot.state();
   }
 
   public MenuFrame<S> frame() {
-    return this.snapshot.get().frame();
+    return this.snapshot.frame();
   }
 
   public long revision() {
-    return this.snapshot.get().revision();
+    return this.snapshot.revision();
   }
 
   public boolean opened() {
@@ -170,7 +213,7 @@ public final class MenuSession<S> {
       throw new IllegalArgumentException("Viewer does not own this menu session");
     }
 
-    Snapshot<S> current = this.snapshot.get();
+    Snapshot<S> current = this.snapshot;
 
     return new MenuContext<>(
         this.id, viewer, current.state(), current.revision(), this.historyDepth);
@@ -251,7 +294,7 @@ public final class MenuSession<S> {
     return handle.complete();
   }
 
-  public void cancelTask(MenuTaskKey key) {
+  public boolean cancelTask(MenuTaskKey key) {
     Objects.requireNonNull(key, "key");
 
     MenuTaskHandle removed;
@@ -261,22 +304,27 @@ public final class MenuSession<S> {
     }
 
     if (removed == null) {
-      return;
+      return false;
     }
 
     removed.cancel();
+    return true;
   }
 
-  public void cancelTask(MenuTaskHandle handle) {
+  public boolean cancelTask(MenuTaskHandle handle) {
     Objects.requireNonNull(handle, "handle");
+
+    boolean removed = false;
 
     synchronized (this.taskLock) {
       if (this.activeTasks.get(handle.key()) == handle) {
         this.activeTasks.remove(handle.key());
+        removed = true;
       }
     }
 
     handle.cancel();
+    return removed;
   }
 
   public void commit(S newState, MenuFrame<S> newFrame) {
@@ -292,9 +340,9 @@ public final class MenuSession<S> {
         throw new IllegalStateException("Cannot commit a disposed menu session");
       }
 
-      Snapshot<S> current = this.snapshot.get();
-      this.snapshot.set(
-          new Snapshot<>(checkedState, checkedFrame, Math.incrementExact(current.revision())));
+      Snapshot<S> current = this.snapshot;
+      this.snapshot =
+          new Snapshot<>(checkedState, checkedFrame, Math.incrementExact(current.revision()));
     }
   }
 

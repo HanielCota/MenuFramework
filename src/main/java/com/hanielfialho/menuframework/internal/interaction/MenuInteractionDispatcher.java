@@ -4,6 +4,9 @@ import com.hanielfialho.menuframework.api.MenuClick;
 import com.hanielfialho.menuframework.api.MenuClickHandler;
 import com.hanielfialho.menuframework.api.MenuCloseReason;
 import com.hanielfialho.menuframework.api.error.MenuFailureOperation;
+import com.hanielfialho.menuframework.api.feedback.MenuFeedbackContext;
+import com.hanielfialho.menuframework.api.feedback.MenuFeedbackSignal;
+import com.hanielfialho.menuframework.internal.error.MenuExceptions;
 import com.hanielfialho.menuframework.internal.error.MenuRuntimeLogger;
 import com.hanielfialho.menuframework.internal.inventory.MenuViewAccess;
 import com.hanielfialho.menuframework.internal.lifecycle.MenuLifecycleCoordinator;
@@ -16,6 +19,7 @@ import com.hanielfialho.menuframework.internal.session.MenuSessionRegistry;
 import com.hanielfialho.menuframework.internal.task.MenuAsyncCommand;
 import com.hanielfialho.menuframework.internal.task.MenuTaskCommands;
 import com.hanielfialho.menuframework.internal.task.MenuTaskRuntime;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.entity.Player;
@@ -90,7 +94,8 @@ public final class MenuInteractionDispatcher {
     try {
       clickHandler.handle(interaction);
       successful = true;
-    } catch (Exception throwable) {
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportSessionFailure(MenuFailureOperation.CLICK_HANDLER, session, throwable);
     } finally {
       interaction.finish();
@@ -100,20 +105,33 @@ public final class MenuInteractionDispatcher {
       return;
     }
 
+    List<MenuFeedbackSignal> feedbackSignals = interaction.feedbackSignals();
+
     if (interaction.closeRequested()) {
-      this.lifecycle.scheduleClose(viewer, session.id(), MenuCloseReason.BUTTON);
+      this.lifecycle.scheduleClose(
+          viewer,
+          session.id(),
+          MenuCloseReason.BUTTON,
+          () -> this.emitFeedback(session, viewer, click, feedbackSignals, false));
       return;
     }
 
     if (interaction.backRequested()) {
-      this.lifecycle.scheduleBack(viewer, session.id());
+      this.lifecycle.scheduleBack(
+          viewer,
+          session.id(),
+          () -> this.emitFeedback(session, viewer, click, feedbackSignals, false));
       return;
     }
 
     MenuNavigation<?> navigation = interaction.navigationRequest();
 
     if (navigation != null) {
-      this.lifecycle.scheduleNavigation(viewer, session.id(), navigation);
+      this.lifecycle.scheduleNavigation(
+          viewer,
+          session.id(),
+          navigation,
+          () -> this.emitFeedback(session, viewer, click, feedbackSignals, false));
       return;
     }
 
@@ -123,20 +141,19 @@ public final class MenuInteractionDispatcher {
 
     if (asyncCommand != null) {
       stateCommandApplied = this.tasks.startAsync(session, viewer, asyncCommand);
-    }
-
-    if (stateCommandApplied && asyncCommand == null && interaction.refreshRequested()) {
+    } else if (interaction.refreshRequested()) {
       try {
         stateCommandApplied =
             this.frames.renderAndApply(session, viewer, interaction.resultingState());
-      } catch (Exception throwable) {
+      } catch (Throwable throwable) {
+        MenuExceptions.rethrowIfFatal(throwable);
         this.logger.reportSessionFailure(MenuFailureOperation.CLICK_RENDER, session, throwable);
 
         stateCommandApplied = false;
       }
     }
 
-    if (!stateCommandApplied || this.isUnusable(session, viewer)) {
+    if (!stateCommandApplied || !this.isUsable(session, viewer)) {
       return;
     }
 
@@ -147,16 +164,51 @@ public final class MenuInteractionDispatcher {
      */
     this.tasks.applyCancellations(session, taskCommands);
 
-    if (this.isUnusable(session, viewer)) {
+    if (!this.isUsable(session, viewer)) {
       return;
     }
 
     this.tasks.startPeriodic(session, viewer, taskCommands);
+
+    this.emitFeedback(session, viewer, click, feedbackSignals, true);
   }
 
-  private boolean isUnusable(MenuSession<?> session, Player viewer) {
-    return !this.runtimeState.running()
-        || !this.sessions.isCurrent(session)
-        || !MenuViewAccess.isSessionInventoryOpen(viewer, session.id());
+  private void emitFeedback(
+      MenuSession<?> session,
+      Player viewer,
+      MenuClick click,
+      List<MenuFeedbackSignal> signals,
+      boolean requireUsableSession) {
+    if (signals.isEmpty()) {
+      return;
+    }
+
+    if (requireUsableSession) {
+      if (!this.isUsable(session, viewer)) {
+        return;
+      }
+    } else if (!this.runtimeState.running() || !viewer.isOnline()) {
+      return;
+    }
+
+    for (MenuFeedbackSignal signal : signals) {
+      try {
+        session
+            .feedback()
+            .emit(
+                new MenuFeedbackContext(
+                    session.id(), viewer, session.menu(), session.revision(), click),
+                signal);
+      } catch (Throwable throwable) {
+        MenuExceptions.rethrowIfFatal(throwable);
+        this.logger.reportSessionFailure(MenuFailureOperation.FEEDBACK, session, throwable);
+      }
+    }
+  }
+
+  private boolean isUsable(MenuSession<?> session, Player viewer) {
+    return this.runtimeState.running()
+        && this.sessions.isCurrent(session)
+        && MenuViewAccess.isSessionInventoryOpen(viewer, session.id());
   }
 }

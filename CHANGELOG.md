@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1
+
+- Documentação de DX para layouts nomeados, regiões, componentes, temas, feedback e `MenuTestHarness`.
+- Exemplos atualizados para ensinar slots nomeados, componentes reutilizáveis e feedback padrão.
+- `MenuComponents.compose(...)` ganhou overload varargs.
+- `MenuButton` documenta estados hidden/disabled e oferece atalhos `hiddenWhen` e `disabledWhen`.
+- Testes de integração usam o fallback de holder do runtime, evitando skips causados por `InventoryMock#getHolder(false)` no MockBukkit.
+
 ## 1.0.0
 
 - Namespace definitivo `com.hanielfialho.menuframework`.

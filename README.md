@@ -13,6 +13,8 @@ A ideia central é simples: a definição do menu é reutilizável, o estado per
 - [Conceitos principais](#conceitos-principais)
 - [API pública](#api-pública)
 - [Renderização e canvas](#renderização-e-canvas)
+- [Layouts nomeados e regiões](#layouts-nomeados-e-regiões)
+- [Componentes, temas e feedback](#componentes-temas-e-feedback)
 - [Interações e comandos](#interações-e-comandos)
 - [Navegação e histórico](#navegação-e-histórico)
 - [Paginação síncrona](#paginação-síncrona)
@@ -20,6 +22,7 @@ A ideia central é simples: a definição do menu é reutilizável, o estado per
 - [Tasks periódicas](#tasks-periódicas)
 - [Tratamento de erros](#tratamento-de-erros)
 - [Paper, Folia e threads](#paper-folia-e-threads)
+- [Testando menus](#testando-menus)
 - [Build, testes e formatação](#build-testes-e-formatação)
 - [Exemplos](#exemplos)
 - [Limites atuais](#limites-atuais)
@@ -35,6 +38,9 @@ A ideia central é simples: a definição do menu é reutilizável, o estado per
 - Rollback de alterações visuais se uma aplicação parcial falhar.
 - Estado, frame e revisão publicados como um snapshot consistente.
 - Histórico de navegação limitado por jogador.
+- Slots nomeados e regiões ordenadas para reduzir números mágicos.
+- Componentes reutilizáveis para background, botões, paginação, loading e retry.
+- Temas de ícones e feedback transacional por sinais.
 - Paginação síncrona sobre snapshots em memória.
 - Paginação assíncrona com `LOADING`, `READY`, `ERROR`, retry e barreira de geração.
 - Tasks assíncronas e periódicas vinculadas à sessão.
@@ -328,12 +334,13 @@ Essas operações são thread-aware pela fronteira de scheduler, mas o código d
 
 ### `MenuFrameworkConfiguration`
 
-Permite configurar profundidade de histórico e handler de erro:
+Permite configurar profundidade de histórico, handler de erro, tema e feedback:
 
 ```java
 MenuFrameworkConfiguration configuration =
     MenuFrameworkConfiguration.builder()
         .maxNavigationHistoryDepth(64)
+        .defaultFeedback(SoundMenuFeedback.minecraftDefaults())
         .errorHandler(context -> {
           getLogger().severe(
               "Menu failure: "
@@ -350,6 +357,8 @@ this.menuFramework = MenuFramework.create(this, configuration);
 ```
 
 O handler pode ser chamado no scheduler da entidade ou em thread assíncrona. Ele deve ser thread-safe e não deve acessar APIs Bukkit dependentes de região.
+
+O feedback padrão é `MenuFeedback.none()`. Configure `SoundMenuFeedback.minecraftDefaults()` ou uma implementação própria quando quiser sons, partículas ou mensagens transacionais nos componentes.
 
 ## Renderização e canvas
 
@@ -378,6 +387,74 @@ canvas.button(2, 4, new ItemStack(Material.BARRIER), MenuInteraction::close);
 ```
 
 Isso equivale a `layout().slot(2, 4)`.
+
+## Layouts nomeados e regiões
+
+Para menus mantidos por mais tempo, prefira nomear slots estruturais. Isso remove números mágicos do `render` e melhora mensagens de erro:
+
+```java
+private static final MenuLayout LAYOUT =
+    MenuLayout.chestBuilder(3)
+        .slot("confirm", 1, 2)
+        .slot("message", 1, 4)
+        .slot("cancel", 1, 6)
+        .slot("close", 2, 4)
+        .region("content", SlotPatterns.rectangle(0, 1, 0, 7))
+        .build();
+```
+
+Uso no canvas:
+
+```java
+canvas.item("message", messageIcon);
+canvas.button("confirm", confirmIcon, interaction -> confirm(interaction.viewer()));
+canvas.region("content").empty();
+```
+
+Regiões preservam a ordem declarada e são úteis para grids, paginação e componentes reutilizáveis. Slots nomeados não podem repetir o mesmo raw slot; regiões podem sobrepor outras regiões, e duplicidade real de render continua sendo validada pelo canvas.
+
+## Componentes, temas e feedback
+
+Componentes encapsulam padrões comuns sem esconder o ciclo de vida do menu:
+
+```java
+canvas.component(context, MenuComponents.background());
+canvas.component(context, MenuComponents.closeButton("close"));
+canvas.component(
+    context,
+    MenuButton.<State>at("confirm")
+        .icon(confirmIcon)
+        .feedback(StandardMenuFeedbackSignals.ACTION_SUCCESS)
+        .onClick(interaction -> interaction.close())
+        .build());
+```
+
+`MenuButton` tem três estados:
+
+- enabled: renderiza ícone e handler;
+- disabled: renderiza ícone sem handler;
+- hidden: não atribui o slot, então o background ainda pode preenchê-lo.
+
+Os componentes padrão resolvem ícones por `MenuTheme`. Para trocar só alguns assets:
+
+```java
+MenuTheme theme =
+    MapMenuTheme.builder()
+        .fallback(MenuTheme.defaults())
+        .item(StandardMenuThemeKeys.CLOSE, customCloseIcon)
+        .build();
+```
+
+Você pode aplicar o tema no framework inteiro com `MenuFrameworkConfiguration.builder().defaultTheme(theme)` ou por menu sobrescrevendo `Menu#theme`.
+
+Feedback é transacional. Sinais só são emitidos quando o handler termina com sucesso e a transição síncrona principal também é aceita:
+
+```java
+MenuFrameworkConfiguration configuration =
+    MenuFrameworkConfiguration.builder()
+        .defaultFeedback(SoundMenuFeedback.minecraftDefaults())
+        .build();
+```
 
 ## Interações e comandos
 
@@ -465,7 +542,12 @@ Comportamento:
 Use `Paginator` quando todos os itens já estão disponíveis em memória.
 
 ```java
-private static final MenuLayout LAYOUT = MenuLayout.chest(6);
+private static final MenuLayout LAYOUT =
+    MenuLayout.chestBuilder(6)
+        .slot("previous", 5, 0)
+        .slot("indicator", 5, 4)
+        .slot("next", 5, 8)
+        .build();
 
 private static final PaginationLayout PAGINATION =
     PaginationLayout.builder(LAYOUT)
@@ -494,23 +576,18 @@ PAGINATION.forEachEntry(
 
 PAGINATION.forEachUnusedSlot(page, canvas::empty);
 
-if (page.hasPrevious()) {
-  canvas.button(
-      PAGINATION.previousSlot(),
-      new ItemStack(Material.ARROW),
-      interaction -> interaction.updateState(state -> state.withCursor(page.cursor().previous())));
-} else {
-  canvas.item(PAGINATION.previousSlot(), new ItemStack(Material.GRAY_DYE));
-}
-
-if (page.hasNext()) {
-  canvas.button(
-      PAGINATION.nextSlot(),
-      new ItemStack(Material.ARROW),
-      interaction -> interaction.updateState(state -> state.withCursor(page.cursor().next())));
-} else {
-  canvas.item(PAGINATION.nextSlot(), new ItemStack(Material.GRAY_DYE));
-}
+canvas.component(
+    context,
+    MenuComponents.previousPageButton(
+        "previous",
+        ignored -> page.hasPrevious(),
+        interaction -> interaction.updateState(state -> state.withCursor(page.cursor().previous()))));
+canvas.component(
+    context,
+    MenuComponents.nextPageButton(
+        "next",
+        ignored -> page.hasNext(),
+        interaction -> interaction.updateState(state -> state.withCursor(page.cursor().next()))));
 ```
 
 Detalhes:
@@ -594,6 +671,8 @@ Botões de navegação:
 this.products.load(interaction, PRODUCT_PAGE, PAGINATION, page.cursor().next());
 this.products.reload(interaction, PRODUCT_PAGE);
 ```
+
+Os componentes `loadingIndicator`, `retryButton`, `previousPageButton` e `nextPageButton` cobrem os controles mais comuns. Veja `AsyncProductMenu` em `examples/` para um render completo de `LOADING`, `READY` e `ERROR`.
 
 Por baixo, cada `AsyncPaginator` usa uma `MenuTaskKey`. Uma nova carga com a mesma chave substitui a geração anterior. Se uma resposta antiga chegar depois, ela é descartada porque não corresponde mais à sessão, chave, geração e handle ativos.
 
@@ -711,6 +790,24 @@ Código do consumidor deve seguir as mesmas regras:
 - Não guarde callback contexts para usar depois.
 - Reagende trabalho Bukkit sensível à região para o contexto correto.
 
+## Testando menus
+
+`MenuTestHarness` renderiza menus e executa handlers de clique sem abrir inventário real. Ele é útil para testar estado, botões, componentes, comandos e feedback sem depender de scheduler ou evento Bukkit:
+
+```java
+MenuTestHarness<State> harness =
+    MenuTestHarness.create(new ProductMenu(), player, State.initial());
+
+harness.assertItem("next", Material.ARROW).assertClickable("next");
+
+MenuTestOutcome<State> outcome = harness.click("next", ClickType.LEFT);
+
+assertTrue(outcome.rendered());
+harness.assertFeedback(StandardMenuFeedbackSignals.PAGE_NEXT);
+```
+
+O harness não emula substituição de sessão, eventos de inventário ou conclusão assíncrona. Use testes de integração para essas partes.
+
 ## Build, testes e formatação
 
 Comandos principais:
@@ -749,6 +846,7 @@ A pasta [examples](examples/) contém:
 - `CountdownMenu`: task periódica que atualiza o estado da sessão.
 - `SynchronousProductMenu`: paginação em memória.
 - `AsyncProductMenu`: loading, ready, error e retry com `AsyncPaginator`.
+- Os exemplos usam slots nomeados, componentes, tema padrão e feedback sonoro configurado no plugin.
 - `Product` e `ItemStacks`: objetos auxiliares usados pelos exemplos.
 
 Os exemplos usam o namespace:

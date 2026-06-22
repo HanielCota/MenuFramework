@@ -1,7 +1,9 @@
 package com.hanielfialho.menuframework.example;
 
 import com.hanielfialho.menuframework.MenuFramework;
+import com.hanielfialho.menuframework.MenuFrameworkConfiguration;
 import com.hanielfialho.menuframework.MenuManager;
+import com.hanielfialho.menuframework.api.feedback.SoundMenuFeedback;
 import com.hanielfialho.menuframework.api.pagination.PageRequest;
 import com.hanielfialho.menuframework.api.pagination.PageSlice;
 import com.hanielfialho.menuframework.example.menu.AsyncProductMenu;
@@ -33,7 +35,11 @@ public final class ExamplePlugin extends JavaPlugin {
 
   @Override
   public void onEnable() {
-    this.menuFramework = MenuFramework.create(this);
+    MenuFrameworkConfiguration configuration =
+        MenuFrameworkConfiguration.builder()
+            .defaultFeedback(SoundMenuFeedback.minecraftDefaults())
+            .build();
+    this.menuFramework = MenuFramework.create(this, configuration);
 
     List<Product> products = new ArrayList<>(100);
 

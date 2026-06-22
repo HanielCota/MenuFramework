@@ -1,13 +1,23 @@
 package com.hanielfialho.menuframework.api;
 
+import com.hanielfialho.menuframework.api.layout.SlotPattern;
+import com.hanielfialho.menuframework.api.layout.SlotRegion;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
 import org.bukkit.event.inventory.InventoryType;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable structural description of a menu inventory.
  *
- * <p>This version supports chest inventories containing one through six rows.
+ * <p>This version supports chest inventories containing one through six rows. A layout may also
+ * expose named slots and named ordered regions. Named metadata has no runtime cost after layout
+ * construction and does not change Bukkit's inventory shape.
  */
 public final class MenuLayout {
 
@@ -23,27 +33,51 @@ public final class MenuLayout {
   private final InventoryType inventoryType;
   private final int rows;
   private final int size;
+  private final Map<String, Integer> namedSlots;
+  private final Map<String, SlotRegion> namedRegions;
 
-  private MenuLayout(InventoryType inventoryType, int rows, int size) {
+  private MenuLayout(
+      InventoryType inventoryType,
+      int rows,
+      int size,
+      Map<String, Integer> namedSlots,
+      Map<String, SlotRegion> namedRegions) {
     this.inventoryType = Objects.requireNonNull(inventoryType, "inventoryType");
     this.rows = rows;
     this.size = size;
+    this.namedSlots = immutableLinkedMap(namedSlots);
+    this.namedRegions = immutableLinkedMap(namedRegions);
   }
 
   /**
-   * Creates a validated chest layout.
+   * Creates a validated chest layout without named metadata.
    *
    * @param rows row count between {@link #MIN_CHEST_ROWS} and {@link #MAX_CHEST_ROWS}, inclusive
-   * @return the immutable layout
+   * @return immutable layout
    * @throws IllegalArgumentException if {@code rows} is outside the range
    */
   public static MenuLayout chest(int rows) {
-    if (rows < MIN_CHEST_ROWS || rows > MAX_CHEST_ROWS) {
-      throw new IllegalArgumentException(
-          "Chest rows must be between " + MIN_CHEST_ROWS + " and " + MAX_CHEST_ROWS + ": " + rows);
-    }
+    validateChestRows(rows);
+    return new MenuLayout(InventoryType.CHEST, rows, rows * CHEST_COLUMNS, Map.of(), Map.of());
+  }
 
-    return new MenuLayout(InventoryType.CHEST, rows, rows * CHEST_COLUMNS);
+  /**
+   * Creates a named-layout builder for a chest inventory.
+   *
+   * @param rows validated chest row count
+   * @return new builder
+   */
+  public static Builder chestBuilder(int rows) {
+    return chest(rows).toBuilder();
+  }
+
+  /**
+   * Creates a builder populated with this layout's named metadata.
+   *
+   * @return independent builder
+   */
+  public Builder toBuilder() {
+    return new Builder(this);
   }
 
   /**
@@ -93,6 +127,102 @@ public final class MenuLayout {
     }
 
     return (row * CHEST_COLUMNS) + column;
+  }
+
+  /**
+   * Resolves a required named slot.
+   *
+   * @param name exact slot name
+   * @return raw menu slot
+   * @throws IllegalArgumentException if the name is unknown
+   */
+  public int slot(String name) {
+    String checkedName = validateName(name);
+    Integer slot = this.namedSlots.get(checkedName);
+
+    if (slot == null) {
+      throw new IllegalArgumentException("Unknown named menu slot: " + checkedName);
+    }
+
+    return slot;
+  }
+
+  /**
+   * Finds a named slot.
+   *
+   * @param name exact slot name
+   * @return optional raw slot
+   */
+  public OptionalInt findSlot(String name) {
+    String checkedName = validateName(name);
+    Integer slot = this.namedSlots.get(checkedName);
+    return slot == null ? OptionalInt.empty() : OptionalInt.of(slot);
+  }
+
+  /**
+   * Returns whether a named slot exists.
+   *
+   * @param name exact slot name
+   * @return existence flag
+   */
+  public boolean hasSlot(String name) {
+    return this.namedSlots.containsKey(validateName(name));
+  }
+
+  /**
+   * Resolves a required named region.
+   *
+   * @param name exact region name
+   * @return immutable ordered region
+   * @throws IllegalArgumentException if the name is unknown
+   */
+  public SlotRegion region(String name) {
+    String checkedName = validateName(name);
+    SlotRegion region = this.namedRegions.get(checkedName);
+
+    if (region == null) {
+      throw new IllegalArgumentException("Unknown named menu region: " + checkedName);
+    }
+
+    return region;
+  }
+
+  /**
+   * Finds a named region.
+   *
+   * @param name exact region name
+   * @return optional immutable region
+   */
+  public Optional<SlotRegion> findRegion(String name) {
+    return Optional.ofNullable(this.namedRegions.get(validateName(name)));
+  }
+
+  /**
+   * Returns whether a named region exists.
+   *
+   * @param name exact region name
+   * @return existence flag
+   */
+  public boolean hasRegion(String name) {
+    return this.namedRegions.containsKey(validateName(name));
+  }
+
+  /**
+   * Returns all named slots in declaration order.
+   *
+   * @return immutable mapping
+   */
+  public Map<String, Integer> namedSlots() {
+    return this.namedSlots;
+  }
+
+  /**
+   * Returns all named regions in declaration order.
+   *
+   * @return immutable mapping
+   */
+  public Map<String, SlotRegion> namedRegions() {
+    return this.namedRegions;
   }
 
   /**
@@ -147,7 +277,7 @@ public final class MenuLayout {
 
   /** {@inheritDoc} */
   @Override
-  public boolean equals(@Nullable Object object) {
+  public boolean equals(Object object) {
     if (this == object) {
       return true;
     }
@@ -158,13 +288,16 @@ public final class MenuLayout {
 
     return this.rows == other.rows
         && this.size == other.size
-        && this.inventoryType == other.inventoryType;
+        && this.inventoryType == other.inventoryType
+        && this.namedSlots.equals(other.namedSlots)
+        && this.namedRegions.equals(other.namedRegions);
   }
 
   /** {@inheritDoc} */
   @Override
   public int hashCode() {
-    return Objects.hash(this.inventoryType, this.rows, this.size);
+    return Objects.hash(
+        this.inventoryType, this.rows, this.size, this.namedSlots, this.namedRegions);
   }
 
   /** {@inheritDoc} */
@@ -177,6 +310,173 @@ public final class MenuLayout {
         + this.rows
         + ", size="
         + this.size
+        + ", namedSlots="
+        + this.namedSlots
+        + ", namedRegions="
+        + this.namedRegions.keySet()
         + '}';
+  }
+
+  private static void validateChestRows(int rows) {
+    if (rows < MIN_CHEST_ROWS || rows > MAX_CHEST_ROWS) {
+      throw new IllegalArgumentException(
+          "Chest rows must be between " + MIN_CHEST_ROWS + " and " + MAX_CHEST_ROWS + ": " + rows);
+    }
+  }
+
+  private static String validateName(String name) {
+    String checkedName = Objects.requireNonNull(name, "name");
+
+    if (checkedName.isBlank()) {
+      throw new IllegalArgumentException("Layout name cannot be blank");
+    }
+
+    if (!checkedName.equals(checkedName.strip())) {
+      throw new IllegalArgumentException(
+          "Layout name cannot contain leading or trailing whitespace: '" + checkedName + "'");
+    }
+
+    return checkedName;
+  }
+
+  private static <K, V> Map<K, V> immutableLinkedMap(Map<K, V> values) {
+    Objects.requireNonNull(values, "values");
+    return Collections.unmodifiableMap(new LinkedHashMap<>(values));
+  }
+
+  /** Validating builder for named slots and regions. */
+  public static final class Builder {
+
+    private final MenuLayout structuralLayout;
+    private final LinkedHashMap<String, Integer> namedSlots;
+    private final LinkedHashMap<String, SlotRegion> namedRegions;
+    private final LinkedHashMap<Integer, String> slotOwners;
+    private final Set<String> names;
+
+    private Builder(MenuLayout source) {
+      this.structuralLayout =
+          new MenuLayout(source.inventoryType, source.rows, source.size, Map.of(), Map.of());
+      this.namedSlots = new LinkedHashMap<>(source.namedSlots);
+      this.namedRegions = new LinkedHashMap<>(source.namedRegions);
+      this.slotOwners = new LinkedHashMap<>();
+      this.names = new LinkedHashSet<>();
+
+      for (Map.Entry<String, Integer> entry : this.namedSlots.entrySet()) {
+        this.names.add(entry.getKey());
+        this.slotOwners.put(entry.getValue(), entry.getKey());
+      }
+      this.names.addAll(this.namedRegions.keySet());
+    }
+
+    /**
+     * Declares a named raw slot.
+     *
+     * <p>Two names cannot identify the same raw slot. A named slot may intentionally belong to one
+     * or more named regions.
+     *
+     * @param name unique name
+     * @param slot raw slot
+     * @return this builder
+     */
+    public Builder slot(String name, int slot) {
+      String checkedName = validateName(name);
+      int checkedSlot = this.structuralLayout.checkSlot(slot);
+      String existingOwner = this.slotOwners.get(checkedSlot);
+
+      if (existingOwner != null) {
+        throw new IllegalArgumentException(
+            "Named slot '"
+                + checkedName
+                + "' overlaps named slot '"
+                + existingOwner
+                + "' at raw slot "
+                + checkedSlot);
+      }
+
+      this.reserveName(checkedName);
+      this.slotOwners.put(checkedSlot, checkedName);
+      this.namedSlots.put(checkedName, checkedSlot);
+      return this;
+    }
+
+    /**
+     * Declares a named slot using zero-based coordinates.
+     *
+     * @param name unique name
+     * @param row zero-based row
+     * @param column zero-based column
+     * @return this builder
+     */
+    public Builder slot(String name, int row, int column) {
+      return this.slot(name, this.structuralLayout.slot(row, column));
+    }
+
+    /**
+     * Declares a named region resolved from a pattern.
+     *
+     * <p>Named regions are metadata views and may overlap other regions or named slots. Actual
+     * duplicate assignments are still rejected by {@link MenuCanvas} during rendering.
+     *
+     * @param name unique name
+     * @param pattern region pattern
+     * @return this builder
+     */
+    public Builder region(String name, SlotPattern pattern) {
+      Objects.requireNonNull(pattern, "pattern");
+      return this.region(name, pattern.resolve(this.structuralLayout));
+    }
+
+    /**
+     * Declares a named region.
+     *
+     * @param name unique name
+     * @param region ordered region whose slots belong to this layout
+     * @return this builder
+     */
+    public Builder region(String name, SlotRegion region) {
+      String checkedName = validateName(name);
+      SlotRegion checkedRegion =
+          SlotRegion.copyOf(
+              this.structuralLayout, Objects.requireNonNull(region, "region").slots());
+      this.reserveName(checkedName);
+      this.namedRegions.put(checkedName, checkedRegion);
+      return this;
+    }
+
+    /**
+     * Declares a named region from explicit raw slots.
+     *
+     * @param name unique name
+     * @param slots ordered raw slots
+     * @return this builder
+     */
+    public Builder region(String name, int... slots) {
+      return this.region(name, SlotRegion.of(this.structuralLayout, slots));
+    }
+
+    /**
+     * Builds an immutable layout.
+     *
+     * @return immutable layout
+     */
+    public MenuLayout build() {
+      return new MenuLayout(
+          this.structuralLayout.inventoryType,
+          this.structuralLayout.rows,
+          this.structuralLayout.size,
+          this.namedSlots,
+          this.namedRegions);
+    }
+
+    private String reserveName(String name) {
+      String checkedName = validateName(name);
+
+      if (!this.names.add(checkedName)) {
+        throw new IllegalArgumentException(
+            "A named slot or region already uses name: " + checkedName);
+      }
+
+      return checkedName;
+    }
   }
 }

@@ -20,6 +20,7 @@ import com.hanielfialho.menuframework.api.error.MenuFailureContext;
 import com.hanielfialho.menuframework.api.error.MenuFailureOperation;
 import com.hanielfialho.menuframework.api.task.MenuTaskKey;
 import com.hanielfialho.menuframework.internal.inventory.MenuHolder;
+import com.hanielfialho.menuframework.internal.inventory.MenuViewAccess;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +30,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +103,8 @@ final class MenuErrorHandlingTest {
 
     MenuHolder holder =
         assertInstanceOf(
-            MenuHolder.class, this.player.getOpenInventory().getTopInventory().getHolder(false));
+            MenuHolder.class,
+            MenuViewAccess.holderOf(this.player.getOpenInventory().getTopInventory()));
     UUID sessionId = holder.sessionId();
     assertNotNull(sessionId);
 
@@ -204,7 +207,7 @@ final class MenuErrorHandlingTest {
     }
 
     @Override
-    public Component title(MenuRenderContext<EmptyMenuState> context) {
+    public Component title(@NonNull MenuRenderContext<EmptyMenuState> context) {
       return Component.text("Failure");
     }
 
@@ -223,7 +226,7 @@ final class MenuErrorHandlingTest {
     }
 
     @Override
-    public Component title(MenuRenderContext<EmptyMenuState> context) {
+    public Component title(@NonNull MenuRenderContext<EmptyMenuState> context) {
       return Component.text("Click failure");
     }
 

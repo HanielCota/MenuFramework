@@ -2,6 +2,7 @@ package com.hanielfialho.menuframework.internal.task;
 
 import com.hanielfialho.menuframework.api.error.MenuFailureOperation;
 import com.hanielfialho.menuframework.api.task.MenuTaskContext;
+import com.hanielfialho.menuframework.internal.error.MenuExceptions;
 import com.hanielfialho.menuframework.internal.error.MenuRuntimeLogger;
 import com.hanielfialho.menuframework.internal.inventory.MenuViewAccess;
 import com.hanielfialho.menuframework.internal.platform.MenuScheduler;
@@ -328,6 +329,7 @@ public final class MenuAsyncTaskRuntime {
 
     if (failure != null) {
       Throwable effectiveFailure = unwrapCompletionFailure(failure);
+      MenuExceptions.rethrowIfFatal(effectiveFailure);
 
       this.logger.reportTaskFailure(
           MenuFailureOperation.ASYNC_OPERATION,

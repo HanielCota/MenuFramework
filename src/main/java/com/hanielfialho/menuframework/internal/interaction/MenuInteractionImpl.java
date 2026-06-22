@@ -3,12 +3,15 @@ package com.hanielfialho.menuframework.internal.interaction;
 import com.hanielfialho.menuframework.api.Menu;
 import com.hanielfialho.menuframework.api.MenuClick;
 import com.hanielfialho.menuframework.api.MenuInteraction;
+import com.hanielfialho.menuframework.api.feedback.MenuFeedbackSignal;
 import com.hanielfialho.menuframework.api.task.MenuPeriodicTask;
 import com.hanielfialho.menuframework.api.task.MenuTaskKey;
 import com.hanielfialho.menuframework.api.task.MenuTaskSchedule;
 import com.hanielfialho.menuframework.internal.lifecycle.MenuNavigation;
 import com.hanielfialho.menuframework.internal.task.MenuAsyncCommand;
 import com.hanielfialho.menuframework.internal.task.MenuTaskCommands;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.entity.Player;
@@ -20,12 +23,21 @@ import org.bukkit.entity.Player;
  */
 public final class MenuInteractionImpl<S> implements MenuInteraction<S> {
 
+  private enum TerminalCommand {
+    NONE,
+    CLOSE,
+    OPEN,
+    BACK
+  }
+
   private final UUID sessionId;
   private final Player viewer;
   private final MenuClick click;
   private final long revision;
   private final int historyDepth;
   private final MenuTaskCommands<S> taskCommands;
+  private final List<MenuFeedbackSignal> feedbackSignals;
+
   private S resultingState;
   private boolean refreshRequested;
   private TerminalCommand terminalCommand;
@@ -61,6 +73,7 @@ public final class MenuInteractionImpl<S> implements MenuInteraction<S> {
     this.click = Objects.requireNonNull(click, "click");
 
     this.taskCommands = new MenuTaskCommands<>();
+    this.feedbackSignals = new ArrayList<>();
     this.terminalCommand = TerminalCommand.NONE;
   }
 
@@ -118,6 +131,12 @@ public final class MenuInteractionImpl<S> implements MenuInteraction<S> {
   public void refresh() {
     this.ensureStateCommandAllowed();
     this.refreshRequested = true;
+  }
+
+  @Override
+  public void feedback(MenuFeedbackSignal signal) {
+    this.ensureActive();
+    this.feedbackSignals.add(Objects.requireNonNull(signal, "signal"));
   }
 
   @Override
@@ -237,6 +256,10 @@ public final class MenuInteractionImpl<S> implements MenuInteraction<S> {
     return this.taskCommands;
   }
 
+  public List<MenuFeedbackSignal> feedbackSignals() {
+    return List.copyOf(this.feedbackSignals);
+  }
+
   private void ensureTerminalCommandAllowed() {
     this.ensureActive();
     this.ensureNoTerminalCommand();
@@ -285,12 +308,5 @@ public final class MenuInteractionImpl<S> implements MenuInteraction<S> {
       throw new IllegalStateException(
           "A menu interaction cannot be used " + "after its handler has returned");
     }
-  }
-
-  private enum TerminalCommand {
-    NONE,
-    CLOSE,
-    OPEN,
-    BACK
   }
 }

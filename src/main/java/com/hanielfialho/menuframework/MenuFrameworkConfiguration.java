@@ -1,16 +1,15 @@
 package com.hanielfialho.menuframework;
 
 import com.hanielfialho.menuframework.api.error.MenuErrorHandler;
+import com.hanielfialho.menuframework.api.feedback.MenuFeedback;
+import com.hanielfialho.menuframework.api.theme.MenuTheme;
 import java.util.Objects;
 import java.util.Optional;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable configuration for one {@link MenuFramework} runtime.
  *
- * <p>Use {@link #builder()} to install a custom error handler or to change the bounded
- * navigation-history depth. Instances are thread-safe and may be reused when creating independent
- * framework runtimes.
+ * <p>Instances are thread-safe and may be reused when creating independent framework runtimes.
  */
 public final class MenuFrameworkConfiguration {
 
@@ -18,52 +17,47 @@ public final class MenuFrameworkConfiguration {
   public static final int DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH = 32;
 
   private static final MenuFrameworkConfiguration DEFAULTS =
-      new MenuFrameworkConfiguration(null, DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH);
+      new MenuFrameworkConfiguration(
+          null, DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH, MenuTheme.defaults(), MenuFeedback.none());
 
-  private final @Nullable MenuErrorHandler errorHandler;
+  private final MenuErrorHandler errorHandler;
   private final int maxNavigationHistoryDepth;
+  private final MenuTheme defaultTheme;
+  private final MenuFeedback defaultFeedback;
 
   private MenuFrameworkConfiguration(
-      @Nullable MenuErrorHandler errorHandler, int maxNavigationHistoryDepth) {
+      MenuErrorHandler errorHandler,
+      int maxNavigationHistoryDepth,
+      MenuTheme defaultTheme,
+      MenuFeedback defaultFeedback) {
     this.errorHandler = errorHandler;
     this.maxNavigationHistoryDepth = validateHistoryDepth(maxNavigationHistoryDepth);
+    this.defaultTheme = Objects.requireNonNull(defaultTheme, "defaultTheme");
+    this.defaultFeedback = Objects.requireNonNull(defaultFeedback, "defaultFeedback");
   }
 
   /**
    * Returns the shared default configuration.
    *
-   * @return the default immutable configuration
+   * @return default immutable configuration
    */
   public static MenuFrameworkConfiguration defaults() {
     return DEFAULTS;
   }
 
   /**
-   * Creates a builder initialized with the default values.
+   * Creates a builder initialized with default values.
    *
-   * @return a new builder
+   * @return new builder
    */
   public static Builder builder() {
     return new Builder();
   }
 
-  private static int validateHistoryDepth(int value) {
-    if (value <= 0) {
-      throw new IllegalArgumentException(
-          "maxNavigationHistoryDepth must be greater " + "than zero: " + value);
-    }
-
-    return value;
-  }
-
   /**
-   * Returns the configured error handler, when one was supplied.
+   * Returns the configured error handler, when supplied.
    *
-   * <p>When empty, the framework creates a {@link
-   * com.hanielfialho.menuframework.api.error.DefaultMenuErrorHandler} backed by the owning plugin's
-   * logger.
-   *
-   * @return the optional custom error handler
+   * @return optional custom error handler
    */
   public Optional<MenuErrorHandler> errorHandler() {
     return Optional.ofNullable(this.errorHandler);
@@ -72,45 +66,72 @@ public final class MenuFrameworkConfiguration {
   /**
    * Returns the maximum number of history entries retained per viewer.
    *
-   * @return a positive history-depth limit
+   * @return positive history-depth limit
    */
   public int maxNavigationHistoryDepth() {
     return this.maxNavigationHistoryDepth;
   }
 
   /**
-   * Creates an independent builder initialized from this configuration.
+   * Returns the framework-level theme supplied to each menu during opening.
    *
-   * @return a populated builder
+   * @return non-null theme
    */
-  public Builder toBuilder() {
-    return new Builder()
-        .errorHandlerIfPresent(this.errorHandler)
-        .maxNavigationHistoryDepth(this.maxNavigationHistoryDepth);
+  public MenuTheme defaultTheme() {
+    return this.defaultTheme;
   }
 
   /**
-   * Mutable builder for {@link MenuFrameworkConfiguration}.
+   * Returns the framework-level feedback destination supplied to each menu during opening.
    *
-   * <p>The builder is not thread-safe. The configuration returned by {@link #build()} is immutable.
+   * @return non-null feedback destination
    */
+  public MenuFeedback defaultFeedback() {
+    return this.defaultFeedback;
+  }
+
+  /**
+   * Creates an independent builder initialized from this configuration.
+   *
+   * @return populated builder
+   */
+  public Builder toBuilder() {
+    Builder builder =
+        new Builder()
+            .maxNavigationHistoryDepth(this.maxNavigationHistoryDepth)
+            .defaultTheme(this.defaultTheme)
+            .defaultFeedback(this.defaultFeedback);
+
+    if (this.errorHandler != null) {
+      builder.errorHandler(this.errorHandler);
+    }
+
+    return builder;
+  }
+
+  private static int validateHistoryDepth(int value) {
+    if (value <= 0) {
+      throw new IllegalArgumentException(
+          "maxNavigationHistoryDepth must be greater than zero: " + value);
+    }
+    return value;
+  }
+
+  /** Mutable, non-thread-safe builder for {@link MenuFrameworkConfiguration}. */
   public static final class Builder {
 
-    private @Nullable MenuErrorHandler errorHandler;
+    private MenuErrorHandler errorHandler;
     private int maxNavigationHistoryDepth = DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH;
+    private MenuTheme defaultTheme = MenuTheme.defaults();
+    private MenuFeedback defaultFeedback = MenuFeedback.none();
 
     private Builder() {}
 
     /**
      * Sets the central destination for non-fatal runtime failures.
      *
-     * <p>The handler can be invoked from entity-scheduler and asynchronous scheduler threads. It
-     * must therefore be thread-safe and must not call region-sensitive Bukkit APIs unless it
-     * explicitly reschedules that work.
-     *
-     * @param errorHandler non-null handler
+     * @param errorHandler thread-safe error handler
      * @return this builder
-     * @throws NullPointerException if {@code errorHandler} is {@code null}
      */
     public Builder errorHandler(MenuErrorHandler errorHandler) {
       this.errorHandler = Objects.requireNonNull(errorHandler, "errorHandler");
@@ -130,11 +151,8 @@ public final class MenuFrameworkConfiguration {
     /**
      * Sets the maximum navigation-history depth per viewer.
      *
-     * <p>When the limit is reached, the oldest entry is discarded before a new entry is appended.
-     *
      * @param maxDepth positive maximum depth
      * @return this builder
-     * @throws IllegalArgumentException if {@code maxDepth} is not positive
      */
     public Builder maxNavigationHistoryDepth(int maxDepth) {
       this.maxNavigationHistoryDepth = validateHistoryDepth(maxDepth);
@@ -142,20 +160,40 @@ public final class MenuFrameworkConfiguration {
     }
 
     /**
-     * Builds an immutable configuration snapshot.
+     * Sets the framework-level default theme.
      *
-     * @return a new configuration
+     * @param defaultTheme non-null theme
+     * @return this builder
      */
-    public MenuFrameworkConfiguration build() {
-      return new MenuFrameworkConfiguration(this.errorHandler, this.maxNavigationHistoryDepth);
+    public Builder defaultTheme(MenuTheme defaultTheme) {
+      this.defaultTheme = Objects.requireNonNull(defaultTheme, "defaultTheme");
+      return this;
     }
 
-    private Builder errorHandlerIfPresent(@Nullable MenuErrorHandler errorHandler) {
-      if (errorHandler != null) {
-        this.errorHandler = errorHandler;
-      }
-
+    /**
+     * Sets the framework-level feedback destination.
+     *
+     * <p>Use {@link MenuFeedback#none()} to disable feedback globally.
+     *
+     * @param defaultFeedback non-null feedback destination
+     * @return this builder
+     */
+    public Builder defaultFeedback(MenuFeedback defaultFeedback) {
+      this.defaultFeedback = Objects.requireNonNull(defaultFeedback, "defaultFeedback");
       return this;
+    }
+
+    /**
+     * Builds an immutable configuration snapshot.
+     *
+     * @return new configuration
+     */
+    public MenuFrameworkConfiguration build() {
+      return new MenuFrameworkConfiguration(
+          this.errorHandler,
+          this.maxNavigationHistoryDepth,
+          this.defaultTheme,
+          this.defaultFeedback);
     }
   }
 }

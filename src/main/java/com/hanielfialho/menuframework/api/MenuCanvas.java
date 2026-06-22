@@ -1,5 +1,8 @@
 package com.hanielfialho.menuframework.api;
 
+import com.hanielfialho.menuframework.api.component.MenuComponent;
+import com.hanielfialho.menuframework.api.layout.MenuRegionCanvas;
+import java.util.Objects;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -16,7 +19,7 @@ public interface MenuCanvas<S> {
   /**
    * Returns the layout associated with this frame.
    *
-   * @return the menu layout
+   * @return menu layout
    */
   MenuLayout layout();
 
@@ -25,10 +28,6 @@ public interface MenuCanvas<S> {
    *
    * @param slot zero-based slot in the top inventory
    * @param icon non-null, non-air icon
-   * @throws IndexOutOfBoundsException if {@code slot} is outside the layout
-   * @throws IllegalStateException if the slot was already assigned
-   * @throws NullPointerException if {@code icon} is {@code null}
-   * @throws IllegalArgumentException if {@code icon} is air or invalid
    */
   void item(int slot, ItemStack icon);
 
@@ -38,10 +37,6 @@ public interface MenuCanvas<S> {
    * @param slot zero-based slot in the top inventory
    * @param icon non-null, non-air icon
    * @param clickHandler non-null action invoked for a known top click
-   * @throws IndexOutOfBoundsException if {@code slot} is outside the layout
-   * @throws IllegalStateException if the slot was already assigned
-   * @throws NullPointerException if an argument is {@code null}
-   * @throws IllegalArgumentException if {@code icon} is air or invalid
    */
   void button(int slot, ItemStack icon, MenuClickHandler<S> clickHandler);
 
@@ -51,8 +46,6 @@ public interface MenuCanvas<S> {
    * <p>An explicitly empty slot is not filled by the frame background.
    *
    * @param slot zero-based slot in the top inventory
-   * @throws IndexOutOfBoundsException if {@code slot} is outside the layout
-   * @throws IllegalStateException if the slot was already assigned
    */
   void empty(int slot);
 
@@ -60,9 +53,6 @@ public interface MenuCanvas<S> {
    * Defines the fallback icon for slots that receive no explicit assignment.
    *
    * @param icon non-null, non-air background icon
-   * @throws IllegalStateException if a background was already configured
-   * @throws NullPointerException if {@code icon} is {@code null}
-   * @throws IllegalArgumentException if {@code icon} is air or invalid
    */
   void background(ItemStack icon);
 
@@ -97,5 +87,56 @@ public interface MenuCanvas<S> {
    */
   default void empty(int row, int column) {
     this.empty(this.layout().slot(row, column));
+  }
+
+  /**
+   * Assigns an item to a required named slot.
+   *
+   * @param namedSlot named slot declared by the layout
+   * @param icon visual item
+   */
+  default void item(String namedSlot, ItemStack icon) {
+    this.item(this.layout().slot(namedSlot), icon);
+  }
+
+  /**
+   * Assigns a button to a required named slot.
+   *
+   * @param namedSlot named slot declared by the layout
+   * @param icon visual item
+   * @param clickHandler button action
+   */
+  default void button(String namedSlot, ItemStack icon, MenuClickHandler<S> clickHandler) {
+    this.button(this.layout().slot(namedSlot), icon, clickHandler);
+  }
+
+  /**
+   * Marks a required named slot as explicitly empty.
+   *
+   * @param namedSlot named slot declared by the layout
+   */
+  default void empty(String namedSlot) {
+    this.empty(this.layout().slot(namedSlot));
+  }
+
+  /**
+   * Binds this canvas to a required named region.
+   *
+   * @param namedRegion named region declared by the layout
+   * @return region-relative facade
+   */
+  default MenuRegionCanvas<S> region(String namedRegion) {
+    return new MenuRegionCanvas<>(this, this.layout().region(namedRegion));
+  }
+
+  /**
+   * Renders one reusable component into this frame.
+   *
+   * @param context current render snapshot
+   * @param component component to render
+   */
+  default void component(MenuRenderContext<S> context, MenuComponent<S> component) {
+    Objects.requireNonNull(context, "context");
+    Objects.requireNonNull(component, "component").render(context, this);
   }
 }

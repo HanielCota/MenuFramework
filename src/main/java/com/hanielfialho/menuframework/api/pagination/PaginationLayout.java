@@ -1,6 +1,7 @@
 package com.hanielfialho.menuframework.api.pagination;
 
 import com.hanielfialho.menuframework.api.MenuLayout;
+import com.hanielfialho.menuframework.api.layout.SlotRegion;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -8,7 +9,6 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.IntConsumer;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable mapping between page entries and menu slots.
@@ -22,14 +22,14 @@ public final class PaginationLayout {
   private final List<Integer> contentSlots;
   private final int previousSlot;
   private final int nextSlot;
-  private final @Nullable Integer indicatorSlot;
+  private final Integer indicatorSlot;
 
   private PaginationLayout(
       MenuLayout menuLayout,
       List<Integer> contentSlots,
       int previousSlot,
       int nextSlot,
-      @Nullable Integer indicatorSlot) {
+      Integer indicatorSlot) {
     this.menuLayout = menuLayout;
     this.contentSlots = contentSlots;
     this.previousSlot = previousSlot;
@@ -183,9 +183,9 @@ public final class PaginationLayout {
     private final MenuLayout menuLayout;
     private final LinkedHashSet<Integer> contentSlots = new LinkedHashSet<>();
 
-    private @Nullable Integer previousSlot;
-    private @Nullable Integer nextSlot;
-    private @Nullable Integer indicatorSlot;
+    private Integer previousSlot;
+    private Integer nextSlot;
+    private Integer indicatorSlot;
 
     private Builder(MenuLayout menuLayout) {
       this.menuLayout = Objects.requireNonNull(menuLayout, "menuLayout");
@@ -205,6 +205,30 @@ public final class PaginationLayout {
       }
 
       return this;
+    }
+
+    /**
+     * Appends every slot from an ordered region.
+     *
+     * @param region content region
+     * @return this builder
+     */
+    public Builder contentRegion(SlotRegion region) {
+      Objects.requireNonNull(region, "region");
+      for (int slot : region.toArray()) {
+        this.addContentSlot(slot);
+      }
+      return this;
+    }
+
+    /**
+     * Appends every slot from a named region in the associated menu layout.
+     *
+     * @param namedRegion required named region
+     * @return this builder
+     */
+    public Builder contentRegion(String namedRegion) {
+      return this.contentRegion(this.menuLayout.region(namedRegion));
     }
 
     /**
@@ -250,6 +274,16 @@ public final class PaginationLayout {
     }
 
     /**
+     * Sets the previous-page control from a named slot.
+     *
+     * @param namedSlot required named slot
+     * @return this builder
+     */
+    public Builder previousSlot(String namedSlot) {
+      return this.previousSlot(this.menuLayout.slot(namedSlot));
+    }
+
+    /**
      * Sets the previous-page control using coordinates.
      *
      * @param row zero-based row
@@ -276,6 +310,16 @@ public final class PaginationLayout {
     }
 
     /**
+     * Sets the next-page control from a named slot.
+     *
+     * @param namedSlot required named slot
+     * @return this builder
+     */
+    public Builder nextSlot(String namedSlot) {
+      return this.nextSlot(this.menuLayout.slot(namedSlot));
+    }
+
+    /**
      * Sets the next-page control using coordinates.
      *
      * @param row zero-based row
@@ -299,6 +343,16 @@ public final class PaginationLayout {
 
       this.indicatorSlot = this.menuLayout.checkSlot(slot);
       return this;
+    }
+
+    /**
+     * Sets the optional page indicator from a named slot.
+     *
+     * @param namedSlot required named slot
+     * @return this builder
+     */
+    public Builder indicatorSlot(String namedSlot) {
+      return this.indicatorSlot(this.menuLayout.slot(namedSlot));
     }
 
     /**

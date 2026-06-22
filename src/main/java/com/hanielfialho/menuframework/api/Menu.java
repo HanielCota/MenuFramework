@@ -1,18 +1,22 @@
 package com.hanielfialho.menuframework.api;
 
+import com.hanielfialho.menuframework.MenuFramework;
+import com.hanielfialho.menuframework.api.feedback.MenuFeedback;
+import com.hanielfialho.menuframework.api.theme.MenuTheme;
+import java.util.Objects;
 import net.kyori.adventure.text.Component;
 
 /**
  * Reusable definition of a menu.
  *
  * <p>A menu implementation must not store viewer-specific mutable state in its fields. Session
- * state is supplied through the callback contexts and should be immutable, or at least treated as
+ * state is supplied through callback contexts and should be immutable, or at least treated as
  * immutable. A single menu instance may be shared by multiple viewers.
  *
  * <p>{@link #render(MenuRenderContext, MenuCanvas)} must describe a complete frame and must not
  * mutate the open inventory directly. Rendering, lifecycle callbacks and click handlers execute in
  * the viewer's entity-scheduler context and must not block the region thread. Use the asynchronous
- * task API exposed by the callback contexts for database, HTTP or other blocking work.
+ * task API exposed by callback contexts for database, HTTP or other blocking work.
  *
  * @param <S> immutable session-state type
  */
@@ -24,19 +28,44 @@ public interface Menu<S> {
    * <p>The layout is captured when a session opens and cannot change while that session remains
    * open.
    *
-   * @return a non-null layout
+   * @return non-null layout
    */
   MenuLayout layout();
 
   /**
    * Returns the inventory interaction policy for newly opened sessions.
    *
-   * <p>The policy is evaluated once during opening.
-   *
-   * @return a non-null policy; defaults to {@link InteractionPolicy#READ_ONLY}
+   * @return non-null policy; defaults to {@link InteractionPolicy#READ_ONLY}
    */
   default InteractionPolicy interactionPolicy() {
     return InteractionPolicy.READ_ONLY;
+  }
+
+  /**
+   * Resolves the immutable theme captured by a newly opened session.
+   *
+   * <p>Override this method to replace or decorate the framework-level default theme for this menu.
+   * The returned theme is resolved once per opening and reused by every subsequent render of that
+   * session.
+   *
+   * @param frameworkTheme configured framework-level theme
+   * @return non-null theme for the session
+   */
+  default MenuTheme theme(MenuTheme frameworkTheme) {
+    return Objects.requireNonNull(frameworkTheme, "frameworkTheme");
+  }
+
+  /**
+   * Resolves the feedback destination captured by a newly opened session.
+   *
+   * <p>Override this method to replace or compose the framework-level feedback destination for a
+   * particular menu.
+   *
+   * @param frameworkFeedback configured framework-level feedback
+   * @return non-null feedback destination
+   */
+  default MenuFeedback feedback(MenuFeedback frameworkFeedback) {
+    return Objects.requireNonNull(frameworkFeedback, "frameworkFeedback");
   }
 
   /**
@@ -46,7 +75,7 @@ public interface Menu<S> {
    * dynamic information such as a page number.
    *
    * @param context immutable opening snapshot
-   * @return a non-null Adventure component
+   * @return non-null Adventure component
    */
   Component title(MenuRenderContext<S> context);
 
@@ -75,10 +104,9 @@ public interface Menu<S> {
   /**
    * Called once when an opened session terminates normally.
    *
-   * <p>This callback is intentionally not invoked by {@link
-   * com.hanielfialho.menuframework.MenuFramework#shutdown()}: plugin shutdown has no guaranteed
-   * entity-region context on Folia. Release plugin-wide resources from the owning plugin's {@code
-   * onDisable()}.
+   * <p>This callback is intentionally not invoked by {@link MenuFramework#shutdown()}: plugin
+   * shutdown has no guaranteed entity-region context on Folia. Release plugin-wide resources from
+   * the owning plugin's {@code onDisable()}.
    *
    * @param context final immutable session snapshot
    * @param reason logical termination reason

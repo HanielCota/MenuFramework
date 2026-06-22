@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.hanielfialho.menuframework.api.MenuLayout;
+import com.hanielfialho.menuframework.api.layout.SlotPatterns;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,30 @@ final class PaginationLayoutTest {
 
     assertEquals(List.of(10, 11, 12, 19, 20, 21), pagination.contentSlots());
     assertEquals(6, pagination.pageSize());
+    assertEquals(27, pagination.previousSlot());
+    assertEquals(31, pagination.indicatorSlot().orElseThrow());
+    assertEquals(35, pagination.nextSlot());
+  }
+
+  @Test
+  void contentRegionAndControlsCanUseLayoutNames() {
+    MenuLayout menuLayout =
+        MenuLayout.chestBuilder(4)
+            .region("entries", SlotPatterns.rectangle(1, 1, 2, 3))
+            .slot("previous", 3, 0)
+            .slot("indicator", 3, 4)
+            .slot("next", 3, 8)
+            .build();
+
+    PaginationLayout pagination =
+        PaginationLayout.builder(menuLayout)
+            .contentRegion("entries")
+            .previousSlot("previous")
+            .indicatorSlot("indicator")
+            .nextSlot("next")
+            .build();
+
+    assertEquals(List.of(10, 11, 12, 19, 20, 21), pagination.contentSlots());
     assertEquals(27, pagination.previousSlot());
     assertEquals(31, pagination.indicatorSlot().orElseThrow());
     assertEquals(35, pagination.nextSlot());

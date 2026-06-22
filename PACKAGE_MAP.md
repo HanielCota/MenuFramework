@@ -6,10 +6,15 @@ Todo o projeto utiliza o namespace base `com.hanielfialho.menuframework`.
 com.hanielfialho.menuframework
 ├── API de entrada
 ├── api
+│   ├── component
 │   ├── error
+│   ├── feedback
+│   ├── layout
 │   ├── pagination
 │   │   └── async
-│   └── task
+│   ├── task
+│   └── theme
+├── testing
 └── internal
     ├── error
     ├── interaction
@@ -48,12 +53,39 @@ Contratos usados para definir menus:
 - `MenuOpenContext`
 - `MenuRenderContext`
 
+## `com.hanielfialho.menuframework.api.component`
+
+- `BackgroundComponent`
+- `CompositeMenuComponent`
+- `MenuButton`
+- `MenuButtonState`
+- `MenuComponent`
+- `MenuComponents`
+- `MenuItemProvider`
+
 ## `com.hanielfialho.menuframework.api.error`
 
 - `DefaultMenuErrorHandler`
 - `MenuErrorHandler`
 - `MenuFailureContext`
 - `MenuFailureOperation`
+
+## `com.hanielfialho.menuframework.api.feedback`
+
+- `MenuFeedback`
+- `MenuFeedbackContext`
+- `MenuFeedbackSignal`
+- `MenuSoundEffect`
+- `NoopMenuFeedback`
+- `SoundMenuFeedback`
+- `StandardMenuFeedbackSignals`
+
+## `com.hanielfialho.menuframework.api.layout`
+
+- `MenuRegionCanvas`
+- `SlotPattern`
+- `SlotPatterns`
+- `SlotRegion`
 
 ## `com.hanielfialho.menuframework.api.pagination`
 
@@ -84,6 +116,23 @@ Contratos usados para definir menus:
 - `MenuTaskSchedule`
 - `MenuTickContext`
 - `MenuTickResult`
+
+## `com.hanielfialho.menuframework.api.theme`
+
+- `DefaultMenuTheme`
+- `MapMenuTheme`
+- `MenuTheme`
+- `MenuThemeItemFactory`
+- `MenuThemeKey`
+- `StandardMenuThemeKeys`
+
+## `com.hanielfialho.menuframework.testing`
+
+Utilitários públicos para testes determinísticos de menus sem abrir inventários reais:
+
+- `MenuTestHarness`
+- `MenuTestNavigation`
+- `MenuTestOutcome`
 
 ## Runtime interno
 
@@ -137,4 +186,7 @@ import com.hanielfialho.menuframework.api.MenuCanvas;
 import com.hanielfialho.menuframework.api.MenuInteraction;
 import com.hanielfialho.menuframework.api.MenuLayout;
 import com.hanielfialho.menuframework.api.MenuRenderContext;
+import com.hanielfialho.menuframework.api.component.MenuButton;
+import com.hanielfialho.menuframework.api.component.MenuComponents;
+import com.hanielfialho.menuframework.api.layout.SlotPatterns;
 ```

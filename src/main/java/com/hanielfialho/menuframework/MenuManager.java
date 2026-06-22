@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Public facade for opening, refreshing, closing and navigating menus.
@@ -59,22 +58,28 @@ public final class MenuManager {
         configuration.errorHandler().orElseGet(() -> new DefaultMenuErrorHandler(plugin));
 
     MenuRuntimeLogger logger = new MenuRuntimeLogger(plugin, errorHandler);
-    MenuScheduler scheduler = new MenuScheduler(plugin, runtimeState);
-    MenuFrameApplier frames = new MenuFrameApplier(runtimeState, sessions);
-
+    MenuScheduler scheduler = new MenuScheduler(plugin, this.runtimeState);
+    MenuFrameApplier frames = new MenuFrameApplier(this.runtimeState, this.sessions);
     MenuAsyncTaskRuntime asyncTasks =
-        new MenuAsyncTaskRuntime(runtimeState, sessions, scheduler, frames, logger);
-
+        new MenuAsyncTaskRuntime(this.runtimeState, this.sessions, scheduler, frames, logger);
     MenuPeriodicTaskRuntime periodicTasks =
-        new MenuPeriodicTaskRuntime(runtimeState, sessions, scheduler, frames, logger);
-
+        new MenuPeriodicTaskRuntime(this.runtimeState, this.sessions, scheduler, frames, logger);
     MenuTaskRuntime tasks = new MenuTaskRuntime(asyncTasks, periodicTasks);
 
     this.lifecycle =
         new MenuLifecycleCoordinator(
-            runtimeState, sessions, history, scheduler, frames, tasks, logger);
+            this.runtimeState,
+            this.sessions,
+            this.history,
+            scheduler,
+            frames,
+            tasks,
+            logger,
+            configuration.defaultTheme(),
+            configuration.defaultFeedback());
     this.interactions =
-        new MenuInteractionDispatcher(runtimeState, sessions, lifecycle, frames, tasks, logger);
+        new MenuInteractionDispatcher(
+            this.runtimeState, this.sessions, this.lifecycle, frames, tasks, logger);
 
     this.eventHandler =
         new MenuEventHandler() {
@@ -108,12 +113,12 @@ public final class MenuManager {
    * not have a guaranteed entity-region context on Folia.
    */
   public void shutdown() {
-    if (!runtimeState.beginShutdown()) {
+    if (!this.runtimeState.beginShutdown()) {
       return;
     }
 
-    List<MenuSession<?>> snapshot = sessions.clearAndSnapshotLiveSessions();
-    history.clearAll();
+    List<MenuSession<?>> snapshot = this.sessions.clearAndSnapshotLiveSessions();
+    this.history.clearAll();
 
     for (MenuSession<?> session : snapshot) {
       session.dispose();
@@ -126,7 +131,7 @@ public final class MenuManager {
    * @return {@code true} after the first call to {@link #shutdown()}
    */
   public boolean isShutdown() {
-    return runtimeState.isShutdown();
+    return this.runtimeState.isShutdown();
   }
 
   /**
@@ -135,42 +140,42 @@ public final class MenuManager {
    * <p>The menu definition may be reused by many viewers, but {@code initialState} must be
    * immutable or treated as immutable. Opening a root menu clears that viewer's navigation history.
    *
-   * @param viewer player that should see the menu
+   * @param viewer player that will own the session
    * @param menu reusable menu definition
-   * @param initialState non-null initial state for this viewer
-   * @param <S> session-state type
-   * @return {@code true} when the open request was accepted for scheduling
+   * @param initialState non-null initial state
+   * @param <S> state type
+   * @return {@code true} when the entity scheduler accepted the request
    * @throws NullPointerException if an argument is {@code null}
    */
   public <S> boolean open(Player viewer, Menu<S> menu, S initialState) {
     Objects.requireNonNull(viewer, "viewer");
     Objects.requireNonNull(menu, "menu");
     Objects.requireNonNull(initialState, "initialState");
-    return lifecycle.open(viewer, menu, initialState);
+    return this.lifecycle.open(viewer, menu, initialState);
   }
 
   /**
    * Submits a refresh of the viewer's current session.
    *
-   * @param viewer player whose current menu should be rendered again
-   * @return {@code true} when a tracked session exists and the refresh request was accepted
+   * @param viewer session owner
+   * @return {@code true} when a current session existed and scheduling was accepted
    * @throws NullPointerException if {@code viewer} is {@code null}
    */
   public boolean refresh(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
-    return lifecycle.refresh(viewer);
+    return this.lifecycle.refresh(viewer);
   }
 
   /**
    * Submits a programmatic close using {@link MenuCloseReason#PLUGIN}.
    *
-   * @param viewer player whose current menu should close
-   * @return {@code true} when a tracked session exists and the close request was accepted
+   * @param viewer session owner
+   * @return {@code true} when a current session existed and scheduling was accepted
    * @throws NullPointerException if {@code viewer} is {@code null}
    */
   public boolean close(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
-    return lifecycle.close(viewer);
+    return this.lifecycle.close(viewer);
   }
 
   /**
@@ -179,74 +184,74 @@ public final class MenuManager {
    * <p>This is a concurrent registry snapshot; it intentionally does not inspect Bukkit's current
    * {@code InventoryView} from the calling thread.
    *
-   * @param viewer player to query
-   * @return {@code true} when the framework tracks a live session for the player
+   * @param viewer viewer to inspect
+   * @return tracked-open flag
    * @throws NullPointerException if {@code viewer} is {@code null}
    */
   public boolean isOpen(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
-    return lifecycle.isOpen(viewer);
+    return this.lifecycle.isOpen(viewer);
   }
 
   /**
    * Returns the number of history entries restorable by {@link #back(Player)}.
    *
-   * @param viewer player to query
-   * @return non-negative navigation-history depth
+   * @param viewer viewer to inspect
+   * @return current history depth, or zero when no session is open
    * @throws NullPointerException if {@code viewer} is {@code null}
    */
   public int historyDepth(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
-    return lifecycle.historyDepth(viewer);
+    return this.lifecycle.historyDepth(viewer);
   }
 
   /**
    * Returns whether the current menu has a previous history entry.
    *
-   * @param viewer player to query
-   * @return {@code true} when {@link #back(Player)} can restore a previous menu
+   * @param viewer viewer to inspect
+   * @return {@code true} when {@link #back(Player)} can be requested
    * @throws NullPointerException if {@code viewer} is {@code null}
    */
   public boolean canGoBack(Player viewer) {
-    return historyDepth(viewer) > 0;
+    return this.historyDepth(viewer) > 0;
   }
 
   /**
    * Submits restoration of the previous menu and its state snapshot.
    *
-   * @param viewer player whose menu should navigate backward
-   * @return {@code true} when a previous entry exists and the request was accepted
+   * @param viewer session owner
+   * @return {@code true} when a back transition existed and scheduling was accepted
    * @throws NullPointerException if {@code viewer} is {@code null}
    */
   public boolean back(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
-    return lifecycle.back(viewer);
+    return this.lifecycle.back(viewer);
   }
 
   MenuEventHandler eventHandler() {
-    return eventHandler;
+    return this.eventHandler;
   }
 
-  boolean owns(@Nullable MenuHolder holder) {
-    return holder != null && runtimeState.runtimeId().equals(holder.runtimeId());
+  boolean owns(MenuHolder holder) {
+    return this.runtimeState.runtimeId().equals(holder.runtimeId());
   }
 
   void dispatchClick(Player viewer, UUID sessionId, MenuClick click) {
     Objects.requireNonNull(viewer, "viewer");
     Objects.requireNonNull(sessionId, "sessionId");
     Objects.requireNonNull(click, "click");
-    interactions.dispatch(viewer, sessionId, click);
+    this.interactions.dispatch(viewer, sessionId, click);
   }
 
   void handleInventoryClose(Player viewer, UUID sessionId, MenuCloseReason reason) {
     Objects.requireNonNull(viewer, "viewer");
     Objects.requireNonNull(sessionId, "sessionId");
     Objects.requireNonNull(reason, "reason");
-    lifecycle.handleInventoryClose(viewer, sessionId, reason);
+    this.lifecycle.handleInventoryClose(viewer, sessionId, reason);
   }
 
   void handleQuit(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
-    lifecycle.handleQuit(viewer);
+    this.lifecycle.handleQuit(viewer);
   }
 }

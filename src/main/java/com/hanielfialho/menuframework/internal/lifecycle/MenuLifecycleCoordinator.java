@@ -5,6 +5,9 @@ import com.hanielfialho.menuframework.api.Menu;
 import com.hanielfialho.menuframework.api.MenuCloseReason;
 import com.hanielfialho.menuframework.api.MenuRenderContext;
 import com.hanielfialho.menuframework.api.error.MenuFailureOperation;
+import com.hanielfialho.menuframework.api.feedback.MenuFeedback;
+import com.hanielfialho.menuframework.api.theme.MenuTheme;
+import com.hanielfialho.menuframework.internal.error.MenuExceptions;
 import com.hanielfialho.menuframework.internal.error.MenuRuntimeLogger;
 import com.hanielfialho.menuframework.internal.interaction.MenuOpenContextImpl;
 import com.hanielfialho.menuframework.internal.inventory.MenuHolder;
@@ -37,6 +40,29 @@ public final class MenuLifecycleCoordinator {
   private final MenuFrameApplier frames;
   private final MenuTaskRuntime tasks;
   private final MenuRuntimeLogger logger;
+  private final MenuTheme defaultTheme;
+  private final MenuFeedback defaultFeedback;
+
+  public MenuLifecycleCoordinator(
+      MenuRuntimeState runtimeState,
+      MenuSessionRegistry sessions,
+      MenuHistoryRegistry history,
+      MenuScheduler scheduler,
+      MenuFrameApplier frames,
+      MenuTaskRuntime tasks,
+      MenuRuntimeLogger logger,
+      MenuTheme defaultTheme,
+      MenuFeedback defaultFeedback) {
+    this.runtimeState = Objects.requireNonNull(runtimeState, "runtimeState");
+    this.sessions = Objects.requireNonNull(sessions, "sessions");
+    this.history = Objects.requireNonNull(history, "history");
+    this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
+    this.frames = Objects.requireNonNull(frames, "frames");
+    this.tasks = Objects.requireNonNull(tasks, "tasks");
+    this.logger = Objects.requireNonNull(logger, "logger");
+    this.defaultTheme = Objects.requireNonNull(defaultTheme, "defaultTheme");
+    this.defaultFeedback = Objects.requireNonNull(defaultFeedback, "defaultFeedback");
+  }
 
   public MenuLifecycleCoordinator(
       MenuRuntimeState runtimeState,
@@ -46,13 +72,16 @@ public final class MenuLifecycleCoordinator {
       MenuFrameApplier frames,
       MenuTaskRuntime tasks,
       MenuRuntimeLogger logger) {
-    this.runtimeState = Objects.requireNonNull(runtimeState, "runtimeState");
-    this.sessions = Objects.requireNonNull(sessions, "sessions");
-    this.history = Objects.requireNonNull(history, "history");
-    this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
-    this.frames = Objects.requireNonNull(frames, "frames");
-    this.tasks = Objects.requireNonNull(tasks, "tasks");
-    this.logger = Objects.requireNonNull(logger, "logger");
+    this(
+        runtimeState,
+        sessions,
+        history,
+        scheduler,
+        frames,
+        tasks,
+        logger,
+        MenuTheme.defaults(),
+        MenuFeedback.none());
   }
 
   public <S> boolean open(Player viewer, Menu<S> menu, S initialState) {
@@ -65,7 +94,8 @@ public final class MenuLifecycleCoordinator {
         () -> {
           try {
             this.openNow(viewer, menu, initialState, MenuOpenTransition.root());
-          } catch (Exception throwable) {
+          } catch (Throwable throwable) {
+            MenuExceptions.rethrowIfFatal(throwable);
             this.logger.reportOpenFailure(MenuFailureOperation.OPEN, viewer, menu, throwable);
           }
         });
@@ -155,32 +185,72 @@ public final class MenuLifecycleCoordinator {
     }
   }
 
-  public void scheduleNavigation(
+  public boolean scheduleNavigation(
       Player viewer, UUID sourceSessionId, MenuNavigation<?> navigation) {
-    this.scheduler.execute(
-        viewer, () -> this.openNavigationIfCurrent(viewer, sourceSessionId, navigation));
+    return this.scheduleNavigation(viewer, sourceSessionId, navigation, () -> {});
   }
 
-  public void scheduleBack(Player viewer, UUID sourceSessionId) {
-    this.scheduler.execute(viewer, () -> this.openBackIfCurrent(viewer, sourceSessionId));
+  public boolean scheduleNavigation(
+      Player viewer, UUID sourceSessionId, MenuNavigation<?> navigation, Runnable onSuccess) {
+    Objects.requireNonNull(onSuccess, "onSuccess");
+    return this.scheduler.execute(
+        viewer,
+        () -> {
+          if (this.openNavigationIfCurrent(viewer, sourceSessionId, navigation)) {
+            onSuccess.run();
+          }
+        });
   }
 
-  public void scheduleClose(Player viewer, UUID sessionId, MenuCloseReason reason) {
-    this.scheduler.execute(viewer, () -> this.closeIfCurrent(viewer, sessionId, reason));
+  public boolean scheduleBack(Player viewer, UUID sourceSessionId) {
+    return this.scheduleBack(viewer, sourceSessionId, () -> {});
   }
 
-  private <S> void openNow(
+  public boolean scheduleBack(Player viewer, UUID sourceSessionId, Runnable onSuccess) {
+    Objects.requireNonNull(onSuccess, "onSuccess");
+    return this.scheduler.execute(
+        viewer,
+        () -> {
+          if (this.openBackIfCurrent(viewer, sourceSessionId)) {
+            onSuccess.run();
+          }
+        });
+  }
+
+  public boolean scheduleClose(Player viewer, UUID sessionId, MenuCloseReason reason) {
+    return this.scheduleClose(viewer, sessionId, reason, () -> {});
+  }
+
+  public boolean scheduleClose(
+      Player viewer, UUID sessionId, MenuCloseReason reason, Runnable onSuccess) {
+    Objects.requireNonNull(onSuccess, "onSuccess");
+    return this.scheduler.execute(
+        viewer,
+        () -> {
+          if (this.closeIfCurrent(viewer, sessionId, reason)) {
+            onSuccess.run();
+          }
+        });
+  }
+
+  private <S> boolean openNow(
       Player viewer, Menu<S> menu, S initialState, MenuOpenTransition transition) {
     Objects.requireNonNull(transition, "transition");
 
     if (!this.runtimeState.running() || !viewer.isOnline()) {
-      return;
+      return false;
     }
 
     int targetHistoryDepth = transition.targetDepth();
 
+    MenuTheme theme =
+        Objects.requireNonNull(menu.theme(this.defaultTheme), "The menu returned a null theme");
+    MenuFeedback feedback =
+        Objects.requireNonNull(
+            menu.feedback(this.defaultFeedback), "The menu returned null feedback");
+
     MenuRenderContext<S> context =
-        new MenuRenderContext<>(viewer, initialState, targetHistoryDepth);
+        new MenuRenderContext<>(viewer, initialState, targetHistoryDepth, theme);
 
     InteractionPolicy interactionPolicy =
         Objects.requireNonNull(
@@ -188,7 +258,8 @@ public final class MenuLifecycleCoordinator {
 
     Component title = Objects.requireNonNull(menu.title(context), "The menu returned a null title");
 
-    MenuFrame<S> initialFrame = MenuRenderer.render(menu, viewer, initialState, targetHistoryDepth);
+    MenuFrame<S> initialFrame =
+        MenuRenderer.render(menu, viewer, initialState, targetHistoryDepth, theme);
 
     UUID sessionId = UUID.randomUUID();
     MenuHolder holder =
@@ -207,9 +278,20 @@ public final class MenuLifecycleCoordinator {
             holder,
             initialState,
             initialFrame,
-            targetHistoryDepth);
+            targetHistoryDepth,
+            theme,
+            feedback);
 
-    this.frames.applyInitialFrame(newSession.inventory(), initialFrame);
+    try {
+      this.frames.applyInitialFrame(newSession.inventory(), initialFrame);
+    } catch (RuntimeException | Error failure) {
+      try {
+        newSession.dispose();
+      } catch (RuntimeException | Error cleanupFailure) {
+        failure.addSuppressed(cleanupFailure);
+      }
+      throw failure;
+    }
 
     UUID viewerId = viewer.getUniqueId();
     AtomicReference<MenuSession<?>> previousReference = new AtomicReference<>();
@@ -242,14 +324,14 @@ public final class MenuLifecycleCoordinator {
         newSession.dispose();
       }
 
-      return;
+      return false;
     }
 
     MenuSession<?> previous = previousReference.get();
 
     if (!this.runtimeState.running()) {
       this.rollbackFailedOpen(viewer, newSession, previous);
-      return;
+      return false;
     }
 
     try {
@@ -257,7 +339,7 @@ public final class MenuLifecycleCoordinator {
 
       if (!this.runtimeState.running()) {
         this.rollbackFailedOpen(viewer, newSession, previous);
-        return;
+        return false;
       }
 
       boolean validView =
@@ -280,9 +362,10 @@ public final class MenuLifecycleCoordinator {
 
       if (!this.runtimeState.running()) {
         this.rollbackFailedOpen(viewer, newSession, previous);
-        return;
+        return false;
       }
-    } catch (Exception throwable) {
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.rollbackFailedOpen(viewer, newSession, previous);
       throw throwable;
     }
@@ -294,109 +377,122 @@ public final class MenuLifecycleCoordinator {
     if (this.isUsable(newSession, viewer)) {
       this.notifyOpen(newSession, viewer);
     }
+
+    return true;
   }
 
-  private void refreshIfCurrent(Player viewer, UUID sessionId) {
+  private boolean refreshIfCurrent(Player viewer, UUID sessionId) {
     if (!this.runtimeState.running()) {
-      return;
+      return false;
     }
 
     MenuSession<?> session = this.sessions.current(viewer.getUniqueId(), sessionId);
 
     if (session == null || !MenuViewAccess.isSessionInventoryOpen(viewer, sessionId)) {
-      return;
+      return false;
     }
 
-    this.refreshTyped(session, viewer);
+    return this.refreshTyped(session, viewer);
   }
 
-  private <S> void refreshTyped(MenuSession<S> session, Player viewer) {
+  private <S> boolean refreshTyped(MenuSession<S> session, Player viewer) {
     try {
-      this.frames.renderAndApply(session, viewer, session.state());
-    } catch (Exception throwable) {
+      return this.frames.renderAndApply(session, viewer, session.state());
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportSessionFailure(MenuFailureOperation.REFRESH_RENDER, session, throwable);
+
+      return false;
     }
   }
 
-  private void openNavigationIfCurrent(
+  private boolean openNavigationIfCurrent(
       Player viewer, UUID sourceSessionId, MenuNavigation<?> navigation) {
     if (!this.runtimeState.running()) {
-      return;
+      return false;
     }
 
     MenuSession<?> source = this.sessions.current(viewer.getUniqueId(), sourceSessionId);
 
     if (source == null || !MenuViewAccess.isSessionInventoryOpen(viewer, sourceSessionId)) {
-      return;
+      return false;
     }
 
     try {
       MenuOpenTransition transition = MenuOpenTransition.forward(source, this.history);
 
-      this.openNavigationTyped(viewer, navigation, transition);
-    } catch (Exception throwable) {
+      return this.openNavigationTyped(viewer, navigation, transition);
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportSessionFailure(MenuFailureOperation.NAVIGATION, source, throwable);
+      return false;
     }
   }
 
-  private <T> void openNavigationTyped(
+  private <T> boolean openNavigationTyped(
       Player viewer, MenuNavigation<T> navigation, MenuOpenTransition transition) {
     try {
-      this.openNow(viewer, navigation.menu(), navigation.initialState(), transition);
-    } catch (Exception throwable) {
+      return this.openNow(viewer, navigation.menu(), navigation.initialState(), transition);
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportOpenFailure(
           MenuFailureOperation.OPEN, viewer, navigation.menu(), throwable);
+      return false;
     }
   }
 
-  private void openBackIfCurrent(Player viewer, UUID sourceSessionId) {
+  private boolean openBackIfCurrent(Player viewer, UUID sourceSessionId) {
     if (!this.runtimeState.running()) {
-      return;
+      return false;
     }
 
     MenuSession<?> source = this.sessions.current(viewer.getUniqueId(), sourceSessionId);
 
     if (source == null || !MenuViewAccess.isSessionInventoryOpen(viewer, sourceSessionId)) {
-      return;
+      return false;
     }
 
     try {
       MenuOpenTransition transition = MenuOpenTransition.back(source, this.history);
 
-      this.openHistoryEntry(viewer, transition.backTarget(), transition);
-    } catch (Exception throwable) {
+      return this.openHistoryEntry(viewer, transition.backTarget(), transition);
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportSessionFailure(MenuFailureOperation.BACK_NAVIGATION, source, throwable);
+      return false;
     }
   }
 
-  private void openHistoryEntry(
+  private boolean openHistoryEntry(
       Player viewer, MenuHistoryEntry<?> entry, MenuOpenTransition transition) {
-    this.openHistoryEntryTyped(viewer, entry, transition);
+    return this.openHistoryEntryTyped(viewer, entry, transition);
   }
 
-  private <S> void openHistoryEntryTyped(
+  private <S> boolean openHistoryEntryTyped(
       Player viewer, MenuHistoryEntry<S> entry, MenuOpenTransition transition) {
     try {
-      this.openNow(viewer, entry.menu(), entry.state(), transition);
-    } catch (Exception throwable) {
+      return this.openNow(viewer, entry.menu(), entry.state(), transition);
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportOpenFailure(MenuFailureOperation.OPEN, viewer, entry.menu(), throwable);
+      return false;
     }
   }
 
-  private void closeIfCurrent(Player viewer, UUID sessionId, MenuCloseReason reason) {
+  private boolean closeIfCurrent(Player viewer, UUID sessionId, MenuCloseReason reason) {
     if (!this.runtimeState.running()) {
-      return;
+      return false;
     }
 
     UUID viewerId = viewer.getUniqueId();
     MenuSession<?> session = this.sessions.current(viewerId, sessionId);
 
     if (session == null) {
-      return;
+      return false;
     }
 
     if (!this.sessions.remove(viewerId, session)) {
-      return;
+      return false;
     }
 
     this.history.clear(viewerId);
@@ -405,31 +501,34 @@ public final class MenuLifecycleCoordinator {
       if (MenuViewAccess.isSessionInventoryOpen(viewer, sessionId)) {
         viewer.closeInventory();
       }
-    } catch (Exception throwable) {
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportSessionFailure(MenuFailureOperation.INVENTORY_CLOSE, session, throwable);
     } finally {
       this.terminate(session, viewer, reason);
     }
+
+    return true;
   }
 
-  private void disposeIfCurrent(Player viewer, UUID sessionId, MenuCloseReason reason) {
+  private boolean disposeIfCurrent(Player viewer, UUID sessionId, MenuCloseReason reason) {
     if (!this.runtimeState.running()) {
-      return;
+      return false;
     }
 
     UUID viewerId = viewer.getUniqueId();
     MenuSession<?> session = this.sessions.current(viewerId, sessionId);
 
     if (session == null) {
-      return;
+      return false;
     }
 
     if (!this.sessions.remove(viewerId, session)) {
-      return;
+      return false;
     }
 
     this.history.clear(viewerId);
-    this.terminate(session, viewer, reason);
+    return this.terminate(session, viewer, reason);
   }
 
   private void rollbackFailedOpen(
@@ -454,7 +553,8 @@ public final class MenuLifecycleCoordinator {
       if (MenuViewAccess.isSessionInventoryOpen(viewer, failedSession.id())) {
         viewer.closeInventory();
       }
-    } catch (Exception throwable) {
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportSessionFailure(
           MenuFailureOperation.FAILED_OPEN_CLEANUP, failedSession, throwable);
     }
@@ -484,7 +584,8 @@ public final class MenuLifecycleCoordinator {
     try {
       session.menu().onOpen(context);
       successful = true;
-    } catch (Exception throwable) {
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportSessionFailure(MenuFailureOperation.OPEN_CALLBACK, session, throwable);
     } finally {
       context.finish();
@@ -524,28 +625,32 @@ public final class MenuLifecycleCoordinator {
         && MenuViewAccess.isSessionInventoryOpen(viewer, session.id());
   }
 
-  private void terminate(MenuSession<?> session, Player viewer, MenuCloseReason reason) {
-    this.terminateTyped(session, viewer, reason);
+  private boolean terminate(MenuSession<?> session, Player viewer, MenuCloseReason reason) {
+    return this.terminateTyped(session, viewer, reason);
   }
 
-  private <S> void terminateTyped(MenuSession<S> session, Player viewer, MenuCloseReason reason) {
+  private <S> boolean terminateTyped(
+      MenuSession<S> session, Player viewer, MenuCloseReason reason) {
     boolean notifyClose = session.lifecycleStarted();
     boolean disposed = session.dispose();
 
     this.sessions.untrack(session);
 
     if (!disposed) {
-      return;
+      return false;
     }
 
     if (!notifyClose) {
-      return;
+      return true;
     }
 
     try {
       session.menu().onClose(session.context(viewer), reason);
-    } catch (Exception throwable) {
+    } catch (Throwable throwable) {
+      MenuExceptions.rethrowIfFatal(throwable);
       this.logger.reportSessionFailure(MenuFailureOperation.CLOSE_CALLBACK, session, throwable);
     }
+
+    return true;
   }
 }

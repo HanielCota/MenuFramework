@@ -29,18 +29,6 @@ public final class MenuFrameApplier {
     this.sessions = Objects.requireNonNull(sessions, "sessions");
   }
 
-  private static ItemStack snapshotOrNull(ItemStack item) {
-    if (item == null || item.getType().isAir()) {
-      return null;
-    }
-
-    return item.clone();
-  }
-
-  private static ItemStack cloneOrNull(ItemStack item) {
-    return item == null ? null : item.clone();
-  }
-
   public <S> void applyInitialFrame(Inventory inventory, MenuFrame<S> frame) {
     Objects.requireNonNull(inventory, "inventory");
     Objects.requireNonNull(frame, "frame");
@@ -71,18 +59,19 @@ public final class MenuFrameApplier {
     Objects.requireNonNull(viewer, "viewer");
     Objects.requireNonNull(candidateState, "candidateState");
 
-    if (this.isUnusable(session, viewer)) {
+    if (!this.isUsable(session, viewer)) {
       return false;
     }
 
     MenuFrame<S> nextFrame =
-        MenuRenderer.render(session.menu(), viewer, candidateState, session.historyDepth());
+        MenuRenderer.render(
+            session.menu(), viewer, candidateState, session.historyDepth(), session.theme());
 
     if (!session.layout().equals(nextFrame.layout())) {
       throw new IllegalStateException("A menu cannot change its layout while open");
     }
 
-    if (this.isUnusable(session, viewer)) {
+    if (!this.isUsable(session, viewer)) {
       return false;
     }
 
@@ -97,7 +86,7 @@ public final class MenuFrameApplier {
         appliedChanges++;
       }
 
-      if (this.isUnusable(session, viewer)) {
+      if (!this.isUsable(session, viewer)) {
         RuntimeException rollbackFailure =
             this.rollbackStaleApplication(inventory, changes, appliedChanges);
         appliedChanges = 0;
@@ -117,10 +106,10 @@ public final class MenuFrameApplier {
     }
   }
 
-  private boolean isUnusable(MenuSession<?> session, Player viewer) {
-    return !this.runtimeState.running()
-        || !this.sessions.isCurrent(session)
-        || !MenuViewAccess.isSessionInventoryOpen(viewer, session.id());
+  private boolean isUsable(MenuSession<?> session, Player viewer) {
+    return this.runtimeState.running()
+        && this.sessions.isCurrent(session)
+        && MenuViewAccess.isSessionInventoryOpen(viewer, session.id());
   }
 
   private RuntimeException rollbackStaleApplication(
@@ -165,6 +154,18 @@ public final class MenuFrameApplier {
         originalFailure.addSuppressed(rollbackFailure);
       }
     }
+  }
+
+  private static ItemStack snapshotOrNull(ItemStack item) {
+    if (item == null || item.getType().isAir()) {
+      return null;
+    }
+
+    return item.clone();
+  }
+
+  private static ItemStack cloneOrNull(ItemStack item) {
+    return item == null ? null : item.clone();
   }
 
   private record VisualChange(int slot, ItemStack previousItem, ItemStack nextItem) {}

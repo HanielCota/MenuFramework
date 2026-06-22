@@ -37,6 +37,9 @@ public enum MenuFailureOperation {
   /** Rendering requested by a click handler. */
   CLICK_RENDER("render a menu after a click"),
 
+  /** Emitting transactional menu feedback. */
+  FEEDBACK("emit menu feedback"),
+
   /** Reserving and starting a session-owned asynchronous task. */
   ASYNC_TASK_START("start an asynchronous menu task"),
 
