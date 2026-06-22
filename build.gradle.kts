@@ -1,12 +1,19 @@
+import com.vanniktech.maven.publish.JavaLibrary
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.SourcesJar
+import org.gradle.plugins.signing.Sign
+
 plugins {
     `java-library`
     `maven-publish`
     id("com.diffplug.spotless") version "8.7.0"
+    id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
 group = providers.gradleProperty("group").get()
 version = providers.gradleProperty("version").get()
 
+val artifactId = providers.gradleProperty("artifactId").get()
 val paperApiVersion = providers.gradleProperty("paperApiVersion").get()
 val mockBukkitVersion = providers.gradleProperty("mockBukkitVersion").get()
 val junitVersion = providers.gradleProperty("junitVersion").get()
@@ -43,8 +50,6 @@ sourceSets {
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(25))
-    withSourcesJar()
-    withJavadocJar()
 }
 
 spotless {
@@ -119,10 +124,59 @@ tasks.register("format") {
     dependsOn("spotlessApply")
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
+val publishingLocally = gradle.startParameter.taskNames.any {
+    it.contains("MavenLocal", ignoreCase = true)
+}
+
+tasks.withType<Sign>().configureEach {
+    onlyIf { !publishingLocally }
+}
+
+mavenPublishing {
+    configure(
+        JavaLibrary(
+            javadocJar = JavadocJar.Javadoc(),
+            sourcesJar = SourcesJar.Sources()
+        )
+    )
+
+    coordinates(
+        groupId = group.toString(),
+        artifactId = artifactId,
+        version = version.toString()
+    )
+
+    publishToMavenCentral()
+    signAllPublications()
+
+    pom {
+        name.set("MenuFramework")
+        description.set(
+            "A type-safe inventory menu framework for Paper and Folia plugins."
+        )
+        inceptionYear.set("2026")
+        url.set("https://github.com/HanielCota/MenuFramework")
+
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/license/mit")
+                distribution.set("repo")
+            }
+        }
+
+        developers {
+            developer {
+                id.set("HanielCota")
+                name.set("Haniel Fialho")
+                url.set("https://github.com/HanielCota")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/HanielCota/MenuFramework")
+            connection.set("scm:git:https://github.com/HanielCota/MenuFramework.git")
+            developerConnection.set("scm:git:ssh://git@github.com/HanielCota/MenuFramework.git")
         }
     }
 }

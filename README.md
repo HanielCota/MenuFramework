@@ -63,9 +63,27 @@ A API suportada fica nos packages `com.hanielfialho.menuframework` e `com.haniel
 
 ## Instalação
 
-O projeto ainda não declara um repositório remoto de publicação. As formas mais diretas de usar são como composite build, subprojeto Gradle, publicação local ou cópia dos fontes para o plugin.
+Após publicação no Maven Central, use a dependência abaixo. Enquanto a primeira versão ainda não estiver disponível, as opções de composite build, subprojeto e Maven Local continuam úteis para desenvolvimento.
 
-### Opção 1: composite build Gradle
+### Opção 1: Maven Central
+
+No `build.gradle.kts` do plugin consumidor:
+
+```kotlin
+repositories {
+    mavenCentral()
+    maven("https://repo.papermc.io/repository/maven-public/")
+}
+
+dependencies {
+    implementation("io.github.hanielcota:menu-framework:1.0.0")
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.69-stable")
+}
+```
+
+Garanta que o jar final do seu plugin inclua a biblioteca, por exemplo com shading ou outro mecanismo de distribuição que você já use para dependências internas. A Paper API deve continuar `compileOnly`.
+
+### Opção 2: composite build Gradle
 
 No `settings.gradle.kts` do plugin consumidor:
 
@@ -92,14 +110,14 @@ No `build.gradle.kts` do plugin consumidor:
 
 ```kotlin
 dependencies {
-    implementation("com.hanielfialho:menu-framework:1.0.0")
+    implementation("io.github.hanielcota:menu-framework:1.0.0")
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.69-stable")
 }
 ```
 
-Garanta que o jar final do seu plugin inclua a biblioteca, por exemplo com um módulo próprio empacotado, shading ou outro mecanismo de distribuição que você já use para dependências internas. A Paper API deve continuar `compileOnly`.
+Quando usado como composite build, o Gradle substitui essas coordenadas pelo projeto local incluído.
 
-### Opção 2: subprojeto Gradle
+### Opção 3: subprojeto Gradle
 
 Se o plugin e a biblioteca estiverem no mesmo workspace, inclua este projeto como subprojeto.
 
@@ -119,7 +137,7 @@ dependencies {
 }
 ```
 
-### Opção 3: Maven Local
+### Opção 4: Maven Local
 
 Neste repositório:
 
@@ -137,12 +155,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.hanielfialho:menu-framework:1.0.0")
+    implementation("io.github.hanielcota:menu-framework:1.0.0")
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.69-stable")
 }
 ```
 
-### Opção 4: copiar fontes
+### Opção 5: copiar fontes
 
 Também é possível copiar `src/main/java/com/hanielfialho/menuframework` para dentro do plugin. Essa opção é simples, mas você passa a ser responsável por manter os fontes atualizados e formatados.
 
@@ -806,4 +824,5 @@ Isso é intencional. `shutdown()` não manipula views nem executa callbacks de m
 - [ARCHITECTURE.md](ARCHITECTURE.md): componentes, invariantes e modelo de threads.
 - [PACKAGE_MAP.md](PACKAGE_MAP.md): mapa dos packages e classes.
 - [REVIEW.md](REVIEW.md): revisão técnica consolidada, correções e limites conhecidos.
+- [PUBLISHING.md](PUBLISHING.md): publicação no Maven Central.
 - [examples/README.md](examples/README.md): descrição dos exemplos.
