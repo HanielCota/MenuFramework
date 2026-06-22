@@ -3,6 +3,7 @@ package com.hanielfialho.menuframework;
 import com.hanielfialho.menuframework.api.error.MenuErrorHandler;
 import java.util.Objects;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable configuration for one {@link MenuFramework} runtime.
@@ -19,10 +20,11 @@ public final class MenuFrameworkConfiguration {
   private static final MenuFrameworkConfiguration DEFAULTS =
       new MenuFrameworkConfiguration(null, DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH);
 
-  private final MenuErrorHandler errorHandler;
+  private final @Nullable MenuErrorHandler errorHandler;
   private final int maxNavigationHistoryDepth;
 
-  private MenuFrameworkConfiguration(MenuErrorHandler errorHandler, int maxNavigationHistoryDepth) {
+  private MenuFrameworkConfiguration(
+      @Nullable MenuErrorHandler errorHandler, int maxNavigationHistoryDepth) {
     this.errorHandler = errorHandler;
     this.maxNavigationHistoryDepth = validateHistoryDepth(maxNavigationHistoryDepth);
   }
@@ -94,7 +96,7 @@ public final class MenuFrameworkConfiguration {
    */
   public static final class Builder {
 
-    private MenuErrorHandler errorHandler;
+    private @Nullable MenuErrorHandler errorHandler;
     private int maxNavigationHistoryDepth = DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH;
 
     private Builder() {}
@@ -148,7 +150,7 @@ public final class MenuFrameworkConfiguration {
       return new MenuFrameworkConfiguration(this.errorHandler, this.maxNavigationHistoryDepth);
     }
 
-    private Builder errorHandlerIfPresent(MenuErrorHandler errorHandler) {
+    private Builder errorHandlerIfPresent(@Nullable MenuErrorHandler errorHandler) {
       if (errorHandler != null) {
         this.errorHandler = errorHandler;
       }

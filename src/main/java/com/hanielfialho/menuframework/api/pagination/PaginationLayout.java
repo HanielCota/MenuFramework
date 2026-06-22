@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.IntConsumer;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable mapping between page entries and menu slots.
@@ -21,14 +22,14 @@ public final class PaginationLayout {
   private final List<Integer> contentSlots;
   private final int previousSlot;
   private final int nextSlot;
-  private final Integer indicatorSlot;
+  private final @Nullable Integer indicatorSlot;
 
   private PaginationLayout(
       MenuLayout menuLayout,
       List<Integer> contentSlots,
       int previousSlot,
       int nextSlot,
-      Integer indicatorSlot) {
+      @Nullable Integer indicatorSlot) {
     this.menuLayout = menuLayout;
     this.contentSlots = contentSlots;
     this.previousSlot = previousSlot;
@@ -182,9 +183,9 @@ public final class PaginationLayout {
     private final MenuLayout menuLayout;
     private final LinkedHashSet<Integer> contentSlots = new LinkedHashSet<>();
 
-    private Integer previousSlot;
-    private Integer nextSlot;
-    private Integer indicatorSlot;
+    private @Nullable Integer previousSlot;
+    private @Nullable Integer nextSlot;
+    private @Nullable Integer indicatorSlot;
 
     private Builder(MenuLayout menuLayout) {
       this.menuLayout = Objects.requireNonNull(menuLayout, "menuLayout");

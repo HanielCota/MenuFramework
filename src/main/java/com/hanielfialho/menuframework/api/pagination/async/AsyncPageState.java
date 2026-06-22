@@ -6,6 +6,7 @@ import com.hanielfialho.menuframework.api.pagination.PageSlice;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable state machine for asynchronous pagination.
@@ -21,15 +22,15 @@ public final class AsyncPageState<T> {
   private final PageRequest request;
   private final PageLoadStatus status;
   private final long generation;
-  private final PageSlice<T> page;
-  private final PageLoadError error;
+  private final @Nullable PageSlice<T> page;
+  private final @Nullable PageLoadError error;
 
   private AsyncPageState(
       PageRequest request,
       PageLoadStatus status,
       long generation,
-      PageSlice<T> page,
-      PageLoadError error) {
+      @Nullable PageSlice<T> page,
+      @Nullable PageLoadError error) {
     this.request = Objects.requireNonNull(request, "request");
     this.status = Objects.requireNonNull(status, "status");
 
@@ -81,27 +82,27 @@ public final class AsyncPageState<T> {
   }
 
   /**
-   * Retorna a requisição ativa.
+   * Returns the active page request.
    *
-   * @return requisição ativa
+   * @return active request
    */
   public PageRequest request() {
     return this.request;
   }
 
   /**
-   * Retorna o cursor da requisição ativa.
+   * Returns the cursor of the active request.
    *
-   * @return cursor ativo
+   * @return active cursor
    */
   public PageCursor cursor() {
     return this.request.cursor();
   }
 
   /**
-   * Retorna a fase atual do carregamento.
+   * Returns the current load phase.
    *
-   * @return status do carregamento
+   * @return load status
    */
   public PageLoadStatus status() {
     return this.status;
@@ -117,27 +118,27 @@ public final class AsyncPageState<T> {
   }
 
   /**
-   * Indica se uma requisição está em carregamento.
+   * Returns whether a request is in progress.
    *
-   * @return {@code true} durante o carregamento
+   * @return {@code true} while loading
    */
   public boolean loading() {
     return this.status == PageLoadStatus.LOADING;
   }
 
   /**
-   * Indica se uma página validada está disponível.
+   * Returns whether a validated page is available.
    *
-   * @return {@code true} quando a página está pronta
+   * @return {@code true} when the page is ready
    */
   public boolean ready() {
     return this.status == PageLoadStatus.READY;
   }
 
   /**
-   * Indica se o carregamento mais recente falhou.
+   * Returns whether the most recent load failed.
    *
-   * @return {@code true} quando o estado representa uma falha
+   * @return {@code true} when this state represents a failure
    */
   public boolean failed() {
     return this.status == PageLoadStatus.ERROR;

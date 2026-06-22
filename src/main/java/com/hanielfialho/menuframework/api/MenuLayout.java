@@ -2,6 +2,7 @@ package com.hanielfialho.menuframework.api;
 
 import java.util.Objects;
 import org.bukkit.event.inventory.InventoryType;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable structural description of a menu inventory.
@@ -146,7 +147,7 @@ public final class MenuLayout {
 
   /** {@inheritDoc} */
   @Override
-  public boolean equals(Object object) {
+  public boolean equals(@Nullable Object object) {
     if (this == object) {
       return true;
     }

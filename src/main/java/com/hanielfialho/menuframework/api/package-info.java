@@ -10,4 +10,7 @@
  * com.hanielfialho.menuframework.api.MenuCanvas}. They must not mutate the underlying Bukkit
  * inventory directly.
  */
+@NullMarked
 package com.hanielfialho.menuframework.api;
+
+import org.jspecify.annotations.NullMarked;

@@ -11,6 +11,7 @@ val paperApiVersion = providers.gradleProperty("paperApiVersion").get()
 val mockBukkitVersion = providers.gradleProperty("mockBukkitVersion").get()
 val junitVersion = providers.gradleProperty("junitVersion").get()
 val googleJavaFormatVersion = providers.gradleProperty("googleJavaFormatVersion").get()
+val jspecifyVersion = providers.gradleProperty("jspecifyVersion").get()
 
 repositories {
     mavenCentral()
@@ -18,6 +19,7 @@ repositories {
 }
 
 dependencies {
+    compileOnlyApi("org.jspecify:jspecify:$jspecifyVersion")
     compileOnly("io.papermc.paper:paper-api:$paperApiVersion")
     testImplementation("io.papermc.paper:paper-api:$paperApiVersion")
 

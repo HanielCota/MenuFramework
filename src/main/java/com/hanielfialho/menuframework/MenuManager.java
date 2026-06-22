@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Public facade for opening, refreshing, closing and navigating menus.
@@ -133,6 +134,13 @@ public final class MenuManager {
    *
    * <p>The menu definition may be reused by many viewers, but {@code initialState} must be
    * immutable or treated as immutable. Opening a root menu clears that viewer's navigation history.
+   *
+   * @param viewer player that should see the menu
+   * @param menu reusable menu definition
+   * @param initialState non-null initial state for this viewer
+   * @param <S> session-state type
+   * @return {@code true} when the open request was accepted for scheduling
+   * @throws NullPointerException if an argument is {@code null}
    */
   public <S> boolean open(Player viewer, Menu<S> menu, S initialState) {
     Objects.requireNonNull(viewer, "viewer");
@@ -141,13 +149,25 @@ public final class MenuManager {
     return lifecycle.open(viewer, menu, initialState);
   }
 
-  /** Submits a refresh of the viewer's current session. */
+  /**
+   * Submits a refresh of the viewer's current session.
+   *
+   * @param viewer player whose current menu should be rendered again
+   * @return {@code true} when a tracked session exists and the refresh request was accepted
+   * @throws NullPointerException if {@code viewer} is {@code null}
+   */
   public boolean refresh(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
     return lifecycle.refresh(viewer);
   }
 
-  /** Submits a programmatic close using {@link MenuCloseReason#PLUGIN}. */
+  /**
+   * Submits a programmatic close using {@link MenuCloseReason#PLUGIN}.
+   *
+   * @param viewer player whose current menu should close
+   * @return {@code true} when a tracked session exists and the close request was accepted
+   * @throws NullPointerException if {@code viewer} is {@code null}
+   */
   public boolean close(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
     return lifecycle.close(viewer);
@@ -158,24 +178,46 @@ public final class MenuManager {
    *
    * <p>This is a concurrent registry snapshot; it intentionally does not inspect Bukkit's current
    * {@code InventoryView} from the calling thread.
+   *
+   * @param viewer player to query
+   * @return {@code true} when the framework tracks a live session for the player
+   * @throws NullPointerException if {@code viewer} is {@code null}
    */
   public boolean isOpen(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
     return lifecycle.isOpen(viewer);
   }
 
-  /** Returns the number of history entries restorable by {@link #back(Player)}. */
+  /**
+   * Returns the number of history entries restorable by {@link #back(Player)}.
+   *
+   * @param viewer player to query
+   * @return non-negative navigation-history depth
+   * @throws NullPointerException if {@code viewer} is {@code null}
+   */
   public int historyDepth(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
     return lifecycle.historyDepth(viewer);
   }
 
-  /** Returns whether the current menu has a previous history entry. */
+  /**
+   * Returns whether the current menu has a previous history entry.
+   *
+   * @param viewer player to query
+   * @return {@code true} when {@link #back(Player)} can restore a previous menu
+   * @throws NullPointerException if {@code viewer} is {@code null}
+   */
   public boolean canGoBack(Player viewer) {
     return historyDepth(viewer) > 0;
   }
 
-  /** Submits restoration of the previous menu and its state snapshot. */
+  /**
+   * Submits restoration of the previous menu and its state snapshot.
+   *
+   * @param viewer player whose menu should navigate backward
+   * @return {@code true} when a previous entry exists and the request was accepted
+   * @throws NullPointerException if {@code viewer} is {@code null}
+   */
   public boolean back(Player viewer) {
     Objects.requireNonNull(viewer, "viewer");
     return lifecycle.back(viewer);
@@ -185,7 +227,7 @@ public final class MenuManager {
     return eventHandler;
   }
 
-  boolean owns(MenuHolder holder) {
+  boolean owns(@Nullable MenuHolder holder) {
     return holder != null && runtimeState.runtimeId().equals(holder.runtimeId());
   }
 

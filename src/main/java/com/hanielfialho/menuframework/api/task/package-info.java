@@ -5,4 +5,7 @@
  * previous generation, while every late result is validated against both the owning session and the
  * active generation.
  */
+@NullMarked
 package com.hanielfialho.menuframework.api.task;
+
+import org.jspecify.annotations.NullMarked;

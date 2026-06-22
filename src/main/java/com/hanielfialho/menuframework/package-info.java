@@ -10,4 +10,7 @@
  * implementation details are isolated under {@code internal} and are not part of the compatibility
  * contract.
  */
+@NullMarked
 package com.hanielfialho.menuframework;
+
+import org.jspecify.annotations.NullMarked;

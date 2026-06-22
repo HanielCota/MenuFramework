@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable structural context for a non-fatal runtime failure.
@@ -19,11 +20,11 @@ public final class MenuFailureContext {
   private final Throwable cause;
   private final UUID viewerId;
   private final Class<?> menuType;
-  private final UUID sessionId;
-  private final Long revision;
-  private final MenuTaskKey taskKey;
-  private final Long taskGeneration;
-  private final Long taskExecution;
+  private final @Nullable UUID sessionId;
+  private final @Nullable Long revision;
+  private final @Nullable MenuTaskKey taskKey;
+  private final @Nullable Long taskGeneration;
+  private final @Nullable Long taskExecution;
 
   private MenuFailureContext(Builder builder) {
     this.operation = builder.operation;
@@ -52,7 +53,7 @@ public final class MenuFailureContext {
     return new Builder(operation, cause, viewerId, menuType);
   }
 
-  private static OptionalLong optionalLong(Long value) {
+  private static OptionalLong optionalLong(@Nullable Long value) {
     return value == null ? OptionalLong.empty() : OptionalLong.of(value);
   }
 
@@ -176,11 +177,11 @@ public final class MenuFailureContext {
     private final UUID viewerId;
     private final Class<?> menuType;
 
-    private UUID sessionId;
-    private Long revision;
-    private MenuTaskKey taskKey;
-    private Long taskGeneration;
-    private Long taskExecution;
+    private @Nullable UUID sessionId;
+    private @Nullable Long revision;
+    private @Nullable MenuTaskKey taskKey;
+    private @Nullable Long taskGeneration;
+    private @Nullable Long taskExecution;
 
     private Builder(
         MenuFailureOperation operation, Throwable cause, UUID viewerId, Class<?> menuType) {

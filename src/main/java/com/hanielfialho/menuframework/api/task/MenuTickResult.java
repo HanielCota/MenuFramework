@@ -1,6 +1,7 @@
 package com.hanielfialho.menuframework.api.task;
 
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable result of one periodic-task execution.
@@ -12,13 +13,16 @@ import java.util.Objects;
  */
 public final class MenuTickResult<S> {
 
-  private final S nextState;
+  private final @Nullable S nextState;
   private final boolean stateReplacement;
   private final boolean renderRequested;
   private final boolean stopRequested;
 
   private MenuTickResult(
-      S nextState, boolean stateReplacement, boolean renderRequested, boolean stopRequested) {
+      @Nullable S nextState,
+      boolean stateReplacement,
+      boolean renderRequested,
+      boolean stopRequested) {
     this.nextState = stateReplacement ? Objects.requireNonNull(nextState, "nextState") : null;
 
     this.stateReplacement = stateReplacement;
