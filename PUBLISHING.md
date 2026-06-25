@@ -5,7 +5,7 @@ Este projeto está configurado para publicar pelo Sonatype Central Portal usando
 ## Coordenadas
 
 ```text
-io.github.hanielcota:menu-framework:1.0.0
+io.github.hanielcota:menu-framework:1.0.1
 ```
 
 Os packages Java continuam em `com.hanielfialho.menuframework`. O `groupId` Maven usa `io.github.hanielcota` porque a Sonatype aceita namespaces pessoais vinculados ao GitHub.
@@ -42,8 +42,8 @@ Use o bloco exportado inteiro como valor de `SIGNING_IN_MEMORY_KEY`.
 Atualize `version` em `gradle.properties`, depois crie e envie uma tag:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.0.1
+git push origin v1.0.1
 ```
 
 O workflow `Publish` do GitHub Actions executa:

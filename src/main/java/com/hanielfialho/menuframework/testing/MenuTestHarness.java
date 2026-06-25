@@ -6,7 +6,10 @@ import com.hanielfialho.menuframework.api.MenuClickHandler;
 import com.hanielfialho.menuframework.api.MenuLayout;
 import com.hanielfialho.menuframework.api.MenuRenderContext;
 import com.hanielfialho.menuframework.api.feedback.MenuFeedbackSignal;
+import com.hanielfialho.menuframework.api.task.MenuPeriodicTask;
 import com.hanielfialho.menuframework.api.task.MenuTaskKey;
+import com.hanielfialho.menuframework.api.task.MenuTickContext;
+import com.hanielfialho.menuframework.api.task.MenuTickResult;
 import com.hanielfialho.menuframework.api.theme.MenuTheme;
 import com.hanielfialho.menuframework.internal.interaction.MenuInteractionImpl;
 import com.hanielfialho.menuframework.internal.lifecycle.MenuNavigation;
@@ -16,6 +19,7 @@ import com.hanielfialho.menuframework.internal.render.MenuSlot;
 import com.hanielfialho.menuframework.internal.task.MenuAsyncCommand;
 import com.hanielfialho.menuframework.internal.task.MenuPeriodicCommand;
 import com.hanielfialho.menuframework.internal.task.MenuTaskCommands;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +27,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 /**
  * Deterministic test harness for rendering and invoking menu handlers without opening an inventory.
@@ -51,6 +57,8 @@ public final class MenuTestHarness<S> {
   private final MenuTheme theme;
   private final Component title;
   private final Map<MenuTaskKey, Long> taskGenerations;
+  private final Map<MenuTaskKey, PendingAsync<S, ?>> pendingAsync;
+  private final Map<MenuTaskKey, ActivePeriodic<S>> activePeriodics;
 
   private S state;
   private MenuFrame<S> frame;
@@ -58,6 +66,11 @@ public final class MenuTestHarness<S> {
   private boolean terminated;
   private boolean closed;
   private MenuTestOutcome<S> lastOutcome;
+
+  private record PendingAsync<S, R>(
+      MenuAsyncCommand<S, R> command, long generation, S stateAtStart) {}
+
+  private record ActivePeriodic<S>(MenuTaskKey key, MenuPeriodicTask<S> task) {}
 
   private MenuTestHarness(Builder<S> builder) {
     this.sessionId = java.util.UUID.randomUUID();
@@ -73,6 +86,8 @@ public final class MenuTestHarness<S> {
     this.title =
         Objects.requireNonNull(this.menu.title(initialContext), "The menu returned a null title");
     this.taskGenerations = new HashMap<>();
+    this.pendingAsync = new HashMap<>();
+    this.activePeriodics = new HashMap<>();
     this.frame =
         MenuRenderer.render(this.menu, this.viewer, this.state, this.historyDepth, this.theme);
     this.revision = 1L;
@@ -322,6 +337,12 @@ public final class MenuTestHarness<S> {
 
     for (MenuTaskKey key : periodicTasks) {
       this.nextTaskGeneration(key);
+      MenuPeriodicCommand<S> command =
+          taskCommands.periodicCommands().stream()
+              .filter(c -> c.key().equals(key))
+              .findFirst()
+              .orElseThrow();
+      this.activePeriodics.put(key, new ActivePeriodic<>(key, command.task()));
     }
 
     Optional<MenuTestNavigation> navigation =
@@ -443,6 +464,92 @@ public final class MenuTestHarness<S> {
   }
 
   /**
+   * Asserts the display name of the item at a raw slot.
+   *
+   * @param slot raw slot
+   * @param expected expected plain-text display name
+   * @return this harness
+   */
+  public MenuTestHarness<S> assertDisplayName(int slot, String expected) {
+    ItemStack icon = this.requireItem(slot);
+    String actual = plainName(icon);
+    if (!Objects.requireNonNull(expected, "expected").equals(actual)) {
+      throw new AssertionError(
+          "Expected slot " + slot + " display name '" + expected + "' but found '" + actual + "'");
+    }
+    return this;
+  }
+
+  /**
+   * Asserts the display name of the item at a named slot.
+   *
+   * @param namedSlot named slot
+   * @param expected expected plain-text display name
+   * @return this harness
+   */
+  public MenuTestHarness<S> assertDisplayName(String namedSlot, String expected) {
+    return this.assertDisplayName(this.layout().slot(namedSlot), expected);
+  }
+
+  /**
+   * Asserts that the item at a raw slot matches the supplied predicate.
+   *
+   * @param slot raw slot
+   * @param predicate item predicate
+   * @param message assertion message
+   * @return this harness
+   */
+  public MenuTestHarness<S> assertItem(
+      int slot, Predicate<? super ItemStack> predicate, String message) {
+    ItemStack icon = this.requireItem(slot);
+    if (!Objects.requireNonNull(predicate, "predicate").test(icon)) {
+      throw new AssertionError(Objects.requireNonNull(message, "message"));
+    }
+    return this;
+  }
+
+  /**
+   * Asserts that the item at a named slot matches the supplied predicate.
+   *
+   * @param namedSlot named slot
+   * @param predicate item predicate
+   * @param message assertion message
+   * @return this harness
+   */
+  public MenuTestHarness<S> assertItem(
+      String namedSlot, Predicate<? super ItemStack> predicate, String message) {
+    return this.assertItem(this.layout().slot(namedSlot), predicate, message);
+  }
+
+  /**
+   * Asserts the lore of the item at a raw slot.
+   *
+   * @param slot raw slot
+   * @param expected expected plain-text lore lines
+   * @return this harness
+   */
+  public MenuTestHarness<S> assertLore(int slot, List<String> expected) {
+    ItemStack icon = this.requireItem(slot);
+    List<String> actual = plainLore(icon);
+    if (!Objects.requireNonNull(expected, "expected").equals(actual)) {
+      throw new AssertionError(
+          "Expected slot " + slot + " lore " + expected + " but found " + actual);
+    }
+    return this;
+  }
+
+  /**
+   * Asserts the lore of the item at a named slot.
+   *
+   * @param namedSlot named slot
+   * @param expected expected plain-text lore lines
+   * @return this harness
+   */
+  public MenuTestHarness<S> assertLore(String namedSlot, List<String> expected) {
+    return this.assertLore(this.layout().slot(namedSlot), expected);
+  }
+
+  /**
    * Asserts that the harness session has terminated through a terminal command.
    *
    * @return this harness
@@ -496,10 +603,123 @@ public final class MenuTestHarness<S> {
     return this;
   }
 
+  /**
+   * Completes a pending asynchronous operation with a successful result.
+   *
+   * @param key task key
+   * @param result operation result
+   * @param <R> result type
+   * @return this harness
+   */
+  public <R> MenuTestHarness<S> completeAsync(MenuTaskKey key, R result) {
+    this.ensureOpen();
+    PendingAsync<S, R> pending = this.requirePendingAsync(key);
+    S candidate =
+        Objects.requireNonNull(
+            pending.command.onSuccess().apply(this.state, pending.generation, result),
+            "The asynchronous success transition returned null");
+    this.pendingAsync.remove(key);
+    this.publish(candidate);
+    return this;
+  }
+
+  /**
+   * Completes a pending asynchronous operation with a failure.
+   *
+   * @param key task key
+   * @param failure failure cause
+   * @return this harness
+   */
+  public MenuTestHarness<S> failAsync(MenuTaskKey key, Throwable failure) {
+    this.ensureOpen();
+    PendingAsync<S, ?> pending = this.requirePendingAsync(key);
+    S candidate =
+        Objects.requireNonNull(
+            pending
+                .command
+                .onFailure()
+                .apply(this.state, pending.generation, Objects.requireNonNull(failure, "failure")),
+            "The asynchronous failure transition returned null");
+    this.pendingAsync.remove(key);
+    this.publish(candidate);
+    return this;
+  }
+
+  /**
+   * Runs the requested number of periodic-task ticks.
+   *
+   * @param ticks number of ticks to run
+   * @return this harness
+   */
+  public MenuTestHarness<S> runTicks(long ticks) {
+    if (ticks <= 0) {
+      throw new IllegalArgumentException("ticks must be greater than zero: " + ticks);
+    }
+    this.ensureOpen();
+
+    for (long tick = 1; tick <= ticks; tick++) {
+      this.runSingleTick();
+    }
+
+    return this;
+  }
+
+  private void runSingleTick() {
+    List<ActivePeriodic<S>> snapshot = List.copyOf(this.activePeriodics.values());
+    long execution = 1L;
+
+    for (ActivePeriodic<S> active : snapshot) {
+      if (!this.activePeriodics.containsKey(active.key)) {
+        continue;
+      }
+
+      MenuTickContext<S> context =
+          new MenuTickContext<>(
+              this.sessionId,
+              this.viewer,
+              this.state,
+              this.revision,
+              active.key,
+              this.nextTaskGeneration(active.key),
+              execution++);
+      MenuTickResult<S> result;
+      try {
+        result = active.task.tick(context);
+      } catch (Exception e) {
+        throw new AssertionError("Periodic task threw an exception", e);
+      }
+      this.applyTickResult(active.key, result);
+    }
+  }
+
+  private void applyTickResult(MenuTaskKey key, MenuTickResult<S> result) {
+    S renderedState = result.resolveState(this.state);
+    if (result.renderRequested()) {
+      this.publish(renderedState);
+    }
+    if (result.stopRequested()) {
+      this.activePeriodics.remove(key);
+    }
+  }
+
   private void ensureOpen() {
     if (this.terminated) {
       throw new IllegalStateException("The test harness session has already terminated");
     }
+  }
+
+  private ItemStack requireItem(int slot) {
+    return this.item(slot)
+        .orElseThrow(() -> new AssertionError("Expected slot " + slot + " to contain an item"));
+  }
+
+  private <R> PendingAsync<S, R> requirePendingAsync(MenuTaskKey key) {
+    @SuppressWarnings("unchecked")
+    PendingAsync<S, R> pending = (PendingAsync<S, R>) this.pendingAsync.get(key);
+    if (pending == null) {
+      throw new IllegalStateException("No pending asynchronous operation for key: " + key.value());
+    }
+    return pending;
   }
 
   private long nextTaskGeneration(MenuTaskKey key) {
@@ -514,6 +734,7 @@ public final class MenuTestHarness<S> {
         Objects.requireNonNull(
             command.onStart().apply(this.state, generation),
             "The asynchronous start transition returned null");
+    this.pendingAsync.put(command.key(), new PendingAsync<>(command, generation, candidate));
     this.publish(candidate);
   }
 
@@ -524,6 +745,32 @@ public final class MenuTestHarness<S> {
     this.state = checkedState;
     this.frame = nextFrame;
     this.revision = Math.incrementExact(this.revision);
+  }
+
+  private static String plainName(ItemStack icon) {
+    if (!icon.hasItemMeta()) {
+      return "";
+    }
+    ItemMeta meta = icon.getItemMeta();
+    Component display = meta.displayName();
+    return display == null ? "" : PlainTextComponentSerializer.plainText().serialize(display);
+  }
+
+  private static List<String> plainLore(ItemStack icon) {
+    if (!icon.hasItemMeta()) {
+      return List.of();
+    }
+    ItemMeta meta = icon.getItemMeta();
+    List<Component> lore = meta.lore();
+    if (lore == null) {
+      return List.of();
+    }
+    PlainTextComponentSerializer serializer = PlainTextComponentSerializer.plainText();
+    List<String> result = new ArrayList<>(lore.size());
+    for (Component line : lore) {
+      result.add(serializer.serialize(line));
+    }
+    return List.copyOf(result);
   }
 
   /** Mutable, non-thread-safe builder for {@link MenuTestHarness}. */

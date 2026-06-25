@@ -18,22 +18,29 @@ public final class MenuFrameworkConfiguration {
 
   private static final MenuFrameworkConfiguration DEFAULTS =
       new MenuFrameworkConfiguration(
-          null, DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH, MenuTheme.defaults(), MenuFeedback.none());
+          null,
+          DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH,
+          MenuTheme.defaults(),
+          MenuFeedback.none(),
+          false);
 
   private final MenuErrorHandler errorHandler;
   private final int maxNavigationHistoryDepth;
   private final MenuTheme defaultTheme;
   private final MenuFeedback defaultFeedback;
+  private final boolean debug;
 
   private MenuFrameworkConfiguration(
       MenuErrorHandler errorHandler,
       int maxNavigationHistoryDepth,
       MenuTheme defaultTheme,
-      MenuFeedback defaultFeedback) {
+      MenuFeedback defaultFeedback,
+      boolean debug) {
     this.errorHandler = errorHandler;
     this.maxNavigationHistoryDepth = validateHistoryDepth(maxNavigationHistoryDepth);
     this.defaultTheme = Objects.requireNonNull(defaultTheme, "defaultTheme");
     this.defaultFeedback = Objects.requireNonNull(defaultFeedback, "defaultFeedback");
+    this.debug = debug;
   }
 
   /**
@@ -91,6 +98,15 @@ public final class MenuFrameworkConfiguration {
   }
 
   /**
+   * Returns whether debug logging is enabled.
+   *
+   * @return debug flag
+   */
+  public boolean debug() {
+    return this.debug;
+  }
+
+  /**
    * Creates an independent builder initialized from this configuration.
    *
    * @return populated builder
@@ -100,7 +116,8 @@ public final class MenuFrameworkConfiguration {
         new Builder()
             .maxNavigationHistoryDepth(this.maxNavigationHistoryDepth)
             .defaultTheme(this.defaultTheme)
-            .defaultFeedback(this.defaultFeedback);
+            .defaultFeedback(this.defaultFeedback)
+            .debug(this.debug);
 
     if (this.errorHandler != null) {
       builder.errorHandler(this.errorHandler);
@@ -124,6 +141,7 @@ public final class MenuFrameworkConfiguration {
     private int maxNavigationHistoryDepth = DEFAULT_MAX_NAVIGATION_HISTORY_DEPTH;
     private MenuTheme defaultTheme = MenuTheme.defaults();
     private MenuFeedback defaultFeedback = MenuFeedback.none();
+    private boolean debug;
 
     private Builder() {}
 
@@ -184,6 +202,17 @@ public final class MenuFrameworkConfiguration {
     }
 
     /**
+     * Enables or disables debug logging for menu lifecycle transitions.
+     *
+     * @param debug true to enable
+     * @return this builder
+     */
+    public Builder debug(boolean debug) {
+      this.debug = debug;
+      return this;
+    }
+
+    /**
      * Builds an immutable configuration snapshot.
      *
      * @return new configuration
@@ -193,7 +222,8 @@ public final class MenuFrameworkConfiguration {
           this.errorHandler,
           this.maxNavigationHistoryDepth,
           this.defaultTheme,
-          this.defaultFeedback);
+          this.defaultFeedback,
+          this.debug);
     }
   }
 }

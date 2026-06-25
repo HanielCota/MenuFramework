@@ -40,11 +40,19 @@ dependencies {
 
 sourceSets {
     val main by getting
+    val test by getting
     val examples by creating {
         java.srcDir("examples/src/main/java")
         resources.srcDir("examples/src/main/resources")
         compileClasspath += main.output + main.compileClasspath
         runtimeClasspath += output + compileClasspath
+    }
+    val examplesTest by creating {
+        java.srcDir("examples/src/test/java")
+        resources.srcDir("examples/src/test/resources")
+        compileClasspath += main.output + examples.output + test.output
+        compileClasspath += main.compileClasspath + test.compileClasspath
+        runtimeClasspath += output + compileClasspath + test.runtimeClasspath
     }
 }
 
@@ -95,6 +103,24 @@ tasks.named<JavaCompile>("compileExamplesJava") {
     options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
 }
 
+tasks.named<JavaCompile>("compileExamplesTestJava") {
+    mustRunAfter("spotlessApply")
+    options.release.set(25)
+    options.compilerArgs.add("-Xlint:all")
+}
+
+tasks.register<Test>("examplesTest") {
+    description = "Runs tests for the examples source set."
+    group = "verification"
+    testClassesDirs = sourceSets["examplesTest"].output.classesDirs
+    classpath = sourceSets["examplesTest"].runtimeClasspath
+    useJUnitPlatform()
+}
+
+tasks.named("check") {
+    dependsOn("examplesTest")
+}
+
 tasks.withType<Javadoc>().configureEach {
     exclude("**/internal/**")
     options.encoding = "UTF-8"
@@ -124,12 +150,10 @@ tasks.register("format") {
     dependsOn("spotlessApply")
 }
 
-val publishingLocally = gradle.startParameter.taskNames.any {
-    it.contains("MavenLocal", ignoreCase = true)
-}
-
 tasks.withType<Sign>().configureEach {
-    onlyIf { !publishingLocally }
+    onlyIf {
+        !gradle.startParameter.taskNames.any { it.contains("MavenLocal", ignoreCase = true) }
+    }
 }
 
 mavenPublishing {

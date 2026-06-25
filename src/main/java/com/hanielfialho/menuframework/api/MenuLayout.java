@@ -72,6 +72,30 @@ public final class MenuLayout {
   }
 
   /**
+   * Creates a standard pagination layout with previous, indicator and next controls.
+   *
+   * @param rows row count, normally 4 through 6
+   * @return layout with slots {@code previous}, {@code indicator}, {@code next}
+   */
+  public static MenuLayout standardPage(int rows) {
+    int lastRow = rows - 1;
+    return chestBuilder(rows)
+        .slot("previous", lastRow, 0)
+        .slot("indicator", lastRow, 4)
+        .slot("next", lastRow, 8)
+        .build();
+  }
+
+  /**
+   * Creates a confirmation layout with message, confirm and cancel slots.
+   *
+   * @return layout with slots {@code message}, {@code confirm}, {@code cancel}
+   */
+  public static MenuLayout confirmation() {
+    return chestBuilder(3).slot("confirm", 1, 2).slot("message", 1, 4).slot("cancel", 1, 6).build();
+  }
+
+  /**
    * Creates a builder populated with this layout's named metadata.
    *
    * @return independent builder
