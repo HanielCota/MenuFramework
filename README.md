@@ -10,16 +10,20 @@ A ideia central é simples: a definição do menu é reutilizável, o estado per
 - [Requisitos](#requisitos)
 - [Instalação](#instalação)
 - [Uso rápido](#uso-rápido)
+- [Menu mínimo](#menu-mínimo)
+- [Menu mínimo com DSL](#menu-mínimo-com-dsl)
 - [Conceitos principais](#conceitos-principais)
 - [API pública](#api-pública)
 - [Renderização e canvas](#renderização-e-canvas)
 - [Layouts nomeados e regiões](#layouts-nomeados-e-regiões)
+- [Layouts pré-fabricados](#layouts-pré-fabricados)
 - [Componentes, temas e feedback](#componentes-temas-e-feedback)
 - [Interações e comandos](#interações-e-comandos)
 - [Navegação e histórico](#navegação-e-histórico)
 - [Paginação síncrona](#paginação-síncrona)
 - [Paginação assíncrona](#paginação-assíncrona)
 - [Tasks periódicas](#tasks-periódicas)
+- [Modo debug](#modo-debug)
 - [Tratamento de erros](#tratamento-de-erros)
 - [Paper, Folia e threads](#paper-folia-e-threads)
 - [Testando menus](#testando-menus)
@@ -40,6 +44,8 @@ A ideia central é simples: a definição do menu é reutilizável, o estado per
 - Histórico de navegação limitado por jogador.
 - Slots nomeados e regiões ordenadas para reduzir números mágicos.
 - Componentes reutilizáveis para background, botões, paginação, loading e retry.
+- **DSL declarativa** (`MenuBuilder`) para menus comuns sem boilerplate.
+- **Componentes de alto nível**: `PaginationComponent`, `AsyncPaginationComponent`, `ToggleButton`, `CountdownComponent`, `ListComponent`.
 - Temas de ícones e feedback transacional por sinais.
 - Paginação síncrona sobre snapshots em memória.
 - Paginação assíncrona com `LOADING`, `READY`, `ERROR`, retry e barreira de geração.
@@ -52,7 +58,7 @@ A ideia central é simples: a definição do menu é reutilizável, o estado per
 
 Este repositório atualmente é configurado para:
 
-- Java 25.
+- Java 25 (toolchain; bytecode continua compatível com JVM 25+).
 - Gradle Wrapper 9.3.0.
 - Paper API `26.1.2.build.69-stable`.
 - MockBukkit `4.113.2` nos testes.
@@ -69,8 +75,6 @@ A API suportada fica nos packages `com.hanielfialho.menuframework` e `com.haniel
 
 ## Instalação
 
-Após publicação no Maven Central, use a dependência abaixo. Enquanto a primeira versão ainda não estiver disponível, as opções de composite build, subprojeto e Maven Local continuam úteis para desenvolvimento.
-
 ### Opção 1: Maven Central
 
 No `build.gradle.kts` do plugin consumidor:
@@ -82,7 +86,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.hanielcota:menu-framework:1.0.0")
+    implementation("io.github.hanielcota:menu-framework:1.0.1")
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.69-stable")
 }
 ```
@@ -116,16 +120,12 @@ No `build.gradle.kts` do plugin consumidor:
 
 ```kotlin
 dependencies {
-    implementation("io.github.hanielcota:menu-framework:1.0.0")
+    implementation("io.github.hanielcota:menu-framework:1.0.1")
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.69-stable")
 }
 ```
 
-Quando usado como composite build, o Gradle substitui essas coordenadas pelo projeto local incluído.
-
 ### Opção 3: subprojeto Gradle
-
-Se o plugin e a biblioteca estiverem no mesmo workspace, inclua este projeto como subprojeto.
 
 No `settings.gradle.kts` do workspace:
 
@@ -161,14 +161,10 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.hanielcota:menu-framework:1.0.0")
+    implementation("io.github.hanielcota:menu-framework:1.0.1")
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.69-stable")
 }
 ```
-
-### Opção 5: copiar fontes
-
-Também é possível copiar `src/main/java/com/hanielfialho/menuframework` para dentro do plugin. Essa opção é simples, mas você passa a ser responsável por manter os fontes atualizados e formatados.
 
 ## Uso rápido
 
@@ -263,7 +259,28 @@ public final class CounterMenu implements Menu<CounterMenu.State> {
 }
 ```
 
-O menu pode ser singleton. O estado não deve ficar em campos mutáveis do menu, porque a mesma instância pode atender vários jogadores ao mesmo tempo.
+## Menu mínimo com DSL
+
+Para menus simples você pode usar `MenuBuilder` e economizar dezenas de linhas:
+
+```java
+import com.hanielfialho.menuframework.api.dsl.MenuBuilder;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+
+Menu<CounterMenu.State> counter =
+    MenuBuilder.<CounterMenu.State>chest(3, Component.text("Contador"))
+        .background(new ItemStack(Material.GRAY_STAINED_GLASS_PANE))
+        .button(
+            "counter",
+            ctx -> new ItemStack(Material.EMERALD),
+            click -> click.updateState(State::increment))
+        .closeButton("close")
+        .build();
+```
+
+A DSL suporta `item`, `button`, `background`, `closeButton`, `backButton`, `toggle`, `component` e `when`.
 
 ## Conceitos principais
 
@@ -301,8 +318,6 @@ public record ProductState(PageCursor cursor, String filter) {
 }
 ```
 
-O histórico guarda a referência do estado. Ele não faz deep copy.
-
 ## API pública
 
 ### `MenuFramework`
@@ -316,8 +331,6 @@ Ponto de entrada:
 - `isShutdown()`
 - `shutdown()`
 
-Crie durante `onEnable()`. O construtor falha se o plugin ainda não estiver habilitado.
-
 ### `MenuManager`
 
 Fachada para operações por jogador:
@@ -330,35 +343,18 @@ Fachada para operações por jogador:
 - `canGoBack(player)`
 - `back(player)`
 
-Essas operações são thread-aware pela fronteira de scheduler, mas o código de menu continua devendo respeitar as regras Paper/Folia.
-
 ### `MenuFrameworkConfiguration`
 
-Permite configurar profundidade de histórico, handler de erro, tema e feedback:
+Permite configurar profundidade de histórico, handler de erro, tema, feedback e debug:
 
 ```java
 MenuFrameworkConfiguration configuration =
     MenuFrameworkConfiguration.builder()
         .maxNavigationHistoryDepth(64)
         .defaultFeedback(SoundMenuFeedback.minecraftDefaults())
-        .errorHandler(context -> {
-          getLogger().severe(
-              "Menu failure: "
-                  + context.operation()
-                  + " menu="
-                  + context.menuTypeName()
-                  + " player="
-                  + context.viewerId());
-          context.cause().printStackTrace();
-        })
+        .debug(true)
         .build();
-
-this.menuFramework = MenuFramework.create(this, configuration);
 ```
-
-O handler pode ser chamado no scheduler da entidade ou em thread assíncrona. Ele deve ser thread-safe e não deve acessar APIs Bukkit dependentes de região.
-
-O feedback padrão é `MenuFeedback.none()`. Configure `SoundMenuFeedback.minecraftDefaults()` ou uma implementação própria quando quiser sons, partículas ou mensagens transacionais nos componentes.
 
 ## Renderização e canvas
 
@@ -371,26 +367,7 @@ canvas.button(13, new ItemStack(Material.DIAMOND), interaction -> {});
 canvas.empty(16);
 ```
 
-Regras importantes:
-
-- Cada slot pode ser atribuído no máximo uma vez por render.
-- `AIR` não pode ser usado como ícone. Use `canvas.empty(slot)`.
-- `ItemStack` é clonado defensivamente.
-- Não altere o inventário Bukkit diretamente dentro de `render`.
-- Não bloqueie `render` com banco, HTTP, arquivo ou outra operação lenta.
-- O layout não pode mudar enquanto a sessão está aberta.
-
-Use coordenadas quando o código ficar mais legível:
-
-```java
-canvas.button(2, 4, new ItemStack(Material.BARRIER), MenuInteraction::close);
-```
-
-Isso equivale a `layout().slot(2, 4)`.
-
 ## Layouts nomeados e regiões
-
-Para menus mantidos por mais tempo, prefira nomear slots estruturais. Isso remove números mágicos do `render` e melhora mensagens de erro:
 
 ```java
 private static final MenuLayout LAYOUT =
@@ -403,19 +380,18 @@ private static final MenuLayout LAYOUT =
         .build();
 ```
 
-Uso no canvas:
+## Layouts pré-fabricados
+
+Para menus comuns, use layouts prontos:
 
 ```java
-canvas.item("message", messageIcon);
-canvas.button("confirm", confirmIcon, interaction -> confirm(interaction.viewer()));
-canvas.region("content").empty();
+MenuLayout.standardPage(6); // slots: previous, indicator, next
+MenuLayout.confirmation();  // slots: confirm, message, cancel
 ```
-
-Regiões preservam a ordem declarada e são úteis para grids, paginação e componentes reutilizáveis. Slots nomeados não podem repetir o mesmo raw slot; regiões podem sobrepor outras regiões, e duplicidade real de render continua sendo validada pelo canvas.
 
 ## Componentes, temas e feedback
 
-Componentes encapsulam padrões comuns sem esconder o ciclo de vida do menu:
+Componentes encapsulam padrões comuns:
 
 ```java
 canvas.component(context, MenuComponents.background());
@@ -429,44 +405,42 @@ canvas.component(
         .build());
 ```
 
-`MenuButton` tem três estados:
-
-- enabled: renderiza ícone e handler;
-- disabled: renderiza ícone sem handler;
-- hidden: não atribui o slot, então o background ainda pode preenchê-lo.
-
-Os componentes padrão resolvem ícones por `MenuTheme`. Para trocar só alguns assets:
+### ToggleButton
 
 ```java
-MenuTheme theme =
-    MapMenuTheme.builder()
-        .fallback(MenuTheme.defaults())
-        .item(StandardMenuThemeKeys.CLOSE, customCloseIcon)
+canvas.component(
+    context,
+    ToggleButton.<SettingsState>at("sounds")
+        .label("Sons")
+        .reader(SettingsState::sounds)
+        .writer(SettingsState::withSounds)
+        .build());
+```
+
+### CountdownComponent
+
+```java
+Menu<Integer> countdown =
+    CountdownComponent.<Integer>builder("Contagem")
+        .secondsReader(seconds -> seconds)
+        .stateFactory(seconds -> seconds)
+        .onFinish(finished -> {})
         .build();
 ```
 
-Você pode aplicar o tema no framework inteiro com `MenuFrameworkConfiguration.builder().defaultTheme(theme)` ou por menu sobrescrevendo `Menu#theme`.
-
-Feedback é transacional. Sinais só são emitidos quando o handler termina com sucesso e a transição síncrona principal também é aceita:
+### ListComponent
 
 ```java
-MenuFrameworkConfiguration configuration =
-    MenuFrameworkConfiguration.builder()
-        .defaultFeedback(SoundMenuFeedback.minecraftDefaults())
-        .build();
+canvas.component(
+    context,
+    ListComponent.<State, Warp>builder("warps")
+        .entries(ctx -> ctx.state().warps())
+        .entryRenderer(warp -> ItemStacks.named(Material.PAPER, warp.name()))
+        .onSelect((warp, interaction) -> interaction.viewer().teleport(warp.location()))
+        .build());
 ```
 
 ## Interações e comandos
-
-Um clique em botão recebe `MenuInteraction<S>`. O evento Bukkit original não é exposto. O framework fornece um snapshot seguro com:
-
-- `sessionId()`
-- `viewer()`
-- `state()`
-- `revision()`
-- `historyDepth()`
-- `canGoBack()`
-- `click()`
 
 Comandos comuns:
 
@@ -481,336 +455,80 @@ interaction.backOrClose();
 interaction.cancelTask(taskKey);
 ```
 
-Os comandos são transacionais:
-
-- O buffer só é aplicado se o callback retornar normalmente.
-- Se o handler lançar `Exception`, o buffer é descartado e a falha vai ao `MenuErrorHandler`.
-- Comandos terminais (`close`, `open`, `back`) não podem ser combinados com mudança de estado ou tasks no mesmo callback.
-- Uma interação pode iniciar no máximo uma operação assíncrona.
-- Não retenha `MenuInteraction` para usar depois que o handler terminar.
-
-## Política de interação
-
-Por padrão, o framework usa `InteractionPolicy.READ_ONLY`, cancelando cliques e drags em toda a view. Botões do menu ainda são despachados depois do cancelamento do evento.
-
-Para permitir interações restritas ao inventário inferior do jogador:
-
-```java
-@Override
-public InteractionPolicy interactionPolicy() {
-  return InteractionPolicy.PLAYER_INVENTORY_ALLOWED;
-}
-```
-
-Mesmo com `PLAYER_INVENTORY_ALLOWED`, o inventário superior continua protegido. Shift-click, double-click collect, drags que cruzam o menu e ações desconhecidas continuam bloqueados.
-
 ## Navegação e histórico
-
-`interaction.open(...)` abre outro menu e empilha o menu atual no histórico:
 
 ```java
 interaction.open(productMenu, ProductMenu.State.firstPage());
-```
-
-Para voltar:
-
-```java
-if (context.canGoBack()) {
-  canvas.button(BACK_SLOT, new ItemStack(Material.ARROW), MenuInteraction::back);
-}
-```
-
-Também há:
-
-```java
 interaction.backOrClose();
 menus.back(player);
-menus.canGoBack(player);
-menus.historyDepth(player);
 ```
-
-Comportamento:
-
-- `menus.open(...)` externo cria uma nova raiz e limpa o histórico do jogador.
-- `interaction.open(...)` fecha o menu atual com `MenuCloseReason.NAVIGATION`.
-- `back()` fecha o menu atual com `MenuCloseReason.BACK`.
-- Se uma abertura de destino falhar, a transição tenta preservar a sessão anterior e o histórico.
-- A profundidade padrão é 32 e pode ser configurada.
 
 ## Paginação síncrona
 
-Use `Paginator` quando todos os itens já estão disponíveis em memória.
+Forma baixo nível com `Paginator` e `PaginationLayout` continua disponível. Para a maioria dos casos, use `PaginationComponent`:
 
 ```java
-private static final MenuLayout LAYOUT =
-    MenuLayout.chestBuilder(6)
-        .slot("previous", 5, 0)
-        .slot("indicator", 5, 4)
-        .slot("next", 5, 8)
+Menu<PaginationComponent.State> menu =
+    PaginationComponent.<Product>builder("Produtos", 6)
+        .items(products)
+        .entryRenderer(product -> product.icon())
+        .onSelect((product, interaction) -> select(product))
         .build();
 
-private static final PaginationLayout PAGINATION =
-    PaginationLayout.builder(LAYOUT)
-        .contentArea(1, 1, 4, 7)
-        .previousSlot(5, 0)
-        .indicatorSlot(5, 4)
-        .nextSlot(5, 8)
-        .build();
-
-private final Paginator<Product> products;
-
-public ProductMenu(Collection<Product> products) {
-  this.products = Paginator.copyOf(products);
-}
+menus.open(player, menu, PaginationComponent.initial());
 ```
-
-No render:
-
-```java
-PageSlice<Product> page = this.products.page(PAGINATION.request(context.state().cursor()));
-
-PAGINATION.forEachEntry(
-    page,
-    (slot, product, indexInPage, absoluteIndex) ->
-        canvas.button(slot, product.icon(), interaction -> select(product)));
-
-PAGINATION.forEachUnusedSlot(page, canvas::empty);
-
-canvas.component(
-    context,
-    MenuComponents.previousPageButton(
-        "previous",
-        ignored -> page.hasPrevious(),
-        interaction -> interaction.updateState(state -> state.withCursor(page.cursor().previous()))));
-canvas.component(
-    context,
-    MenuComponents.nextPageButton(
-        "next",
-        ignored -> page.hasNext(),
-        interaction -> interaction.updateState(state -> state.withCursor(page.cursor().next()))));
-```
-
-Detalhes:
-
-- O tamanho da página é a quantidade de slots de conteúdo.
-- `Paginator` normaliza cursor além da última página para a última página válida.
-- Coleções vazias expõem uma página virtual vazia.
-- `PageSlice.knownTotal(...)` valida que a janela fornecida é completa.
-- `PageSlice.unknownTotal(...)` permite ausência de contagem total, mas exige página cheia quando `hasNext=true`.
 
 ## Paginação assíncrona
 
-Use `AsyncPaginator` quando a página vem de banco, HTTP, cache remoto ou qualquer fonte lenta.
+Use `AsyncPaginationComponent` para esconder `AsyncPageState` e `PageStateAdapter`:
 
 ```java
-private final AsyncPaginator<Product> products =
-    AsyncPaginator.create(
-        "products",
-        (loadContext, request) ->
-            CompletableFuture.completedFuture(repository.loadPage(request)));
+Menu<AsyncPaginationComponent.State<Product>> menu =
+    AsyncPaginationComponent.<Product>builder("products", layout, this::loadPage)
+        .entryRenderer(product -> product.icon())
+        .onSelect((product, interaction) -> select(product))
+        .build();
 ```
-
-O `PageSource` já é chamado pelo scheduler assíncrono do runtime. Isso significa que uma consulta bloqueante pode ser iniciada ali, desde que ela não acesse objetos Bukkit sensíveis à região.
-
-Estado inicial:
-
-```java
-public record State(AsyncPageState<Product> products) {
-
-  public static State initial() {
-    return new State(AsyncPageState.initial(PAGINATION.request(PageCursor.FIRST)));
-  }
-
-  public State withProducts(AsyncPageState<Product> products) {
-    return new State(Objects.requireNonNull(products, "products"));
-  }
-}
-```
-
-Adapter para estado composto:
-
-```java
-private static final PageStateAdapter<State, Product> PRODUCT_PAGE =
-    new PageStateAdapter<>() {
-      @Override
-      public AsyncPageState<Product> pageState(State state) {
-        return state.products();
-      }
-
-      @Override
-      public State withPageState(State state, AsyncPageState<Product> pageState) {
-        return state.withProducts(pageState);
-      }
-    };
-```
-
-Carregar ao abrir:
-
-```java
-@Override
-public void onOpen(MenuOpenContext<State> context) {
-  this.products.load(context, PRODUCT_PAGE, context.state().products().request());
-}
-```
-
-Renderize os três estados:
-
-```java
-AsyncPageState<Product> pageState = context.state().products();
-
-switch (pageState.status()) {
-  case LOADING -> renderLoading(canvas);
-  case READY -> renderProducts(canvas, pageState.requirePage());
-  case ERROR -> renderError(canvas, pageState.requireError());
-}
-```
-
-Botões de navegação:
-
-```java
-this.products.load(interaction, PRODUCT_PAGE, PAGINATION, page.cursor().next());
-this.products.reload(interaction, PRODUCT_PAGE);
-```
-
-Os componentes `loadingIndicator`, `retryButton`, `previousPageButton` e `nextPageButton` cobrem os controles mais comuns. Veja `AsyncProductMenu` em `examples/` para um render completo de `LOADING`, `READY` e `ERROR`.
-
-Por baixo, cada `AsyncPaginator` usa uma `MenuTaskKey`. Uma nova carga com a mesma chave substitui a geração anterior. Se uma resposta antiga chegar depois, ela é descartada porque não corresponde mais à sessão, chave, geração e handle ativos.
-
-Regras para `PageSource`:
-
-- Não capture `Player`, `World`, `Inventory`, `ItemStack` ou outros objetos Bukkit region-bound.
-- Retorne DTOs imutáveis ou tratados como imutáveis.
-- Retorne `CompletionStage<PageSlice<T>>` não nulo.
-- Complete com `PageSlice` não nulo.
-- A página retornada deve ter o mesmo `PageRequest` recebido.
-
-## Operações assíncronas diretas
-
-Para casos fora de paginação, use `executeAsync` diretamente:
-
-```java
-private static final MenuTaskKey PROFILE_LOAD = MenuTaskKey.of("profile.load");
-
-interaction.executeAsync(
-    PROFILE_LOAD,
-    taskContext -> CompletableFuture.completedFuture(repository.loadProfile(taskContext.viewerId())),
-    (state, generation) -> state.loading(generation),
-    (state, generation, profile) -> state.loaded(generation, profile),
-    (state, generation, failure) -> state.failed(generation, failure.getMessage()));
-```
-
-Fluxo:
-
-1. `onStart` roda no scheduler da entidade e publica o estado de loading.
-2. `operation` roda no scheduler assíncrono.
-3. `onSuccess` ou `onFailure` volta ao scheduler da entidade.
-4. O resultado só é aplicado se a sessão e a geração ainda forem atuais.
-
-`MenuTaskKey` deve seguir o padrão:
-
-```text
-[a-z0-9][a-z0-9._-]{0,63}
-```
-
-Exemplos válidos: `products`, `profile.load`, `animation_1`, `search-cache`.
 
 ## Tasks periódicas
 
-Tasks periódicas rodam no scheduler da entidade. Use para animações curtas, polling leve ou atualização visual barata.
+Veja `CountdownComponent` acima ou use a API de baixo nível:
 
 ```java
-private static final MenuTaskKey ANIMATION = MenuTaskKey.of("animation");
-
-@Override
-public void onOpen(MenuOpenContext<State> context) {
-  context.repeat(
-      ANIMATION,
-      MenuTaskSchedule.startingNextTick(4L),
-      tick -> MenuTickResult.update(tick.state().nextFrame()));
-}
+context.repeat(
+    ANIMATION,
+    MenuTaskSchedule.startingNextTick(4L),
+    tick -> MenuTickResult.update(tick.state().nextFrame()));
 ```
 
-Resultados possíveis:
+## Modo debug
 
-- `MenuTickResult.continueTask()`: não renderiza e mantém a task.
-- `MenuTickResult.refresh()`: renderiza o estado atual e mantém a task.
-- `MenuTickResult.update(newState)`: troca estado, renderiza e mantém a task.
-- `MenuTickResult.stop()`: cancela sem renderizar.
-- `MenuTickResult.stopAndRefresh()`: renderiza estado atual e cancela.
-- `MenuTickResult.stopWithState(newState)`: troca estado, renderiza e cancela.
-
-Cancelar explicitamente:
+Ative para logar transições de lifecycle no logger do plugin:
 
 ```java
-interaction.cancelTask(ANIMATION);
+MenuFrameworkConfiguration.builder().debug(true).build();
 ```
-
-Tasks são canceladas automaticamente quando a sessão é descartada. O cancelamento é best effort; a garantia real contra resultado atrasado é a validação de sessão, chave, geração e handle.
 
 ## Tratamento de erros
 
 Falhas não fatais de callbacks, renders e tasks são encaminhadas ao `MenuErrorHandler`.
 
-```java
-MenuFrameworkConfiguration configuration =
-    MenuFrameworkConfiguration.builder()
-        .errorHandler(
-            context ->
-                getLogger()
-                    .log(
-                        Level.SEVERE,
-                        DefaultMenuErrorHandler.format(context),
-                        context.cause()))
-        .build();
-```
-
-O contexto contém:
-
-- operação (`MenuFailureOperation`);
-- causa original;
-- UUID do jogador;
-- classe do menu;
-- sessão e revisão, quando disponíveis;
-- chave, geração e execução de task, quando disponíveis.
-
-Se o handler customizado lançar `Exception`, o framework usa um fallback para o logger do plugin. `Error` não é convertido em falha recuperável comum.
-
-## Paper, Folia e threads
-
-O framework usa:
-
-- `EntityScheduler` do jogador para abertura, renderização, clique, navegação, fechamento e tasks periódicas.
-- `AsyncScheduler` para operações assíncronas.
-- Retorno ao `EntityScheduler` antes de ler view, alterar estado ou aplicar frame.
-
-Código do consumidor deve seguir as mesmas regras:
-
-- Não acesse `Player`, `World`, `Inventory` ou `ItemStack` compartilhado em trabalho assíncrono.
-- Não bloqueie o scheduler da entidade.
-- Não guarde callback contexts para usar depois.
-- Reagende trabalho Bukkit sensível à região para o contexto correto.
-
 ## Testando menus
 
-`MenuTestHarness` renderiza menus e executa handlers de clique sem abrir inventário real. Ele é útil para testar estado, botões, componentes, comandos e feedback sem depender de scheduler ou evento Bukkit:
+`MenuTestHarness` agora suporta assertions mais ricas, conclusão de operações assíncronas e execução de tasks periódicas:
 
 ```java
 MenuTestHarness<State> harness =
-    MenuTestHarness.create(new ProductMenu(), player, State.initial());
+    MenuTestHarness.create(menu, player, State.initial());
 
-harness.assertItem("next", Material.ARROW).assertClickable("next");
-
-MenuTestOutcome<State> outcome = harness.click("next", ClickType.LEFT);
-
-assertTrue(outcome.rendered());
-harness.assertFeedback(StandardMenuFeedbackSignals.PAGE_NEXT);
+harness.assertItem("counter", Material.EMERALD)
+       .assertDisplayName("counter", "Cliques: 0")
+       .click("counter", ClickType.LEFT)
+       .assertState(s -> s.clicks() == 1, "expected one click")
+       .runTicks(5);
 ```
 
-O harness não emula substituição de sessão, eventos de inventário ou conclusão assíncrona. Use testes de integração para essas partes.
-
 ## Build, testes e formatação
-
-Comandos principais:
 
 ```powershell
 .\gradlew.bat format
@@ -818,22 +536,10 @@ Comandos principais:
 .\gradlew.bat check
 .\gradlew.bat javadoc
 .\gradlew.bat build
-```
-
-O projeto usa Spotless com Google Java Format. O task `check` depende de:
-
-- `examplesClasses`, para compilar `examples/src/main/java`;
-- `spotlessApply`;
-- `spotlessCheck`;
-- `test`.
-
-Isso faz com que os exemplos também sejam validados pelo build, mesmo não fazendo parte do artifact principal da biblioteca.
-
-Para publicar localmente:
-
-```powershell
 .\gradlew.bat publishToMavenLocal
 ```
+
+O `check` também executa os testes do source set `examples`.
 
 ## Exemplos
 
@@ -846,81 +552,15 @@ A pasta [examples](examples/) contém:
 - `CountdownMenu`: task periódica que atualiza o estado da sessão.
 - `SynchronousProductMenu`: paginação em memória.
 - `AsyncProductMenu`: loading, ready, error e retry com `AsyncPaginator`.
-- Os exemplos usam slots nomeados, componentes, tema padrão e feedback sonoro configurado no plugin.
-- `Product` e `ItemStacks`: objetos auxiliares usados pelos exemplos.
-
-Os exemplos usam o namespace:
-
-```text
-com.hanielfialho.menuframework.example
-```
-
-Eles são compilados pelo build, mas não são empacotados no source set principal da biblioteca.
-
-## Limites atuais
-
-Esta versão assume:
-
-- Somente chest inventories de uma a seis linhas.
-- Título e layout são estruturais durante a sessão.
-- Inventário superior sempre pertence ao framework.
-- Menus editáveis/transacionais não fazem parte da versão atual.
-- Estado de sessão e histórico não recebem deep copy.
-- Operações públicas retornam aceite de agendamento, não sucesso final.
-- Shutdown não manipula views nem chama `onClose`, por segurança com Folia.
-- Cancelamento de futures e scheduled tasks é best effort.
-- Várias tasks periódicas no mesmo callback são iniciadas por chave; não há rollback global se uma task posterior for rejeitada.
-
-## Invariantes de produção
-
-1. Não identifique menus pelo título.
-2. Não altere inventários diretamente em `render`, handlers, `onOpen` ou `onClose`.
-3. Não compartilhe estado mutável entre sessões.
-4. Não bloqueie callbacks que rodam no scheduler da entidade.
-5. Não capture objetos Bukkit em operações assíncronas.
-6. Use `MenuTaskKey` estável para cada operação lógica.
-7. Renderize explicitamente estados `LOADING`, `READY` e `ERROR` em paginação assíncrona.
-8. Execute smoke tests em Paper e Folia antes de release.
-9. Evite `/reload` e hot reload para plugins com scheduler, listeners e estado em memória.
-
-## Troubleshooting
-
-### O menu abre, mas o botão não responde
-
-Verifique se o slot foi registrado com `canvas.button(...)`, não `canvas.item(...)`. O framework só despacha cliques do inventário superior, em slots com botão e click conhecido. Eventos já cancelados por outro plugin antes do listener também não disparam botão.
-
-### Recebi `Slot X was assigned more than once`
-
-O mesmo slot foi escrito duas vezes no mesmo render. Use `if/else` para escolher entre item desabilitado e botão, em vez de chamar `canvas.item` e depois `canvas.button` no mesmo slot.
-
-### Recebi `A menu cannot change its layout while open`
-
-`layout()` retornou uma estrutura diferente durante a mesma sessão. O layout deve ser fixo para a abertura atual. Coloque variações visuais no frame, não no tamanho do inventário.
-
-### O estado assíncrono fica em loading
-
-Confirme que o `CompletionStage` completa, que o `PageSource` não retornou `null`, que a página tem o mesmo `PageRequest` e que `onFailure` retorna um estado não nulo. Se a sessão foi fechada ou substituída, o resultado antigo é descartado de propósito.
-
-### Uma task antiga sobrescreveu um menu novo
-
-Isso não deveria acontecer se a task foi criada pela API. O runtime valida sessão, chave, geração e handle. Se você observa algo parecido, procure estado mutável compartilhado fora do framework.
-
-### `Task key must match [a-z0-9][a-z0-9._-]{0,63}`
-
-A chave da task precisa começar com letra minúscula ou dígito e conter apenas letras minúsculas, dígitos, ponto, underscore ou hífen. Ela deve ter de 1 a 64 caracteres.
-
-### `MenuFramework must be created while the owning plugin is enabled`
-
-Crie o framework em `JavaPlugin#onEnable()`, não em construtor, inicializador estático ou antes do plugin estar habilitado.
-
-### `onClose` não rodou no shutdown
-
-Isso é intencional. `shutdown()` não manipula views nem executa callbacks de menu porque o desligamento do plugin não garante contexto de região seguro no Folia. Libere recursos globais no `onDisable()` do plugin.
+- `SimpleConfirmationMenu`, `SimpleProductMenu`, `SimpleCountdownMenu`: versões usando as novas APIs de alto nível.
 
 ## Documentação adicional
 
+- [docs/QUICK_START.md](docs/QUICK_START.md): 5 minutos de copy-paste.
+- [docs/TEMPLATES.md](docs/TEMPLATES.md): templates de menus comuns.
+- [docs/CHEAT_SHEET.md](docs/CHEAT_SHEET.md): referência rápida.
 - [ARCHITECTURE.md](ARCHITECTURE.md): componentes, invariantes e modelo de threads.
 - [PACKAGE_MAP.md](PACKAGE_MAP.md): mapa dos packages e classes.
-- [REVIEW.md](REVIEW.md): revisão técnica consolidada, correções e limites conhecidos.
+- [REVIEW.md](REVIEW.md): revisão técnica consolidada.
 - [PUBLISHING.md](PUBLISHING.md): publicação no Maven Central.
 - [examples/README.md](examples/README.md): descrição dos exemplos.
